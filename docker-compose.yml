@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ragevaluator-postgress
+    environment:
+      POSTGRES_DB: ragevaluator
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ragevaluator-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "/bin/ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  ragevaluator-api:
+    image: ragevaluator-api
+    container_name: ragevaluator-api
+    build:
+      context: .
+      dockerfile: RagEvaluator.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=ragevaluator;Username=postgres;Password=postgres
+      - OllamaEndpoint=http://ollama:11434/v1
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+
+  ragevaluator-web-ui:
+    image: ragevaluator-web-ui
+    container_name: ragevaluator-web-ui
+    build:
+      context: ./RagEvaluator.WebUi
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - ragevaluator-api
+    environment:
+      - VITE_API_URL=http://localhost:5000
+
+volumes:
+  postgres_data:
+  ollama_data:

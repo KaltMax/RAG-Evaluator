@@ -6,11 +6,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>38d2f167-baad-41c9-969f-d0ce12e31b7e</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RagEvaluator.Application\RagEvaluator.Application.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Contract\RagEvaluator.Contract.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Infrastructure\RagEvaluator.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

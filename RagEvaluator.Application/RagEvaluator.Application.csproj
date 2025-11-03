@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RagEvaluator.Contract\RagEvaluator.Contract.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Domain\RagEvaluator.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

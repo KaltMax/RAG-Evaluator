@@ -13,6 +13,10 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["RagEvaluator.API/RagEvaluator.API.csproj", "RagEvaluator.API/"]
+COPY ["RagEvaluator.Application/RagEvaluator.Application.csproj", "RagEvaluator.Application/"]
+COPY ["RagEvaluator.Contract/RagEvaluator.Contract.csproj", "RagEvaluator.Contract/"]
+COPY ["RagEvaluator.Domain/RagEvaluator.Domain.csproj", "RagEvaluator.Domain/"]
+COPY ["RagEvaluator.Infrastructure/RagEvaluator.Infrastructure.csproj", "RagEvaluator.Infrastructure/"]
 RUN dotnet restore "./RagEvaluator.API/RagEvaluator.API.csproj"
 COPY . .
 WORKDIR "/src/RagEvaluator.API"
