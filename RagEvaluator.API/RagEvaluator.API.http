@@ -1,0 +1,6 @@
+@RagEvaluator.API_HostAddress = http://localhost:5276
+
+GET {{RagEvaluator.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
