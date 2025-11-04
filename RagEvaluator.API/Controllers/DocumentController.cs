@@ -1,21 +1,50 @@
 using Microsoft.AspNetCore.Mvc;
+using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/documents")]
     public class DocumentController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
+        private readonly ILoggerWrapper<DocumentController> _logger;
+        private readonly IDocumentService _documentService;
 
-        private readonly ILogger<DocumentController> _logger;
-
-        public DocumentController(ILogger<DocumentController> logger)
+        public DocumentController(ILoggerWrapper<DocumentController> logger, IDocumentService documentService)
         {
             _logger = logger;
+            _documentService = documentService;
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadDocumentAsync()
+        {
+            return Ok();
+        }
+
+        [HttpGet()]
+        public async Task<IActionResult> GetAllDocumentsAsync()
+        {
+            return Ok();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetDocumentByIdAsync(Guid id)
+        {
+            return Ok();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteDocumentAsync(Guid id)
+        {
+            return Ok();
+        }
+
+        [HttpGet("{id}/chunks")]
+        public async Task<IActionResult> GetDocumentChunksAsync(Guid id)
+        {
+            return Ok();
         }
     }
 }

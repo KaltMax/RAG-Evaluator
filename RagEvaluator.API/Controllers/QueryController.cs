@@ -1,21 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
+using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/query")]
     public class QueryController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
+        private readonly ILoggerWrapper<QueryController> _logger;
+        private readonly IQueryService _queryService;
 
-        private readonly ILogger<QueryController> _logger;
-
-        public QueryController(ILogger<QueryController> logger)
+        public QueryController(ILoggerWrapper<QueryController> logger, IQueryService queryService)
         {
             _logger = logger;
+            _queryService = queryService;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> QueryAsync()
+        {
+            return Ok();
+        }
+
+        [HttpGet("history")]
+        public async Task<IActionResult> GetQueryHistoryAsync()
+        {
+            return Ok();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetQueryByIdAsync(Guid id)
+        {
+            return Ok();
         }
     }
 }

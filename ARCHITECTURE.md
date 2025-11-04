@@ -365,13 +365,6 @@ GET    /api/query/history          # Get query history
 GET    /api/query/{id}             # Get specific query
 ```
 
-#### Configuration API (optional)
-
-```
-GET    /api/configuration          # Get current RAG config
-PUT    /api/configuration          # Update RAG config
-```
-
 ### Request/Response Examples
 
 **Ask Question Request**:

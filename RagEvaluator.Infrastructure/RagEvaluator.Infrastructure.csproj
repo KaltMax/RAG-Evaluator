@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="itext7" Version="9.3.0" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.66.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.66.0-preview" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RagEvaluator.Application\RagEvaluator.Application.csproj" />
     <ProjectReference Include="..\RagEvaluator.Domain\RagEvaluator.Domain.csproj" />
   </ItemGroup>
