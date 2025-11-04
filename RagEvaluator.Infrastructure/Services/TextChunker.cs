@@ -1,9 +1,11 @@
-﻿namespace RagEvaluator.Infrastructure.Services
+﻿using RagEvaluator.Application.Services.Interfaces;
+
+namespace RagEvaluator.Infrastructure.Services
 {
     /// <summary>
     /// Service for splitting text into manageable chunks with overlap
     /// </summary>
-    public class TextChunker
+    public class TextChunker : ITextChunker
     {
         private readonly int _chunkSize;
         private readonly int _chunkOverlap;

@@ -1,13 +1,14 @@
 ﻿using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using RagEvaluator.Application.Services.Interfaces;
 
 namespace RagEvaluator.Infrastructure.Services
 {
     /// <summary>
     /// Service for loading and extracting text from PDF documents
     /// </summary>
-    public class PdfLoader
+    public class PdfLoader : IPdfLoader
     {
         /// <summary>
         /// Loads a PDF file and extracts text from each page
@@ -39,11 +40,44 @@ namespace RagEvaluator.Infrastructure.Services
         }
 
         /// <summary>
+        /// Loads a PDF from a stream and extracts text from each page
+        /// </summary>
+        /// <param name="stream">Stream containing PDF data</param>
+        /// <returns>List of text content from each page</returns>
+        public List<string> LoadPdf(Stream stream)
+        {
+            var pages = new List<string>();
+
+            using var pdfReader = new PdfReader(stream);
+            using var pdfDocument = new PdfDocument(pdfReader);
+
+            for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
+            {
+                var page = pdfDocument.GetPage(i);
+                var strategy = new SimpleTextExtractionStrategy();
+                var text = PdfTextExtractor.GetTextFromPage(page, strategy);
+                pages.Add(text);
+            }
+
+            return pages;
+        }
+
+        /// <summary>
         /// Gets the number of pages in a PDF without loading all content
         /// </summary>
         public int GetPageCount(string pdfPath)
         {
             using var pdfReader = new PdfReader(pdfPath);
+            using var pdfDocument = new PdfDocument(pdfReader);
+            return pdfDocument.GetNumberOfPages();
+        }
+
+        /// <summary>
+        /// Gets the number of pages in a PDF from a stream
+        /// </summary>
+        public int GetPageCount(Stream stream)
+        {
+            using var pdfReader = new PdfReader(stream);
             using var pdfDocument = new PdfDocument(pdfReader);
             return pdfDocument.GetNumberOfPages();
         }

@@ -21,14 +21,16 @@ services:
     container_name: ragevaluator-ollama
     volumes:
       - ollama_data:/root/.ollama
+      - ./ollama-init.sh:/ollama-init.sh
     ports:
       - "11434:11434"
+    entrypoint: ["/bin/bash", "/ollama-init.sh"]
     healthcheck:
       test: ["CMD", "/bin/ollama", "list"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 60s
 
   ragevaluator-api:
     image: ragevaluator-api
@@ -37,9 +39,9 @@ services:
       context: .
       dockerfile: RagEvaluator.API/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=ragevaluator;Username=postgres;Password=postgres
-      - OllamaEndpoint=http://ollama:11434/v1
+      - RagConfiguration__OllamaEndpoint=http://ollama:11434/v1
     ports:
       - "5000:8080"
     depends_on:

@@ -38,6 +38,8 @@ This will start:
 - **PostgreSQL** on `localhost:5432`
 - **Ollama** on `localhost:11434`
 
+**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 1.5 GB total: `nomic-embed-text` and `llama3.2:1b`). This may take 5-10 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume.
+
 ## Project Structure
 
 ```
@@ -105,25 +107,93 @@ dotnet test
 Once running, the API is available at `http://localhost:5000`:
 
 ### Documents
-- `POST /api/documents` - Upload document
-- `GET /api/documents` - List all documents
-- `GET /api/documents/{id}` - Get document details
-- `DELETE /api/documents/{id}` - Delete document
+- `POST /api/documents/upload` - Upload PDF document for RAG processing
 
 ### Query
-- `POST /api/query` - Ask question about documents
-- `GET /api/query/history` - Get query history
+- `POST /api/query` - Ask questions using RAG (Retrieval-Augmented Generation)
 
 ### Swagger UI
-- `http://localhost:5000/swagger` - Interactive API documentation
+- `http://localhost:5000/swagger` - Interactive API documentation and testing
+
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload and question answering. Additional endpoints (list documents, query history, etc.) are scaffolded but not yet implemented.
+
+## Using the API
+
+### 1. Upload a PDF Document
+
+Navigate to Swagger UI at `http://localhost:5000/swagger` and use the `POST /api/documents/upload` endpoint:
+
+```bash
+# Example using curl
+curl -X 'POST' \
+  'http://localhost:5000/api/documents/upload' \
+  -H 'accept: */*' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@your-document.pdf' \
+  -F 'description=Optional description'
+```
+
+Response:
+```json
+{
+  "documentId": "guid",
+  "fileName": "your-document.pdf",
+  "description": "Optional description",
+  "pageCount": 10,
+  "chunkCount": 25,
+  "uploadedAt": "2025-01-04T12:00:00Z"
+}
+```
+
+### 2. Ask Questions
+
+Use the `POST /api/query` endpoint:
+
+```bash
+curl -X 'POST' \
+  'http://localhost:5000/api/query' \
+  -H 'accept: */*' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "question": "What is the main topic of the document?",
+  "topK": 3
+}'
+```
+
+Response:
+```j
+{
+  "queryId": "guid",
+  "question": "What is the main topic of the document?",
+  "answer": "The document discusses...",
+  "sources": [
+    {
+      "id": 0,
+      "text": "Relevant chunk text...",
+      "similarity": 0.89,
+      "metadata": {
+        "documentId": "guid",
+        "fileName": "your-document.pdf"
+      }
+    }
+  ],
+  "timestamp": "2025-01-04T12:05:00Z"
+}
+```
 
 ## Technology Stack
 
 ### Backend
-- ASP.NET Core 9.0
-- Entity Framework Core 9.0
-- PostgreSQL 16
-- Ollama (Local LLM)
+- **Framework**: ASP.NET Core 9.0
+- **Architecture**: Clean Architecture (Onion Architecture)
+- **AI/ML**: Microsoft Semantic Kernel 1.66.0
+- **LLM Provider**: Ollama (local models)
+  - Embedding Model: `nomic-embed-text`
+  - Chat Model: `llama3.2:1b`
+- **PDF Processing**: iText7 9.3.0
+- **Database**: PostgreSQL 16 (planned for persistence)
+- **Vector Store**: In-memory (SimpleVectorStore) with cosine similarity
+- **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore)
 
 ### Frontend
 - React 18+

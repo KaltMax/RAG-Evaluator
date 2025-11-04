@@ -190,6 +190,22 @@ RAG-Evaluator/
 - Business validators
 - Application-specific DTOs mapping
 
+**Implemented Services**:
+
+- `IRagService` - Core RAG orchestration (business logic)
+  - `ProcessDocumentAsync()` - Orchestrates document upload workflow
+  - `AskQuestionAsync()` - Orchestrates RAG query workflow
+  - `IsInitializedAsync()` - Checks service availability
+  - `GetDocumentCountAsync()` - Returns document count
+
+**Infrastructure Service Abstractions** (defined in Application, implemented in Infrastructure):
+
+- `IPdfLoader` - PDF text extraction
+- `ITextChunker` - Text splitting with overlap
+- `IVectorStore` - Vector storage and similarity search
+- `IEmbeddingService` - Text embedding generation
+- `IChatService` - LLM chat completion
+
 **Dependencies**: → Domain, Contract
 
 ### 3. Contract Layer (`RagEvaluator.Contract`)
@@ -248,11 +264,20 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- EF Core DbContext and configurations
-- Repository implementations
+- EF Core DbContext and configurations (planned)
+- Repository implementations (planned)
 - PDF processing services
 - Vector store implementations
 - External API clients
+
+**Implemented Services**:
+
+- `PdfLoader` - PDF text extraction using iText7
+- `TextChunker` - Text chunking with configurable size and overlap
+- `SimpleVectorStore` - In-memory vector store with cosine similarity
+- `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel
+- `OllamaChatService` - Ollama chat completion via Semantic Kernel
+- `PgVectorStore` - PostgreSQL vector store (placeholder for future implementation)
 
 **Dependencies**: → Domain, Application
 
@@ -276,6 +301,47 @@ RAG-Evaluator/
 - TanStack Query (data fetching)
 - React Router (routing)
 - Tailwind CSS / Material-UI (UI components)
+
+## RAG Implementation Workflow
+
+### Document Processing Pipeline
+
+```
+1. PDF Upload (Controller)
+   → 2. RagService.ProcessDocumentAsync() (Application Layer)
+      → 3. PdfLoader.LoadPdf() - Extract text from pages
+      → 4. TextChunker.SplitDocuments() - Split into chunks (1000 chars, 200 overlap)
+      → 5. For each chunk:
+         → 6. OllamaEmbeddingService.GenerateEmbeddingAsync() - Create vector
+         → 7. SimpleVectorStore.AddEntry() - Store chunk + embedding
+      → 8. Store DocumentMetadata (Domain Value Object)
+   → 9. Return DocumentResponse (DTO)
+```
+
+### Query Processing Pipeline
+
+```
+1. Question Submission (Controller)
+   → 2. RagService.AskQuestionAsync() (Application Layer)
+      → 3. OllamaEmbeddingService.GenerateEmbeddingAsync() - Embed question
+      → 4. SimpleVectorStore.Search() - Find top K similar chunks (cosine similarity)
+      → 5. Build context from retrieved chunks
+      → 6. OllamaChatService.GenerateResponseAsync() - Generate answer with context
+   → 7. Return QueryResponse with answer + sources (DTOs)
+```
+
+### Dependency Inversion in Action
+
+The Application layer defines **what** needs to be done (interfaces):
+- `IPdfLoader`, `ITextChunker`, `IVectorStore`, `IEmbeddingService`, `IChatService`
+
+The Infrastructure layer defines **how** it's done (implementations):
+- `PdfLoader`, `TextChunker`, `SimpleVectorStore`, `OllamaEmbeddingService`, `OllamaChatService`
+
+This allows:
+- Testing Application layer with mocks
+- Swapping implementations (e.g., SimpleVectorStore → PgVectorStore)
+- Framework independence
 
 ## Database Design
 
@@ -350,31 +416,54 @@ CREATE TABLE QuerySources (
 #### Documents API
 
 ```
-POST   /api/documents              # Upload document
-GET    /api/documents              # List all documents
-GET    /api/documents/{id}         # Get document details
-DELETE /api/documents/{id}         # Delete document
-GET    /api/documents/{id}/chunks  # Get document chunks
+POST   /api/documents/upload       # Upload PDF document (IMPLEMENTED)
+GET    /api/documents              # List all documents (scaffolded)
+GET    /api/documents/{id}         # Get document details (scaffolded)
+DELETE /api/documents/{id}         # Delete document (scaffolded)
+GET    /api/documents/{id}/chunks  # Get document chunks (scaffolded)
 ```
 
 #### Query API
 
 ```
-POST   /api/query                  # Ask question
-GET    /api/query/history          # Get query history
-GET    /api/query/{id}             # Get specific query
+POST   /api/query                  # Ask question using RAG (IMPLEMENTED)
+GET    /api/query/history          # Get query history (scaffolded)
+GET    /api/query/{id}             # Get specific query (scaffolded)
 ```
 
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Additional endpoints are scaffolded and return empty responses.
+
 ### Request/Response Examples
+
+**Upload Document Request**:
+
+```
+POST /api/documents/upload
+Content-Type: multipart/form-data
+
+file: <PDF file>
+description: "Optional description"
+```
+
+**Upload Document Response**:
+
+```json
+{
+  "documentId": "123e4567-e89b-12d3-a456-426614174000",
+  "fileName": "document.pdf",
+  "description": "Optional description",
+  "pageCount": 15,
+  "chunkCount": 38,
+  "uploadedAt": "2025-01-04T12:00:00Z"
+}
+```
 
 **Ask Question Request**:
 
 ```json
 {
-  "documentId": "123e4567-e89b-12d3-a456-426614174000",
   "question": "What is the main conclusion?",
-  "topK": 3,
-  "includeMetadata": true
+  "topK": 3
 }
 ```
 
@@ -382,20 +471,21 @@ GET    /api/query/{id}             # Get specific query
 
 ```json
 {
+  "queryId": "456e7890-e89b-12d3-a456-426614174001",
+  "question": "What is the main conclusion?",
   "answer": "The main conclusion is...",
   "sources": [
     {
-      "chunkId": "chunk_0",
-      "text": "...relevant text...",
+      "id": 0,
+      "text": "...relevant text chunk...",
       "similarity": 0.892,
       "metadata": {
-        "page": 5,
-        "chapter": "Conclusion"
+        "documentId": "123e4567-e89b-12d3-a456-426614174000",
+        "fileName": "document.pdf"
       }
     }
   ],
-  "responseTimeMs": 1234,
-  "documentId": "123e4567-e89b-12d3-a456-426614174000"
+  "timestamp": "2025-01-04T12:05:00Z"
 }
 ```
 
@@ -404,13 +494,19 @@ GET    /api/query/{id}             # Get specific query
 ### Backend
 
 - **Framework**: ASP.NET Core 9.0
-- **ORM**: Entity Framework Core 9.0
-- **Database**: PostgreSQL 16
-- **Vector Search**: pgvector (or in-memory)
-- **AI/ML**: Microsoft Semantic Kernel
-- **LLM**: Ollama (local models)
-- **PDF Processing**: iText7
-- **Testing**: xUnit, FluentAssertions, Moq
+- **Architecture**: Clean Architecture (Onion Architecture)
+- **AI/ML Framework**: Microsoft Semantic Kernel 1.66.0
+- **LLM Provider**: Ollama (local models)
+  - **Embedding Model**: nomic-embed-text (274 MB)
+  - **Chat Model**: llama3.2:1b (1.3 GB)
+- **PDF Processing**: iText7 9.3.0
+- **Vector Store**:
+  - In-memory (SimpleVectorStore) - Current implementation with cosine similarity
+  - PostgreSQL with pgvector - Planned for persistence
+- **Database**: PostgreSQL 16 (planned for metadata/history persistence)
+- **ORM**: Entity Framework Core 9.0 (planned)
+- **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore 9.0.6)
+- **Testing**: xUnit, FluentAssertions, Moq (planned)
 
 ### Frontend
 
@@ -428,6 +524,54 @@ GET    /api/query/{id}             # Get specific query
 - **Containerization**: Docker & Docker Compose
 - **CI/CD**: GitHub Actions
 - **API Documentation**: Swagger/OpenAPI
+
+## Docker Deployment
+
+### Container Architecture
+
+The application uses 4 Docker containers orchestrated via Docker Compose:
+
+| Container | Image | Port Mapping | Purpose |
+|-----------|-------|--------------|---------|
+| ragevaluator-api | Custom (.NET 9) | 5000:8080 | ASP.NET Core Web API |
+| ragevaluator-web-ui | Custom (Nginx + React) | 3000:80 | React frontend |
+| postgres | postgres:16 | 5432:5432 | PostgreSQL database |
+| ollama | ollama/ollama:latest | 11434:11434 | Local LLM service |
+
+### Ollama Initialization
+
+The Ollama container uses a custom initialization script (`ollama-init.sh`) that:
+
+1. Starts the Ollama service in the background
+2. Waits for the service to be ready
+3. Checks for required models and pulls them if missing:
+   - `nomic-embed-text` - Text embedding model (approximately 274 MB)
+   - `llama3.2:1b` - Chat completion model (approximately 1.3 GB)
+4. Models are persisted in the `ollama_data` Docker volume
+
+**First Startup**: Initial container startup takes 5-10 minutes to download models (approximately 1.5 GB total).
+
+**Subsequent Startups**: Nearly instant as models are cached in the persistent volume.
+
+### Environment Configuration
+
+The API container is configured via environment variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  - ASPNETCORE_ENVIRONMENT=Development
+  - ConnectionStrings__DefaultConnection=Host=postgres;Database=ragevaluator;...
+  - RagConfiguration__OllamaEndpoint=http://ollama:11434/v1
+```
+
+**Note**: Configuration uses double underscores (`__`) to override nested JSON configuration in ASP.NET Core.
+
+### Docker Networking
+
+Containers communicate via Docker's internal network:
+- API connects to Ollama at `http://ollama:11434`
+- API connects to PostgreSQL at `postgres:5432`
+- External access via port mappings (5000, 3000, etc.)
 
 ## Security Considerations
 
@@ -477,23 +621,55 @@ GET    /api/query/{id}             # Get specific query
 - Health checks
 - Metrics collection (Prometheus)
 
-## Future Enhancements
+## Current Implementation Status
 
+### Completed
+
+- [x] Clean Architecture project structure
+- [x] Core RAG pipeline (upload PDF, ask questions)
+- [x] PDF text extraction with iText7
+- [x] Text chunking with configurable size/overlap
+- [x] In-memory vector store with cosine similarity
+- [x] Ollama integration via Microsoft Semantic Kernel
+- [x] Automatic model downloading on first startup
+- [x] Swagger UI for API testing
+- [x] Docker Compose orchestration
+- [x] Dependency Inversion with interface-based services
+- [x] Domain Value Objects (DocumentMetadata, SearchResult, etc.)
+
+### In Progress / Planned
+
+- [ ] Database persistence (EF Core + PostgreSQL)
+  - Document metadata storage
+  - Query history tracking
+  - User management
+- [ ] Repository pattern implementations
+- [ ] Additional API endpoints (list documents, delete, query history)
+- [ ] React frontend UI components
+- [ ] PostgreSQL vector store (pgvector) for production
+- [ ] Unit and integration tests
+- [ ] Authentication and authorization
 - [ ] Multi-document querying
 - [ ] Document versioning
-- [ ] Collaborative features (sharing, annotations)
-- [ ] Advanced search filters
 - [ ] Conversation memory/context
 - [ ] Support for more document formats (DOCX, TXT, MD)
 - [ ] Real-time streaming responses (SignalR)
-- [ ] Multi-language support (i18n)
 - [ ] Admin dashboard
-- [ ] Usage analytics
+- [ ] Usage analytics and monitoring
 
 ## Resources
 
+### Architecture & Best Practices
 - [Clean Architecture - Microsoft](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures)
-- [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
 - [ASP.NET Core Best Practices](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices)
+- [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
+
+### AI/ML & RAG
+- [Microsoft Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/)
+- [Ollama Documentation](https://ollama.ai/)
+- [RAG (Retrieval-Augmented Generation) Overview](https://arxiv.org/abs/2005.11401)
+
+### Frontend & DevOps
 - [React Documentation](https://react.dev/)
 - [Docker Documentation](https://docs.docker.com/)
+- [Swagger/OpenAPI Specification](https://swagger.io/specification/)

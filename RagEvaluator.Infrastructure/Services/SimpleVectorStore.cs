@@ -1,13 +1,13 @@
-﻿using RagEvaluator.Domain.Entities;
+﻿using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.ValueObjects;
-
 
 namespace RagEvaluator.Infrastructure.Services
 {
     /// <summary>
     /// Simple in-memory vector store with cosine similarity search
     /// </summary>
-    public class SimpleVectorStore
+    public class SimpleVectorStore : IVectorStore
     {
         private readonly List<VectorEntry> _entries = new();
         private readonly object _lock = new();
