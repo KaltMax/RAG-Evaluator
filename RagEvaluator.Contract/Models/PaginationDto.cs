@@ -2,5 +2,6 @@
 {
     public class PaginationDto
     {
+        // TODO: Implement pagination properties
     }
 }

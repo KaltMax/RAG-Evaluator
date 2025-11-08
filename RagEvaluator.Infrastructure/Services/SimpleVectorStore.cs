@@ -9,8 +9,8 @@ namespace RagEvaluator.Infrastructure.Services
     /// </summary>
     public class SimpleVectorStore : IVectorStore
     {
-        private readonly List<VectorEntry> _entries = new();
-        private readonly object _lock = new();
+        private readonly List<VectorEntry> _entries = [];
+        private readonly Lock _lock = new();
 
         /// <summary>
         /// Gets the total number of entries in the store

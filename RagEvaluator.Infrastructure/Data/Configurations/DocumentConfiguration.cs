@@ -2,5 +2,6 @@
 {
     public class DocumentConfiguration
     {
+        // TODO: Implement the configuration for the Document entity
     }
 }

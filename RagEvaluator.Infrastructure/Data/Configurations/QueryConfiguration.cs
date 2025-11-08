@@ -2,5 +2,6 @@
 {
     public class QueryConfiguration
     {
+        // TODO: Implement the configuration for the Query entity
     }
 }

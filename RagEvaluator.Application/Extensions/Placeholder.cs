@@ -2,6 +2,6 @@
 {
     public class Placeholder
     {
-        // Placeholder class for future extension methods
+        // TODO: Implement actual Application Extensions
     }
 }

@@ -8,6 +8,6 @@
         public int ChunkSize { get; set; } = 1000;
         public int ChunkOverlap { get; set; } = 200;
         public int TopK { get; set; } = 3;
-        public string SystemPrompt { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate.";
+        public string SystemPrompt { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.'";
     }
 }

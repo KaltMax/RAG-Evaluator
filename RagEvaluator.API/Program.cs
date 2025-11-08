@@ -1,7 +1,7 @@
 
 namespace RagEvaluator.API
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -10,23 +10,23 @@ namespace RagEvaluator.API
             // Add services to the container.
 
             // Configure RAG Configuration
-            var ragConfig = new RagEvaluator.Contract.Models.RagConfiguration();
+            var ragConfig = new Contract.Models.RagConfiguration();
             builder.Configuration.GetSection("RagConfiguration").Bind(ragConfig);
             builder.Services.AddSingleton(ragConfig);
 
             // Register logger wrapper
-            builder.Services.AddSingleton(typeof(RagEvaluator.Contract.Logger.ILoggerWrapper<>), typeof(RagEvaluator.Contract.Logger.LoggerWrapper<>));
+            builder.Services.AddSingleton(typeof(Contract.Logger.ILoggerWrapper<>), typeof(Contract.Logger.LoggerWrapper<>));
 
             // Register Infrastructure services (implementations)
-            builder.Services.AddSingleton<RagEvaluator.Application.Services.Interfaces.IPdfLoader, RagEvaluator.Infrastructure.Services.PdfLoader>();
-            builder.Services.AddSingleton<RagEvaluator.Application.Services.Interfaces.ITextChunker>(sp =>
-                new RagEvaluator.Infrastructure.Services.TextChunker(ragConfig.ChunkSize, ragConfig.ChunkOverlap));
-            builder.Services.AddSingleton<RagEvaluator.Application.Services.Interfaces.IVectorStore, RagEvaluator.Infrastructure.Services.SimpleVectorStore>();
-            builder.Services.AddSingleton<RagEvaluator.Application.Services.Interfaces.IEmbeddingService, RagEvaluator.Infrastructure.Services.OllamaEmbeddingService>();
-            builder.Services.AddSingleton<RagEvaluator.Application.Services.Interfaces.IChatService, RagEvaluator.Infrastructure.Services.OllamaChatService>();
+            builder.Services.AddSingleton<Application.Services.Interfaces.IPdfLoader, Infrastructure.Services.PdfLoader>();
+            builder.Services.AddSingleton<Application.Services.Interfaces.ITextChunker>(sp =>
+                new Infrastructure.Services.TextChunker(ragConfig.ChunkSize, ragConfig.ChunkOverlap));
+            builder.Services.AddSingleton<Application.Services.Interfaces.IVectorStore, Infrastructure.Services.SimpleVectorStore>();
+            builder.Services.AddSingleton<Application.Services.Interfaces.IEmbeddingService, Infrastructure.Services.OllamaEmbeddingService>();
+            builder.Services.AddSingleton<Application.Services.Interfaces.IChatService, Infrastructure.Services.OllamaChatService>();
 
             // Register Application services (business logic)
-            builder.Services.AddSingleton<RagEvaluator.Application.Services.Interfaces.IRagService, RagEvaluator.Application.Services.RagService>();
+            builder.Services.AddSingleton<Application.Services.Interfaces.IRagService, Application.Services.RagService>();
 
             // Add CORS for development
             builder.Services.AddCors(options =>
@@ -56,23 +56,15 @@ namespace RagEvaluator.API
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
-            // Enable Swagger in all environments for testing/demo purposes
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
+            if (app.Environment.IsDevelopment())
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "RAG Evaluator API v1");
-                options.RoutePrefix = "swagger";
-            });
-
-            app.UseHttpsRedirection();
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
             app.UseCors();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }

@@ -55,12 +55,14 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("history")]
         public async Task<IActionResult> GetQueryHistoryAsync()
         {
+            // TODO: Implement retrieval of query history
             return Ok();
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetQueryByIdAsync(Guid id)
         {
+            // TODO: Implement retrieval of a specific query by ID
             return Ok();
         }
     }

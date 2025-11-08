@@ -38,23 +38,23 @@ namespace RagEvaluator.API.Controllers
                     return BadRequest("Only PDF files are supported.");
                 }
 
-                _logger.LogInformation($"Uploading document: {file.FileName}");
+                _logger.LogInformation("Uploading document: {FileName}", file.FileName);
 
                 using var stream = file.OpenReadStream();
                 var result = await _ragService.ProcessDocumentAsync(stream, file.FileName, description);
 
-                _logger.LogInformation($"Document processed successfully: {result.DocumentId}");
+                _logger.LogInformation("Document processed successfully: {DocumentId}", result.DocumentId);
 
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError($"RAG service not initialized: {ex.Message}");
+                _logger.LogError(ex, "RAG service not initialized");
                 return StatusCode(503, new { error = "RAG service not available", message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error uploading document: {ex.Message}");
+                _logger.LogError(ex, "Error uploading document");
                 return StatusCode(500, new { error = "Failed to process document", message = ex.Message });
             }
         }
@@ -62,24 +62,28 @@ namespace RagEvaluator.API.Controllers
         [HttpGet()]
         public async Task<IActionResult> GetAllDocumentsAsync()
         {
+            // TODO: Implement retrieval of all documents
             return Ok();
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDocumentByIdAsync(Guid id)
         {
+            // TODO: Implement retrieval of a document by ID
             return Ok();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocumentAsync(Guid id)
         {
+            // TODO : Implement deletion of a document by ID
             return Ok();
         }
 
         [HttpGet("{id}/chunks")]
         public async Task<IActionResult> GetDocumentChunksAsync(Guid id)
         {
+            // TODO: Implement retrieval of document chunks by document ID
             return Ok();
         }
     }
