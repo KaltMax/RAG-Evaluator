@@ -1,4 +1,4 @@
-﻿using RagEvaluator.Application.Services.Interfaces;
+﻿using RagEvaluator.Contract.Abstractions.Services;
 
 namespace RagEvaluator.Infrastructure.Services
 {

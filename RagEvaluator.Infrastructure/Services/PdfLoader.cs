@@ -1,7 +1,7 @@
 ﻿using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
-using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Contract.Abstractions.Services;
 
 namespace RagEvaluator.Infrastructure.Services
 {

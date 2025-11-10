@@ -1,5 +1,9 @@
-﻿namespace RagEvaluator.Contract.Models
+﻿namespace RagEvaluator.Contract.Configurations
 {
+    /// <summary>
+    /// Represents the configuration settings for a Retrieval-Augmented Generation (RAG) workflow, including model
+    /// endpoints, chunking parameters, and system prompt customization.
+    /// </summary>
     public class RagConfiguration
     {
         public string OllamaEndpoint { get; set; } = "http://localhost:11434/v1";

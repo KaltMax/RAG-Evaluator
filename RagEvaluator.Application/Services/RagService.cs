@@ -1,6 +1,8 @@
 using RagEvaluator.Application.Services.Interfaces;
-using RagEvaluator.Contract.Models;
-using RagEvaluator.Contract.Responses;
+using RagEvaluator.Contract.Abstractions.Data;
+using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Dtos.Responses;
+using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services
@@ -17,7 +19,7 @@ namespace RagEvaluator.Application.Services
         private readonly IVectorStore _vectorStore;
         private readonly IEmbeddingService _embeddingService;
         private readonly IChatService _chatService;
-        private int _nextChunkId = 0;
+        private int _nextChunkId;
         private readonly List<DocumentMetadata> _documents = new();
 
         public RagService(
@@ -66,14 +68,16 @@ namespace RagEvaluator.Application.Services
             }
 
             // Store document metadata
-            var metadata = new DocumentMetadata(
-                documentId: documentId,
-                fileName: fileName,
-                description: description,
-                pageCount: pages.Count,
-                chunkCount: chunks.Count,
-                uploadedAt: DateTime.UtcNow
-            );
+            var metadata = new DocumentMetadata
+            { 
+                DocumentId = documentId,
+                FileName = fileName,
+                Description = description,
+                PageCount = pages.Count,
+                ChunkCount = chunks.Count,
+                UploadedAt = DateTime.UtcNow
+            };
+     
             _documents.Add(metadata);
 
             return new DocumentResponse

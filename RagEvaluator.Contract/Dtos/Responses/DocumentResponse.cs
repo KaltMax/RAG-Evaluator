@@ -1,5 +1,8 @@
-﻿namespace RagEvaluator.Contract.Responses
+﻿namespace RagEvaluator.Contract.Dtos.Responses
 {
+    /// <summary>
+    /// Represents the metadata and status information for a document that has been uploaded.
+    /// </summary>
     public class DocumentResponse
     {
         public Guid DocumentId { get; set; }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Logger;
-using RagEvaluator.Contract.Requests;
 
 namespace RagEvaluator.API.Controllers
 {

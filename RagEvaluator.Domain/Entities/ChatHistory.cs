@@ -2,5 +2,6 @@
 {
     public class ChatHistory
     {
+        // TODO: Implement ChatHistory properties
     }
 }

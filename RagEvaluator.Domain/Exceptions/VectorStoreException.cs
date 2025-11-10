@@ -2,5 +2,6 @@
 {
     public class VectorStoreException
     {
+        // TODO: Implement the exception class
     }
 }

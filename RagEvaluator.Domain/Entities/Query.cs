@@ -2,5 +2,6 @@
 {
     public class Query
     {
+        // TODO: Implement Query properties
     }
 }

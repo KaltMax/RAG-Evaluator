@@ -1,7 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RagEvaluator.Contract.Requests
+namespace RagEvaluator.Contract.Dtos.Requests
 {
+    /// <summary>
+    /// Represents a request to ask a question, specifying the query and the number of top results to retrieve.
+    /// </summary>
     public class AskQuestionRequest
     {
         [Required]

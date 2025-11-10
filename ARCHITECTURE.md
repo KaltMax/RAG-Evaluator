@@ -17,12 +17,60 @@ This document describes the architecture, design decisions, and technical implem
 
 ## Architectural Pattern
 
-The application follows **Clean Architecture** (Onion Architecture) principles with clear separation of concerns:
+The application follows **Clean Architecture** (Onion Architecture) principles with clear separation of concerns and a pragmatic, centralized approach to interface management:
 
 - **Dependency Rule**: Dependencies point inward (Infrastructure → Application → Domain)
 - **Domain-Centric**: Business logic independent of frameworks and external concerns
 - **Testability**: Each layer can be tested independently
 - **Maintainability**: Changes in one layer have minimal impact on others
+- **Centralized Abstractions**: All interface definitions are consolidated in the Contract layer for simplified dependency management
+
+### Dependency Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      RagEvaluator.API                        │
+│                   (Controllers, Middleware)                  │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  RagEvaluator.Application                    │
+│            (Business Logic & Orchestration)                  │
+│  Services: RagService, DocumentService, QueryService         │
+└──────────┬────────────────────────────────┬─────────────────┘
+           │                                │
+           ↓                                ↓
+┌──────────────────────┐        ┌─────────────────────────────┐
+│ RagEvaluator.Domain  │        │  RagEvaluator.Contract      │
+│  (Core Entities)     │←───────│  (ALL Abstractions)         │
+│                      │        │                             │
+│ • Entities           │        │ • Abstractions/Services/    │
+│ • Value Objects      │        │ • Abstractions/Data/        │
+│ • Exceptions         │        │ • Dtos/                     │
+└──────────────────────┘        │ • Configurations/           │
+                                │ • Logger/                   │
+                                └────────────┬────────────────┘
+                                             │
+                                             ↓
+                                ┌────────────────────────────┐
+                                │ RagEvaluator.Infrastructure│
+                                │   (Implementations)        │
+                                │                            │
+                                │ • OllamaChatService        │
+                                │ • OllamaEmbeddingService   │
+                                │ • PdfLoader                │
+                                │ • TextChunker              │
+                                │ • SimpleVectorStore        │
+                                │ • Repositories (planned)   │
+                                └────────────────────────────┘
+```
+
+**Key Points**:
+- Infrastructure implements interfaces defined in Contract
+- Application orchestrates workflows using Contract abstractions
+- Domain is dependency-free and purely focused on business logic
+- Contract serves as the central "interface hub" for the entire application
 
 ## Project Structure
 
@@ -57,19 +105,32 @@ RAG-Evaluator/
 │   │   └── AskQuestionValidator.cs
 │   └── Extensions/
 │
-├── RagEvaluator.Contract/               # DTOs & Shared Interfaces
-│   ├── Requests/
-│   │   ├── AskQuestionRequest.cs
-│   │   ├── UploadDocumentRequest.cs
-│   │   └── UpdateConfigurationRequest.cs
-│   ├── Responses/
-│   │   ├── QueryResponse.cs
-│   │   ├── SearchResultDto.cs
-│   │   ├── DocumentResponse.cs
-│   │   └── ErrorResponse.cs
-│   └── Models/
-│       ├── RagConfiguration.cs          # Configuration model
-│       └── PaginationDto.cs
+├── RagEvaluator.Contract/               # DTOs, Abstractions & Shared Contracts
+│   ├── Abstractions/                    # All interface abstractions
+│   │   ├── Services/
+│   │   │   ├── IChatService.cs          # Chat/LLM service interface
+│   │   │   ├── IEmbeddingService.cs     # Embedding generation interface
+│   │   │   ├── IPdfLoader.cs            # PDF loading interface
+│   │   │   └── ITextChunker.cs          # Text chunking interface
+│   │   └── Data/
+│   │       ├── IDocumentRepository.cs   # Document repository interface
+│   │       └── IVectorStore.cs          # Vector store interface
+│   ├── Configurations/
+│   │   └── RagConfiguration.cs          # Configuration model
+│   ├── Dtos/
+│   │   ├── Requests/
+│   │   │   ├── AskQuestionRequest.cs
+│   │   │   ├── UploadDocumentRequest.cs
+│   │   │   └── UploadConfigurationRequest.cs
+│   │   ├── Responses/
+│   │   │   ├── QueryResponse.cs
+│   │   │   ├── SearchResultDto.cs
+│   │   │   ├── DocumentResponse.cs
+│   │   │   └── ErrorResponse.cs
+│   │   └── PaginationDto.cs
+│   └── Logger/
+│       ├── ILoggerWrapper.cs            # Logger abstraction
+│       └── LoggerWrapper.cs             # Logger implementation
 │
 ├── RagEvaluator.Domain/                 # Domain Models & Business Rules
 │   ├── Entities/
@@ -81,10 +142,6 @@ RAG-Evaluator/
 │   │   ├── DocumentMetadata.cs
 │   │   ├── SearchResult.cs
 │   │   └── Embedding.cs
-│   ├── Interfaces/
-│   │   ├── IRepository.cs
-│   │   ├── IDocumentRepository.cs
-│   │   └── IVectorStore.cs
 │   └── Exceptions/
 │       ├── DocumentNotFoundException.cs
 │       └── VectorStoreException.cs
@@ -103,6 +160,8 @@ RAG-Evaluator/
 │   │   ├── PdfLoader.cs                 # PDF text extraction
 │   │   ├── TextChunker.cs               # Text splitting
 │   │   ├── SimpleVectorStore.cs         # In-memory vector store
+│   │   ├── OllamaChatService.cs         # Ollama chat service
+│   │   ├── OllamaEmbeddingService.cs    # Ollama embedding service
 │   │   └── PgVectorStore.cs             # PostgreSQL vector store (future)
 │   ├── External/
 │   │   └── OllamaClient.cs              # Ollama API client
@@ -197,36 +256,34 @@ RAG-Evaluator/
   - `AskQuestionAsync()` - Orchestrates RAG query workflow
   - `IsInitializedAsync()` - Checks service availability
   - `GetDocumentCountAsync()` - Returns document count
-
-**Infrastructure Service Abstractions** (defined in Application, implemented in Infrastructure):
-
-- `IPdfLoader` - PDF text extraction
-- `ITextChunker` - Text splitting with overlap
-- `IVectorStore` - Vector storage and similarity search
-- `IEmbeddingService` - Text embedding generation
-- `IChatService` - LLM chat completion
+- `IDocumentService` - Document management operations
+- `IQueryService` - Query handling and history management
 
 **Dependencies**: → Domain, Contract
 
 ### 3. Contract Layer (`RagEvaluator.Contract`)
 
-**Purpose**: Data transfer objects and shared contracts
+**Purpose**: Shared abstractions, DTOs, and contracts across all layers
 
 **Responsibilities**:
 
-- API request/response models
-- DTOs for data transfer between layers
-- Shared interfaces (if needed)
-- Validation attributes
+- **Service Abstractions**: All service interface definitions (IChatService, IEmbeddingService, etc.)
+- **Data Abstractions**: Repository and data access interfaces (IVectorStore, IDocumentRepository)
+- **Configuration Models**: Application configuration structures
+- **DTOs**: Request/response models for API communication
+- **Logging Abstractions**: Logger wrapper interfaces and implementations
+- **Shared Contracts**: Validation attributes and common enums
 
 **Key Components**:
 
-- Request DTOs
-- Response DTOs
-- API models
-- Enums and constants
+- `Abstractions/Services/` - Service interfaces (IChatService, IEmbeddingService, IPdfLoader, ITextChunker)
+- `Abstractions/Data/` - Data access interfaces (IVectorStore, IDocumentRepository)
+- `Configurations/` - Configuration models (RagConfiguration)
+- `Dtos/Requests/` - API request DTOs
+- `Dtos/Responses/` - API response DTOs
+- `Logger/` - Logger abstraction and implementation
 
-**Dependencies**: None (shared by all layers)
+**Dependencies**: → Domain (for value objects like SearchResult used in interfaces)
 
 ### 4. Domain Layer (`RagEvaluator.Domain`)
 
@@ -236,7 +293,6 @@ RAG-Evaluator/
 
 - Domain entities and aggregates
 - Value objects
-- Domain interfaces (repository contracts)
 - Domain exceptions
 - Business invariants and rules
 
@@ -244,8 +300,7 @@ RAG-Evaluator/
 
 - Entities: `Document`, `VectorEntry`, `Query`, `ChatHistory`
 - Value Objects: `DocumentMetadata`, `SearchResult`, `Embedding`
-- Repository interfaces
-- Domain exceptions
+- Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
 
 **Dependencies**: None (pure domain logic)
 
@@ -332,16 +387,22 @@ RAG-Evaluator/
 
 ### Dependency Inversion in Action
 
-The Application layer defines **what** needs to be done (interfaces):
-- `IPdfLoader`, `ITextChunker`, `IVectorStore`, `IEmbeddingService`, `IChatService`
+The Contract layer defines **what** needs to be done (interface abstractions):
+- Service interfaces: `IChatService`, `IEmbeddingService`, `IPdfLoader`, `ITextChunker`
+- Data interfaces: `IVectorStore`, `IDocumentRepository`
 
-The Infrastructure layer defines **how** it's done (implementations):
-- `PdfLoader`, `TextChunker`, `SimpleVectorStore`, `OllamaEmbeddingService`, `OllamaChatService`
+The Infrastructure layer defines **how** it's done (concrete implementations):
+- `OllamaChatService`, `OllamaEmbeddingService`, `PdfLoader`, `TextChunker`, `SimpleVectorStore`
+
+The Application layer consumes these abstractions:
+- `RagService` uses IChatService, IEmbeddingService, IVectorStore, etc.
+- No direct dependency on Infrastructure implementations
 
 This allows:
 - Testing Application layer with mocks
 - Swapping implementations (e.g., SimpleVectorStore → PgVectorStore)
 - Framework independence
+- Centralized interface management in the Contract layer
 
 ## Database Design
 

@@ -1,4 +1,4 @@
-﻿using RagEvaluator.Application.Services.Interfaces;
+﻿using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.ValueObjects;
 

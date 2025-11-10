@@ -1,7 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
-using RagEvaluator.Application.Services.Interfaces;
-using RagEvaluator.Contract.Models;
+using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Configurations;
 
 namespace RagEvaluator.Infrastructure.Services
 {

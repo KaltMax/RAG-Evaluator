@@ -1,5 +1,8 @@
-﻿namespace RagEvaluator.Contract.Responses
+﻿namespace RagEvaluator.Contract.Dtos.Responses
 {
+    /// <summary>
+    /// Represents the result of a query, including the question, answer, related sources, and metadata.
+    /// </summary>
     public class QueryResponse
     {
         public Guid QueryId { get; set; }

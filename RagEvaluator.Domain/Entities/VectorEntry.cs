@@ -11,14 +11,14 @@
         public int Id { get; set; }
 
         /// <summary>
-        /// The original text content
+        /// Gets or sets the text content associated with this instance.
         /// </summary>
         public string Text { get; set; } = string.Empty;
 
         /// <summary>
         /// The vector embedding representation of the text
         /// </summary>
-        public float[] Embedding { get; set; } = Array.Empty<float>();
+        public float[] Embedding { get; set; } = [];
 
         /// <summary>
         /// Optional metadata about the entry

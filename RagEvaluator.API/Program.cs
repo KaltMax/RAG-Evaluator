@@ -1,3 +1,9 @@
+using RagEvaluator.Application.Services;
+using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Contract.Abstractions.Data;
+using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Logger;
+using RagEvaluator.Infrastructure.Services;
 
 namespace RagEvaluator.API
 {
@@ -10,23 +16,23 @@ namespace RagEvaluator.API
             // Add services to the container.
 
             // Configure RAG Configuration
-            var ragConfig = new Contract.Models.RagConfiguration();
+            var ragConfig = new Contract.Configurations.RagConfiguration();
             builder.Configuration.GetSection("RagConfiguration").Bind(ragConfig);
             builder.Services.AddSingleton(ragConfig);
 
             // Register logger wrapper
-            builder.Services.AddSingleton(typeof(Contract.Logger.ILoggerWrapper<>), typeof(Contract.Logger.LoggerWrapper<>));
+            builder.Services.AddSingleton(typeof(ILoggerWrapper<>), typeof(LoggerWrapper<>));
 
             // Register Infrastructure services (implementations)
-            builder.Services.AddSingleton<Application.Services.Interfaces.IPdfLoader, Infrastructure.Services.PdfLoader>();
-            builder.Services.AddSingleton<Application.Services.Interfaces.ITextChunker>(sp =>
-                new Infrastructure.Services.TextChunker(ragConfig.ChunkSize, ragConfig.ChunkOverlap));
-            builder.Services.AddSingleton<Application.Services.Interfaces.IVectorStore, Infrastructure.Services.SimpleVectorStore>();
-            builder.Services.AddSingleton<Application.Services.Interfaces.IEmbeddingService, Infrastructure.Services.OllamaEmbeddingService>();
-            builder.Services.AddSingleton<Application.Services.Interfaces.IChatService, Infrastructure.Services.OllamaChatService>();
+            builder.Services.AddSingleton<IPdfLoader, PdfLoader>();
+            builder.Services.AddSingleton<ITextChunker>(sp =>
+                new TextChunker(ragConfig.ChunkSize, ragConfig.ChunkOverlap));
+            builder.Services.AddSingleton<IVectorStore, SimpleVectorStore>();
+            builder.Services.AddSingleton<IEmbeddingService, OllamaEmbeddingService>();
+            builder.Services.AddSingleton<IChatService, OllamaChatService>();
 
             // Register Application services (business logic)
-            builder.Services.AddSingleton<Application.Services.Interfaces.IRagService, Application.Services.RagService>();
+            builder.Services.AddSingleton<IRagService, RagService>();
 
             // Add CORS for development
             builder.Services.AddCors(options =>

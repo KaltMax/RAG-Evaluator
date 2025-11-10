@@ -1,4 +1,4 @@
-﻿using RagEvaluator.Contract.Responses;
+﻿using RagEvaluator.Contract.Dtos.Responses;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {

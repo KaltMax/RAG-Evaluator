@@ -1,7 +1,7 @@
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using RagEvaluator.Application.Services.Interfaces;
-using RagEvaluator.Contract.Models;
+using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Configurations;
 
 namespace RagEvaluator.Infrastructure.Services
 {
@@ -20,7 +20,7 @@ namespace RagEvaluator.Infrastructure.Services
             _ = InitializeAsync();
         }
 
-        private async Task InitializeAsync()
+        private Task InitializeAsync()
         {
             try
             {
@@ -29,7 +29,7 @@ namespace RagEvaluator.Infrastructure.Services
                 kernelBuilder.AddOpenAIChatCompletion(
                     modelId: _config.ChatModel,
                     apiKey: "ollama",
-                    httpClient: new System.Net.Http.HttpClient { BaseAddress = new Uri(_config.OllamaEndpoint) }
+                    httpClient: new HttpClient { BaseAddress = new Uri(_config.OllamaEndpoint) }
                 );
 
                 var kernel = kernelBuilder.Build();
@@ -40,6 +40,8 @@ namespace RagEvaluator.Infrastructure.Services
             {
                 _isInitialized = false;
             }
+
+            return Task.CompletedTask;
         }
 
         public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage)

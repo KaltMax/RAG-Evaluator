@@ -2,5 +2,6 @@
 {
     public class Document
     {
+        // TODO: Implement Document properties
     }
 }

@@ -2,5 +2,6 @@
 {
     public class Embedding
     {
+        // TODO: Implement Embedding value object
     }
 }

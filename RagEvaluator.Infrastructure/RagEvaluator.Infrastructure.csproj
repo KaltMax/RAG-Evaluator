@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RagEvaluator.Application\RagEvaluator.Application.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Contract\RagEvaluator.Contract.csproj" />
     <ProjectReference Include="..\RagEvaluator.Domain\RagEvaluator.Domain.csproj" />
   </ItemGroup>
 

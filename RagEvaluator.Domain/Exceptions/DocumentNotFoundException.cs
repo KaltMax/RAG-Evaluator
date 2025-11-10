@@ -2,5 +2,6 @@
 {
     public class DocumentNotFoundException
     {
+        // TODO: Implement the exception class
     }
 }

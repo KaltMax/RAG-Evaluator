@@ -1,5 +1,9 @@
-﻿namespace RagEvaluator.Contract.Responses
+﻿namespace RagEvaluator.Contract.Dtos.Responses
 {
+    /// <summary>
+    /// Represents the result of a search operation, including the matched item's identifier, text, similarity score,
+    /// and optional metadata.
+    /// </summary>
     public class SearchResultDto
     {
         public int Id { get; set; }
