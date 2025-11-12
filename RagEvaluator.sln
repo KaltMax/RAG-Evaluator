@@ -1,21 +1,21 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36623.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RagEvaluator.API", "RagEvaluator.API\RagEvaluator.API.csproj", "{60433C3A-6385-4F3C-8E47-1012D833A500}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RagEvaluator.API", "RagEvaluator.API\RagEvaluator.API.csproj", "{60433C3A-6385-4F3C-8E47-1012D833A500}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RagEvaluator.Contract", "RagEvaluator.Contract\RagEvaluator.Contract.csproj", "{20587625-6770-4F47-96EB-9D5AFDF1614E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RagEvaluator.Contract", "RagEvaluator.Contract\RagEvaluator.Contract.csproj", "{20587625-6770-4F47-96EB-9D5AFDF1614E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RagEvaluator.Infrastructure", "RagEvaluator.Infrastructure\RagEvaluator.Infrastructure.csproj", "{77A21AEE-12E7-4206-8958-8B89C510F32B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RagEvaluator.Infrastructure", "RagEvaluator.Infrastructure\RagEvaluator.Infrastructure.csproj", "{77A21AEE-12E7-4206-8958-8B89C510F32B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RagEvaluator.Tests", "RagEvaluator.Tests\RagEvaluator.Tests.csproj", "{B77AFE68-535C-4F67-A05A-CD0E30764CE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RagEvaluator.Tests", "RagEvaluator.Tests\RagEvaluator.Tests.csproj", "{B77AFE68-535C-4F67-A05A-CD0E30764CE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RagEvaluator.Application", "RagEvaluator.Application\RagEvaluator.Application.csproj", "{5799B622-8D6C-40D9-93D1-AFC0E9244679}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RagEvaluator.Application", "RagEvaluator.Application\RagEvaluator.Application.csproj", "{5799B622-8D6C-40D9-93D1-AFC0E9244679}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "RagEvaluator.WebUi", "RagEvaluator.WebUi\RagEvaluator.WebUi.esproj", "{A78331AE-58A7-5563-01DC-D16101719730}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RagEvaluator.Domain", "RagEvaluator.Domain\RagEvaluator.Domain.csproj", "{F0945BA5-5971-4CAD-AFC5-1CA08A177B35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RagEvaluator.Domain", "RagEvaluator.Domain\RagEvaluator.Domain.csproj", "{F0945BA5-5971-4CAD-AFC5-1CA08A177B35}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject

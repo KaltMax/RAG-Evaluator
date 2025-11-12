@@ -1,20 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="itext7" Version="9.3.0" />
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.66.0" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.67.1" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.66.0-preview" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\RagEvaluator.Contract\RagEvaluator.Contract.csproj" />
     <ProjectReference Include="..\RagEvaluator.Domain\RagEvaluator.Domain.csproj" />
   </ItemGroup>
-
 </Project>
