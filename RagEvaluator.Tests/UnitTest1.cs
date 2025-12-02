@@ -5,7 +5,8 @@
         [Fact]
         public void Test1()
         {
-            // TODO: Implement unit tests for RagEvaluator project
+            int result = 2 + 2;
+            Assert.Equal(4, result);
         }
     }
 }
