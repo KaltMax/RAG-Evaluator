@@ -1,3 +1,4 @@
+using Microsoft.OpenApi;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
@@ -51,11 +52,11 @@ namespace RagEvaluator.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "RAG Evaluator API",
                     Version = "v1",
-                    Description = "API for Simple-RAG document processing and querying"
+                    Description = "API for RAG document processing and querying"
                 });
             });
 
