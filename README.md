@@ -11,7 +11,7 @@ A full-stack application using C#/.NET and React to evaluate RAG-based search wi
 
 ### Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js 20+](https://nodejs.org/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) (recommended) or VS Code
@@ -64,7 +64,7 @@ The application uses 4 Docker containers:
 
 | Service | Image | Port | Purpose |
 |---------|-------|------|---------|
-| **ragevaluator-api** | Custom (.NET 9) | 5000 | REST API backend |
+| **ragevaluator-api** | Custom (.NET 10) | 5000 | REST API backend |
 | **ragevaluator-web-ui** | Custom (Nginx + React) | 3000 | Frontend SPA |
 | **postgres** | postgres:16 | 5432 | Database |
 | **ollama** | ollama/ollama:latest | 11434 | Local LLM service |
@@ -184,7 +184,7 @@ Response:
 ## Technology Stack
 
 ### Backend
-- **Framework**: ASP.NET Core 9.0
+- **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML**: Microsoft Semantic Kernel 1.66.0
 - **LLM Provider**: Ollama (local models)
@@ -196,9 +196,15 @@ Response:
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore)
 
 ### Frontend
-- React 18+
-- Vite
-- JavaScript
+- **Framework**: React 19
+- **Build Tool**: Vite 7
+- **Styling**: Tailwind CSS 4
+- **Routing**: React Router DOM 7
+- **HTTP Client**: Axios
+- **UI Libraries**: React Dropzone, React Toastify, Heroicons
+- **Testing**: Vitest with coverage
+
+For detailed frontend documentation, see [RagEvaluator.WebUi/README.md](RagEvaluator.WebUi/README.md)
 
 ### DevOps
 - Docker & Docker Compose
@@ -214,4 +220,4 @@ For production deployment:
 3. Set up reverse proxy (nginx/Caddy) for HTTPS
 4. Enable authentication and security features
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed deployment strategies.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed overview of the architecture, design patterns, and technical decisions.
