@@ -14,7 +14,7 @@ function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <aside className="w-64 bg-[#181818] border-r border-gray-800 p-4 hidden md:block">
+    <aside className="w-16 md:w-64 bg-[#181818] border-r border-gray-800 p-2 md:p-4">
       <nav className="space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -22,14 +22,15 @@ function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              className={`flex items-center gap-3 px-2 md:px-4 py-3 rounded-lg transition-colors ${
                 isActive(item.path)
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-400 hover:bg-[#1F1F1F] hover:text-white'
               }`}
+              title={item.name}
             >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{item.name}</span>
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              <span className="font-medium hidden md:inline">{item.name}</span>
             </Link>
           );
         })}
