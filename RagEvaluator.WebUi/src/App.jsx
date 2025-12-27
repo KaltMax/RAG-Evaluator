@@ -20,7 +20,7 @@ function App() {
             <Routes>
               <Route path="/" element={<SearchView />} />
               <Route path="/upload" element={<UploadDocuments />} />
-              <Route path="/statistics" element={< Statistics />} />
+              <Route path="/statistics" element={<Statistics />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </main>
