@@ -1,34 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Header from "./components/Header";
+import SearchView from "./components/SearchView";
+import Sidebar from "./components/Sidebar";
+import UploadDocuments from "./components/UploadDocuments";
+import Settings from "./components/Settings";
+import Statistics from "./components/Statistics";
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <BrowserRouter>
+      <div className="min-h-screen flex flex-col bg-[#1F1F1F]">
+        <Header />
+        <div className="flex flex-1 w-full overflow-x-hidden">
+          <Sidebar />
+          <main className="flex-1 min-w-0 p-4 md:p-8">
+            <Routes>
+              <Route path="/" element={<SearchView />} />
+              <Route path="/upload" element={<UploadDocuments />} />
+              <Route path="/statistics" element={< Statistics />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </main>
+        </div>
+        <ToastContainer position="bottom-left" theme="dark" />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </BrowserRouter>
   )
 }
 
