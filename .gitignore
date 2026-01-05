@@ -618,3 +618,6 @@ documents/
 
 # Simple-RAG implementation
 Simple-RAG
+
+# Claude directory
+.claude/

@@ -8,7 +8,7 @@
     {
         public string OllamaEndpoint { get; set; } = "http://localhost:11434/v1";
         public string EmbeddingModel { get; set; } = "nomic-embed-text";
-        public string ChatModel { get; set; } = "llama3.2:1b";
+        public string ChatModel { get; set; } = "qwen2.5:14b";
         public int ChunkSize { get; set; } = 1000;
         public int ChunkOverlap { get; set; } = 200;
         public int TopK { get; set; } = 3;

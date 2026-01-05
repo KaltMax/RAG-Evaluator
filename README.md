@@ -66,8 +66,8 @@ The application uses 4 Docker containers:
 |---------|-------|------|---------|
 | **ragevaluator-api** | Custom (.NET 10) | 5000 | REST API backend |
 | **ragevaluator-web-ui** | Custom (Nginx + React) | 3000 | Frontend SPA |
-| **postgres** | postgres:16 | 5432 | Database |
-| **ollama** | ollama/ollama:latest | 11434 | Local LLM service |
+| **postgres** | postgres:18 | 5432 | Database |
+| **ollama** | ollama/ollama:0.13.5 | 11434 | Local LLM service |
 
 ## Development
 
@@ -189,9 +189,9 @@ Response:
 - **AI/ML**: Microsoft Semantic Kernel 1.66.0
 - **LLM Provider**: Ollama (local models)
   - Embedding Model: `nomic-embed-text`
-  - Chat Model: `llama3.2:1b`
+  - Chat Model: `qwen2.5:14b`
 - **PDF Processing**: iText7 9.3.0
-- **Database**: PostgreSQL 16 (planned for persistence)
+- **Database**: PostgreSQL 18 (planned for persistence)
 - **Vector Store**: In-memory (SimpleVectorStore) with cosine similarity
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore)
 

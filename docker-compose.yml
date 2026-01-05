@@ -1,13 +1,13 @@
 services:
   postgres:
-    image: postgres:16
-    container_name: ragevaluator-postgress
+    image: postgres:18
+    container_name: ragevaluator-postgres
     environment:
       POSTGRES_DB: ragevaluator
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     ports:
       - "5432:5432"
     healthcheck:
@@ -17,7 +17,7 @@ services:
       retries: 5
 
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.11
     container_name: ragevaluator-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -32,7 +32,7 @@ services:
       - postgres
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.13.5
     container_name: ragevaluator-ollama
     volumes:
       - ollama_data:/root/.ollama
@@ -48,7 +48,6 @@ services:
       start_period: 60s
 
   ragevaluator-api:
-    image: ragevaluator-api
     container_name: ragevaluator-api
     build:
       context: .
@@ -68,7 +67,6 @@ services:
       - ./uploads:/app/uploads
 
   ragevaluator-web-ui:
-    image: ragevaluator-web-ui
     container_name: ragevaluator-web-ui
     build:
       context: ./RagEvaluator.WebUi

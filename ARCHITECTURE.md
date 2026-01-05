@@ -554,20 +554,20 @@ description: "Optional description"
 
 ### Backend
 
-- **Framework**: ASP.NET Core 9.0
+- **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML Framework**: Microsoft Semantic Kernel 1.66.0
 - **LLM Provider**: Ollama (local models)
-  - **Embedding Model**: nomic-embed-text (274 MB)
-  - **Chat Model**: llama3.2:1b (1.3 GB)
+  - **Embedding Model**: nomic-embed-text
+  - **Chat Model**: qwen2.5:14b
 - **PDF Processing**: iText7 9.3.0
 - **Vector Store**:
   - In-memory (SimpleVectorStore) - Current implementation with cosine similarity
   - PostgreSQL with pgvector - Planned for persistence
-- **Database**: PostgreSQL 16 (planned for metadata/history persistence)
+- **Database**: PostgreSQL 18 (planned for metadata/history persistence)
 - **ORM**: Entity Framework Core 9.0 (planned)
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore 9.0.6)
-- **Testing**: xUnit, FluentAssertions, Moq (planned)
+- **Testing**: xUnit, FluentAssertions, NSubstitute (planned)
 
 ### Frontend
 
@@ -596,8 +596,8 @@ The application uses 4 Docker containers orchestrated via Docker Compose:
 |-----------|-------|--------------|---------|
 | ragevaluator-api | Custom (.NET 9) | 5000:8080 | ASP.NET Core Web API |
 | ragevaluator-web-ui | Custom (Nginx + React) | 3000:80 | React frontend |
-| postgres | postgres:16 | 5432:5432 | PostgreSQL database |
-| ollama | ollama/ollama:latest | 11434:11434 | Local LLM service |
+| postgres | postgres:18 | 5432:5432 | PostgreSQL database |
+| ollama | ollama/ollama:0.13.5 | 11434:11434 | Local LLM service |
 
 ### Ollama Initialization
 
@@ -607,7 +607,7 @@ The Ollama container uses a custom initialization script (`ollama-init.sh`) that
 2. Waits for the service to be ready
 3. Checks for required models and pulls them if missing:
    - `nomic-embed-text` - Text embedding model (approximately 274 MB)
-   - `llama3.2:1b` - Chat completion model (approximately 1.3 GB)
+   - `qwen2.5:14b` - Chat completion model (approximately 1.3 GB)
 4. Models are persisted in the `ollama_data` Docker volume
 
 **First Startup**: Initial container startup takes 5-10 minutes to download models (approximately 1.5 GB total).

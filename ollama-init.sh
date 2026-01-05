@@ -19,12 +19,12 @@ else
     echo "nomic-embed-text model already exists"
 fi
 
-# Check if llama3.2:1b exists
-if ! /bin/ollama list | grep -q "llama3.2:1b"; then
-    echo "Pulling llama3.2:1b model..."
-    /bin/ollama pull llama3.2:1b
+# Check if qwen2.5:14b exists
+if ! /bin/ollama list | grep -q "qwen2.5:14b"; then
+    echo "Pulling Qwen2.5:14B model..."
+    /bin/ollama pull qwen2.5:14b
 else
-    echo "llama3.2:1b model already exists"
+    echo "qwen2.5:14b model already exists"
 fi
 
 echo "Ollama initialization complete!"
