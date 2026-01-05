@@ -5,7 +5,7 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds
+  timeout: 300000, // 5 minutes - needed for large model loading and inference
 });
 
 // Request interceptor for adding auth tokens if needed in the future

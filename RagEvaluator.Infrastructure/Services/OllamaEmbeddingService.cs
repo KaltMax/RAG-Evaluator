@@ -27,10 +27,16 @@ namespace RagEvaluator.Infrastructure.Services
                 var kernelBuilder = Kernel.CreateBuilder();
 
 #pragma warning disable SKEXP0010
+                var httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri(_config.OllamaEndpoint),
+                    Timeout = TimeSpan.FromMinutes(5) // Allow time for model loading and inference
+                };
+
                 kernelBuilder.AddOpenAIEmbeddingGenerator(
                     modelId: _config.EmbeddingModel,
                     apiKey: "ollama",
-                    httpClient: new System.Net.Http.HttpClient { BaseAddress = new Uri(_config.OllamaEndpoint) }
+                    httpClient: httpClient
                 );
 #pragma warning restore SKEXP0010
 

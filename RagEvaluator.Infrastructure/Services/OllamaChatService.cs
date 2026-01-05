@@ -26,10 +26,16 @@ namespace RagEvaluator.Infrastructure.Services
             {
                 var kernelBuilder = Kernel.CreateBuilder();
 
+                var httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri(_config.OllamaEndpoint),
+                    Timeout = TimeSpan.FromMinutes(5) // Allow time for model loading and inference
+                };
+
                 kernelBuilder.AddOpenAIChatCompletion(
                     modelId: _config.ChatModel,
                     apiKey: "ollama",
-                    httpClient: new HttpClient { BaseAddress = new Uri(_config.OllamaEndpoint) }
+                    httpClient: httpClient
                 );
 
                 var kernel = kernelBuilder.Build();
