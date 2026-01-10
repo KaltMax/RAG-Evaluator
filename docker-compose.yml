@@ -40,6 +40,13 @@ services:
     ports:
       - "11434:11434"
     entrypoint: ["/bin/bash", "/ollama-init.sh"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "/bin/ollama", "list"]
       interval: 10s

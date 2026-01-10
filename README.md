@@ -13,8 +13,12 @@ A full-stack application using C#/.NET and React to evaluate RAG-based search wi
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js 20+](https://nodejs.org/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) with WSL2 backend (Windows)
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) (recommended) or VS Code
+- **NVIDIA GPU** with CUDA support (12GB+ VRAM recommended for Qwen2.5-14b)
+  - RTX 3060 (12GB) or better
+  - NVIDIA drivers installed
+  - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) for Docker GPU access
 
 ### Running with Docker Compose (Recommended)
 
@@ -38,7 +42,23 @@ This will start:
 - **PostgreSQL** on `localhost:5432`
 - **Ollama** on `localhost:11434`
 
-**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 1.5 GB total: `nomic-embed-text` and `llama3.2:1b`). This may take 5-10 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume.
+**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 9 GB total: `nomic-embed-text` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume.
+
+**GPU Verification**: After startup, verify GPU access with:
+```bash
+docker exec ragevaluator-ollama nvidia-smi
+```
+You should see your NVIDIA GPU listed. If not, ensure Docker Desktop is using WSL2 backend and NVIDIA Container Toolkit is installed.
+
+### Troubleshooting
+
+**Windows Line Ending Issues**: If you see `\r': command not found` errors from `ollama-init.sh`, the `.gitattributes` file enforces Unix (LF) line endings. If you cloned before this was added:
+```bash
+dos2unix ollama-init.sh
+git add ollama-init.sh
+```
+
+**GPU Not Detected**: Ensure Docker Desktop is configured for WSL2 (Settings → General → "Use WSL 2 based engine"). Install NVIDIA drivers in Windows and verify with `nvidia-smi` in PowerShell.
 
 ## Project Structure
 
