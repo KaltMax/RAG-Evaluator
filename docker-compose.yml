@@ -34,6 +34,8 @@ services:
   ollama:
     image: ollama/ollama:0.13.5
     container_name: ragevaluator-ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
     volumes:
       - ollama_data:/root/.ollama
       - ./ollama-init.sh:/ollama-init.sh
