@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Logger;
+using RagEvaluator.Infrastructure.Data;
 using RagEvaluator.Infrastructure.Services;
 
 namespace RagEvaluator.API
@@ -24,6 +26,13 @@ namespace RagEvaluator.API
             // Register logger wrapper
             builder.Services.AddSingleton(typeof(ILoggerWrapper<>), typeof(LoggerWrapper<>));
 
+            // Register DbContext with PostgreSQL
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Register repositories
+            builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+
             // Register Infrastructure services (implementations)
             builder.Services.AddSingleton<IPdfLoader, PdfLoader>();
             builder.Services.AddSingleton<ITextChunker>(sp =>
@@ -33,7 +42,8 @@ namespace RagEvaluator.API
             builder.Services.AddSingleton<IChatService, OllamaChatService>();
 
             // Register Application services (business logic)
-            builder.Services.AddSingleton<IRagService, RagService>();
+            builder.Services.AddScoped<IDocumentService, DocumentService>();
+            builder.Services.AddScoped<IRagService, RagService>();
 
             // Add CORS for development
             builder.Services.AddCors(options =>
@@ -61,6 +71,14 @@ namespace RagEvaluator.API
             });
 
             var app = builder.Build();
+
+            // Apply pending EF Core migrations at startup (development only)
+            if (app.Environment.IsDevelopment())
+            {
+                using var scope = app.Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.Database.Migrate();
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

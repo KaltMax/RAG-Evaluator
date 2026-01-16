@@ -1,7 +1,13 @@
-﻿namespace RagEvaluator.Application.Services.Interfaces
+﻿using RagEvaluator.Domain.Entities;
+
+namespace RagEvaluator.Application.Services.Interfaces
 {
     public interface IDocumentService
     {
-        // TODO: Define methods for document processing, such as loading, chunking, and storing documents.
+        Task<Document> CreateDocumentAsync(string fileName, string? filePath, long? fileSize, string? mimeType);
+        Task<Document?> GetByIdAsync(Guid id);
+        Task<IReadOnlyList<Document>> GetAllAsync();
+        Task UpdateStatusAsync(Guid id, DocumentStatus status, int? pageCount = null, int? chunkCount = null);
+        Task DeleteAsync(Guid id);
     }
 }

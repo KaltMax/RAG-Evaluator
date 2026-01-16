@@ -10,11 +10,16 @@ namespace RagEvaluator.API.Controllers
     {
         private readonly ILoggerWrapper<DocumentController> _logger;
         private readonly IRagService _ragService;
+        private readonly IDocumentService _documentService;
 
-        public DocumentController(ILoggerWrapper<DocumentController> logger, IRagService ragService)
+        public DocumentController(
+            ILoggerWrapper<DocumentController> logger,
+            IRagService ragService,
+            IDocumentService documentService)
         {
             _logger = logger;
             _ragService = ragService;
+            _documentService = documentService;
         }
 
         /// <summary>
@@ -59,25 +64,36 @@ namespace RagEvaluator.API.Controllers
             }
         }
 
-        [HttpGet()]
+        [HttpGet]
         public async Task<IActionResult> GetAllDocumentsAsync()
         {
-            // TODO: Implement retrieval of all documents
-            return Ok();
+            var documents = await _documentService.GetAllAsync();
+            return Ok(documents);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDocumentByIdAsync(Guid id)
         {
-            // TODO: Implement retrieval of a document by ID
-            return Ok();
+            var document = await _documentService.GetByIdAsync(id);
+            if (document is null)
+            {
+                return NotFound();
+            }
+            return Ok(document);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocumentAsync(Guid id)
         {
-            // TODO : Implement deletion of a document by ID
-            return Ok();
+            var document = await _documentService.GetByIdAsync(id);
+            if (document is null)
+            {
+                return NotFound();
+            }
+
+            await _documentService.DeleteAsync(id);
+            _logger.LogInformation("Document deleted: {DocumentId}", id);
+            return NoContent();
         }
 
         [HttpGet("{id}/chunks")]

@@ -1,10 +1,14 @@
-﻿namespace RagEvaluator.Contract.Abstractions.Data
+﻿using RagEvaluator.Domain.Entities;
+
+namespace RagEvaluator.Contract.Abstractions.Data
 {
-    /// <summary>
-    /// Represents a contract for accessing and managing documents within a repository.
-    /// </summary>
     public interface IDocumentRepository
     {
-        // TODO: Define Document Repository methods
+        Task<Document?> GetByIdAsync(Guid id);
+        Task<IReadOnlyList<Document>> GetAllAsync();
+        Task<IReadOnlyList<Document>> GetByStatusAsync(DocumentStatus status);
+        Task AddAsync(Document document);
+        Task UpdateAsync(Document document);
+        Task DeleteAsync(Guid id);
     }
 }

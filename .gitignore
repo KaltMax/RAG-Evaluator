@@ -621,3 +621,6 @@ Simple-RAG
 
 # Claude directory
 .claude/
+
+# Environment variables file
+.env

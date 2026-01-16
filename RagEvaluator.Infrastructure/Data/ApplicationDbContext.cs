@@ -1,7 +1,21 @@
-﻿namespace RagEvaluator.Infrastructure.Data
+﻿using Microsoft.EntityFrameworkCore;
+using RagEvaluator.Domain.Entities;
+
+namespace RagEvaluator.Infrastructure.Data
 {
-    public class ApplicationDbContext
+    public class ApplicationDbContext : DbContext
     {
-        // TODO: Implement the DbContext for Entity Framework Core
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<Document> Documents => Set<Document>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        }
     }
 }

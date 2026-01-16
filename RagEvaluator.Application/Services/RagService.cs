@@ -3,7 +3,7 @@ using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Contract.Configurations;
-using RagEvaluator.Domain.ValueObjects;
+using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Application.Services
 {
@@ -19,8 +19,8 @@ namespace RagEvaluator.Application.Services
         private readonly IVectorStore _vectorStore;
         private readonly IEmbeddingService _embeddingService;
         private readonly IChatService _chatService;
+        private readonly IDocumentService _documentService;
         private int _nextChunkId;
-        private readonly List<DocumentMetadata> _documents = new();
 
         public RagService(
             RagConfiguration config,
@@ -28,7 +28,8 @@ namespace RagEvaluator.Application.Services
             ITextChunker textChunker,
             IVectorStore vectorStore,
             IEmbeddingService embeddingService,
-            IChatService chatService)
+            IChatService chatService,
+            IDocumentService documentService)
         {
             _config = config;
             _pdfLoader = pdfLoader;
@@ -36,6 +37,7 @@ namespace RagEvaluator.Application.Services
             _vectorStore = vectorStore;
             _embeddingService = embeddingService;
             _chatService = chatService;
+            _documentService = documentService;
         }
 
         public async Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string? description = null)
@@ -45,50 +47,53 @@ namespace RagEvaluator.Application.Services
                 throw new InvalidOperationException("Embedding service not available. Ensure Ollama is running with the required models.");
             }
 
-            var documentId = Guid.NewGuid();
+            // Create document with Pending status
+            var document = await _documentService.CreateDocumentAsync(fileName, null, pdfStream.Length, "application/pdf");
 
-            // Load and process PDF
-            var pages = _pdfLoader.LoadPdf(pdfStream);
-            var chunks = _textChunker.SplitDocuments(pages);
-
-            // Generate embeddings and store chunks
-            foreach (var chunk in chunks)
+            try
             {
-                var embedding = await _embeddingService.GenerateEmbeddingAsync(chunk);
-                _vectorStore.AddEntry(
-                    _nextChunkId++,
-                    chunk,
-                    embedding,
-                    new Dictionary<string, object>
-                    {
-                        ["documentId"] = documentId.ToString(),
-                        ["fileName"] = fileName
-                    }
-                );
+                // Update status to Processing
+                await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Processing);
+
+                // Load and process PDF
+                var pages = _pdfLoader.LoadPdf(pdfStream);
+                var chunks = _textChunker.SplitDocuments(pages);
+
+                // Generate embeddings and store chunks
+                foreach (var chunk in chunks)
+                {
+                    var embedding = await _embeddingService.GenerateEmbeddingAsync(chunk);
+                    _vectorStore.AddEntry(
+                        _nextChunkId++,
+                        chunk,
+                        embedding,
+                        new Dictionary<string, object>
+                        {
+                            ["documentId"] = document.Id.ToString(),
+                            ["fileName"] = fileName
+                        }
+                    );
+                }
+
+                // Update status to Completed with page and chunk counts
+                await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Completed, pages.Count, chunks.Count);
+
+                return new DocumentResponse
+                {
+                    DocumentId = document.Id,
+                    FileName = fileName,
+                    Description = description,
+                    PageCount = pages.Count,
+                    ChunkCount = chunks.Count,
+                    UploadedAt = document.UploadedAt
+                };
             }
-
-            // Store document metadata
-            var metadata = new DocumentMetadata
-            { 
-                DocumentId = documentId,
-                FileName = fileName,
-                Description = description,
-                PageCount = pages.Count,
-                ChunkCount = chunks.Count,
-                UploadedAt = DateTime.UtcNow
-            };
-     
-            _documents.Add(metadata);
-
-            return new DocumentResponse
+            catch
             {
-                DocumentId = documentId,
-                FileName = fileName,
-                Description = description,
-                PageCount = pages.Count,
-                ChunkCount = chunks.Count,
-                UploadedAt = metadata.UploadedAt
-            };
+                // Update status to Failed on error
+                await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Failed);
+                throw;
+            }
         }
 
         public async Task<QueryResponse> AskQuestionAsync(string question, int topK = 3)
@@ -147,9 +152,10 @@ namespace RagEvaluator.Application.Services
             return await _embeddingService.IsAvailableAsync() && await _chatService.IsAvailableAsync();
         }
 
-        public Task<int> GetDocumentCountAsync()
+        public async Task<int> GetDocumentCountAsync()
         {
-            return Task.FromResult(_documents.Count);
+            var documents = await _documentService.GetAllAsync();
+            return documents.Count;
         }
     }
 }
