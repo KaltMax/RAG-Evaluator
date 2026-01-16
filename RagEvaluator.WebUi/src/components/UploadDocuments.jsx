@@ -6,7 +6,6 @@ import { uploadDocument } from '../api/UploadDocumentsService';
 
 function UploadDocuments() {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [description, setDescription] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
 
@@ -35,13 +34,12 @@ function UploadDocuments() {
 
     setIsUploading(true);
     try {
-      const result = await uploadDocument(selectedFile, description);
+      const result = await uploadDocument(selectedFile);
       setUploadResult(result);
       toast.success('Document uploaded and processed successfully!');
 
       // Reset form
       setSelectedFile(null);
-      setDescription('');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Failed to upload document');
@@ -122,24 +120,6 @@ function UploadDocuments() {
           </div>
         )}
 
-        {/* Description Input */}
-        {selectedFile && (
-          <div className="mt-6">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">
-              Description (Optional)
-            </label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description for this document..."
-              rows={3}
-              className="w-full px-4 py-3 bg-[#1F1F1F] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              disabled={isUploading}
-            />
-          </div>
-        )}
-
         {/* Upload Button */}
         {selectedFile && (
           <div className="mt-6">
@@ -177,12 +157,6 @@ function UploadDocuments() {
               <span className="text-gray-400">File Name:</span>
               <span className="text-gray-200">{uploadResult.fileName}</span>
             </div>
-            {uploadResult.description && (
-              <div className="flex justify-between">
-                <span className="text-gray-400">Description:</span>
-                <span className="text-gray-200">{uploadResult.description}</span>
-              </div>
-            )}
             <div className="flex justify-between">
               <span className="text-gray-400">Pages:</span>
               <span className="text-gray-200">{uploadResult.pageCount}</span>

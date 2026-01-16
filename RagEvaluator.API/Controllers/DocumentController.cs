@@ -26,10 +26,9 @@ namespace RagEvaluator.API.Controllers
         /// Uploads a PDF document for RAG processing
         /// </summary>
         /// <param name="file">The PDF file to upload</param>
-        /// <param name="description">Optional description of the document</param>
         [HttpPost("upload")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadDocumentAsync(IFormFile file, [FromForm] string? description = null)
+        public async Task<IActionResult> UploadDocumentAsync(IFormFile file)
         {
             try
             {
@@ -46,7 +45,7 @@ namespace RagEvaluator.API.Controllers
                 _logger.LogInformation("Uploading document: {FileName}", file.FileName);
 
                 using var stream = file.OpenReadStream();
-                var result = await _ragService.ProcessDocumentAsync(stream, file.FileName, description);
+                var result = await _ragService.ProcessDocumentAsync(stream, file.FileName);
 
                 _logger.LogInformation("Document processed successfully: {DocumentId}", result.DocumentId);
 

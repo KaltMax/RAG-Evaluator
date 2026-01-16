@@ -40,7 +40,7 @@ namespace RagEvaluator.Application.Services
             _documentService = documentService;
         }
 
-        public async Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string? description = null)
+        public async Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName)
         {
             if (!await _embeddingService.IsAvailableAsync())
             {
@@ -82,7 +82,6 @@ namespace RagEvaluator.Application.Services
                 {
                     DocumentId = document.Id,
                     FileName = fileName,
-                    Description = description,
                     PageCount = pages.Count,
                     ChunkCount = chunks.Count,
                     UploadedAt = document.UploadedAt
