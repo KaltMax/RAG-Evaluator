@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import SearchView from "./components/SearchView";
 import Sidebar from "./components/Sidebar";
 import UploadDocuments from "./components/UploadDocuments";
+import DocumentList from "./components/DocumentList";
 import Settings from "./components/Settings";
 import Statistics from "./components/Statistics";
 
@@ -20,6 +21,7 @@ function App() {
             <Routes>
               <Route path="/" element={<SearchView />} />
               <Route path="/upload" element={<UploadDocuments />} />
+              <Route path="/documents" element={<DocumentList />} />
               <Route path="/statistics" element={<Statistics />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>

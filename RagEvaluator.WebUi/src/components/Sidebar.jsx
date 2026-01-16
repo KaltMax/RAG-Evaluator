@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { MagnifyingGlassIcon, DocumentPlusIcon, Cog6ToothIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, DocumentPlusIcon, Cog6ToothIcon, ChartBarIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 function Sidebar() {
   const location = useLocation();
@@ -7,6 +7,7 @@ function Sidebar() {
   const navItems = [
     { path: '/', name: 'Search', icon: MagnifyingGlassIcon },
     { path: '/upload', name: 'Upload', icon: DocumentPlusIcon },
+    { path: '/documents', name: 'Documents', icon: DocumentTextIcon },
     { path: '/statistics', name: 'Statistics', icon: ChartBarIcon },
     { path: '/settings', name: 'Settings', icon: Cog6ToothIcon },
   ];

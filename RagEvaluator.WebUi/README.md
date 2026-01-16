@@ -15,9 +15,13 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 - **Document Upload** - Upload PDF documents for processing
   - Drag-and-drop interface powered by react-dropzone
   - PDF-only validation
-  - Optional document descriptions
   - Real-time upload progress
   - View processed document metadata (pages, chunks, etc.)
+
+- **Document List**
+  - View all uploaded documents
+  - See metadata like upload date, page count, chunk count, state
+  - Delete documents
 
 - **Responsive Navigation**
   - Collapsible sidebar (icon-only on mobile, full width on desktop)
@@ -133,24 +137,28 @@ See `nginx.conf` for the complete configuration.
 
 ```
 src/
-├── api/                    # API service layer
-│   ├── axiosConfig.js     # Axios instance configuration
-│   ├── PostQueryService.js # Query API service
-│   └── UploadDocumentsService.js # Upload API service
-├── components/             # React components
-│   ├── Header.jsx         # Top navigation bar
-│   ├── Sidebar.jsx        # Collapsible sidebar navigation
-│   ├── SearchView.jsx     # Main search page
-│   ├── Searchbar.jsx      # Search input component
-│   ├── SearchResults.jsx  # Search results display
-│   ├── UploadDocuments.jsx # Document upload page
-│   ├── Statistics.jsx     # Statistics page (placeholder)
-│   └── Settings.jsx       # Settings page (placeholder)
-├── assets/                 # Static assets
-│   └── rag-evaluator.svg  # Application logo
-├── App.jsx                 # Main app component with routing
-├── main.jsx               # Application entry point
-└── index.css              # Global styles (Tailwind imports)
+├── api/                                # API service layer
+│   ├── axiosConfig.js                  # Axios instance configuration
+│   ├── DeleteDocumentService.js        # Document deletion API service
+│   ├── GetAllDocumentsService.js       # Fetch all documents API service
+│   ├── GetDocumentByIdService.js       # Fetch single document API service
+│   ├── PostQueryService.js             # Query API service
+│   └── UploadDocumentsService.js       # Upload API service
+├── components/                         # React components
+│   ├── DocumentList.jsx                # Document list page
+│   ├── Header.jsx                      # Top navigation bar
+│   ├── Sidebar.jsx                     # Collapsible sidebar navigation
+│   ├── SearchView.jsx                  # Main search page
+│   ├── Searchbar.jsx                   # Search input component
+│   ├── SearchResults.jsx               # Search results display
+│   ├── UploadDocuments.jsx             # Document upload page
+│   ├── Statistics.jsx                  # Statistics page (placeholder)
+│   └── Settings.jsx                    # Settings page (placeholder)
+├── assets/                             # Static assets
+│   └── rag-evaluator.svg               # Application logo
+├── App.jsx                             # Main app component with routing
+├── main.jsx                            # Application entry point
+└── index.css                           # Global styles (Tailwind imports)
 ```
 
 ## Available Scripts
@@ -177,16 +185,12 @@ docker-compose up -d
 
 ## API Integration
 
-The frontend communicates with the backend API through two main services:
+Brief summary of implemented API services (see `src/api`):
 
-### Query Service
-- **Endpoint**: `POST /api/query`
-- **Purpose**: Submit questions and get AI-generated answers
-- **Request**: `{ Question: string, TopK: number }`
-- **Response**: `{ queryId, question, answer, sources[], timestamp }`
+- POST /api/query — send `{ Question, TopK }` → AI answer + sources
+- POST /api/documents/upload — upload PDF (multipart/form-data, field `file`); upload progress supported
+- GET /api/documents — list uploaded documents
+- DELETE /api/documents/{id} — delete a document
+- GET /api/documents/{id} — frontend helper is currently a placeholder
 
-### Upload Service
-- **Endpoint**: `POST /api/documents/upload`
-- **Purpose**: Upload PDF documents for processing
-- **Request**: Multipart form data with `file` and optional `description`
-- **Response**: `{ documentId, fileName, description, pageCount, chunkCount, uploadedAt }`
+Axios base URL is controlled by `VITE_API_BASE_URL` (default `/api`). Timeout is 300000 ms (5 min).

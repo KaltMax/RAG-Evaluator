@@ -1,17 +1,20 @@
 import axiosInstance from './axiosConfig';
 
 /**
- * Fetches all documents from the backend
- * @returns {Promise<Array>} Array of document objects
+ * Deletes a document by its ID
+ * @param {string} id - The document ID to delete
+ * @returns {Promise<void>}
  */
-export const getAllDocuments = async () => {
+export const deleteDocument = async (id) => {
   try {
-    const response = await axiosInstance.get('/documents');
-    return response.data;
+    await axiosInstance.delete(`/documents/${id}`);
   } catch (error) {
-    console.error('Error fetching documents:', error);
+    console.error('Error deleting document:', error);
 
     if (error.response) {
+      if (error.response.status === 404) {
+        throw new Error('Document not found');
+      }
       const errorMessage =
         error.response.data?.message ||
         error.response.data?.error ||
