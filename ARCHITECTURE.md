@@ -62,7 +62,7 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
                                 │ • PdfLoader                │
                                 │ • TextChunker              │
                                 │ • SimpleVectorStore        │
-                                │ • Repositories (planned)   │
+                                │ • DocumentRepository       │
                                 └────────────────────────────┘
 ```
 
@@ -78,18 +78,16 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 RAG-Evaluator/
 ├── RagEvaluator.API/                    # ASP.NET Core Web API
 │   ├── Controllers/
-│   │   ├── DocumentsController.cs       # Upload PDFs, manage docs
+│   │   ├── DocumentController.cs        # Upload PDFs, manage docs
 │   │   └── QueryController.cs           # Ask questions, RAG queries
 │   ├── Middleware/
-│   │   ├── ExceptionHandlingMiddleware.cs
-│   │   └── RequestLoggingMiddleware.cs
+│   │   └── ExceptionHandlingMiddleware.cs
 │   ├── Filters/
 │   │   └── ValidationFilter.cs
 │   ├── Extensions/
-│   │   └── ServiceCollectionExtensions.cs
+│   │   └── ServiceCollectionExtension.cs
 │   ├── Program.cs
 │   ├── appsettings.json
-│   ├── appsettings.Development.json
 │   └── Dockerfile
 │
 ├── RagEvaluator.Application/            # Business Logic & Orchestration
@@ -100,13 +98,13 @@ RAG-Evaluator/
 │   │   │   └── IQueryService.cs
 │   │   ├── RagService.cs                # Core RAG orchestration
 │   │   ├── DocumentService.cs           # Document management
-│   │   └── QueryService.cs              # Query handling
+│   │   └── QueryService.cs              # Query handling (placeholder)
 │   ├── Validators/
 │   │   └── AskQuestionValidator.cs
 │   └── Extensions/
 │
 ├── RagEvaluator.Contract/               # DTOs, Abstractions & Shared Contracts
-│   ├── Abstractions/                    # All interface abstractions
+│   ├── Abstractions/
 │   │   ├── Services/
 │   │   │   ├── IChatService.cs          # Chat/LLM service interface
 │   │   │   ├── IEmbeddingService.cs     # Embedding generation interface
@@ -116,12 +114,11 @@ RAG-Evaluator/
 │   │       ├── IDocumentRepository.cs   # Document repository interface
 │   │       └── IVectorStore.cs          # Vector store interface
 │   ├── Configurations/
-│   │   └── RagConfiguration.cs          # Configuration model
+│   │   └── RagConfiguration.cs
 │   ├── Dtos/
 │   │   ├── Requests/
 │   │   │   ├── AskQuestionRequest.cs
-│   │   │   ├── UploadDocumentRequest.cs
-│   │   │   └── UploadConfigurationRequest.cs
+│   │   │   └── UploadDocumentRequest.cs
 │   │   ├── Responses/
 │   │   │   ├── QueryResponse.cs
 │   │   │   ├── SearchResultDto.cs
@@ -129,15 +126,15 @@ RAG-Evaluator/
 │   │   │   └── ErrorResponse.cs
 │   │   └── PaginationDto.cs
 │   └── Logger/
-│       ├── ILoggerWrapper.cs            # Logger abstraction
-│       └── LoggerWrapper.cs             # Logger implementation
+│       ├── ILoggerWrapper.cs
+│       └── LoggerWrapper.cs
 │
 ├── RagEvaluator.Domain/                 # Domain Models & Business Rules
 │   ├── Entities/
 │   │   ├── Document.cs                  # Document aggregate root
 │   │   ├── VectorEntry.cs               # Vector storage entity
-│   │   ├── Query.cs                     # User query entity
-│   │   └── ChatHistory.cs               # Conversation history
+│   │   ├── Query.cs                     # User query entity (placeholder)
+│   │   └── ChatHistory.cs               # Conversation history (placeholder)
 │   ├── ValueObjects/
 │   │   ├── DocumentMetadata.cs
 │   │   ├── SearchResult.cs
@@ -149,59 +146,40 @@ RAG-Evaluator/
 ├── RagEvaluator.Infrastructure/         # Data Access & External Services
 │   ├── Data/
 │   │   ├── ApplicationDbContext.cs      # EF Core DbContext
+│   │   ├── DocumentRepository.cs        # Document repository implementation
 │   │   ├── Configurations/
 │   │   │   ├── DocumentConfiguration.cs
-│   │   │   └── QueryConfiguration.cs
+│   │   │   └── QueryConfiguration.cs    # (placeholder)
 │   │   └── Migrations/
-│   ├── Repositories/
-│   │   ├── DocumentRepository.cs
-│   │   └── QueryRepository.cs
 │   ├── Services/
-│   │   ├── PdfLoader.cs                 # PDF text extraction
+│   │   ├── PdfLoader.cs                 # PDF text extraction (PdfPig)
 │   │   ├── TextChunker.cs               # Text splitting
 │   │   ├── SimpleVectorStore.cs         # In-memory vector store
 │   │   ├── OllamaChatService.cs         # Ollama chat service
 │   │   ├── OllamaEmbeddingService.cs    # Ollama embedding service
-│   │   └── PgVectorStore.cs             # PostgreSQL vector store (future)
+│   │   └── PgVectorStore.cs             # PostgreSQL vector store (placeholder)
 │   ├── External/
-│   │   └── OllamaClient.cs              # Ollama API client
+│   │   └── OllamaClient.cs              # Ollama API client (placeholder)
 │   └── Extensions/
 │       └── InfrastructureExtensions.cs
 │
 ├── RagEvaluator.WebUi/                  # React Frontend (Vite)
-│   ├── public/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── DocumentUpload/
-│   │   │   ├── QueryInterface/
-│   │   │   ├── ChatHistory/
-│   │   │   └── SourceViewer/
-│   │   ├── pages/
-│   │   │   ├── Home.jsx
-│   │   │   ├── Documents.jsx
-│   │   │   └── Settings.jsx
-│   │   ├── services/
-│   │   │   └── api.js                   # API client
-│   │   ├── hooks/
-│   │   ├── utils/
+│   │   ├── assets/
+│   │   ├── api/
+│   │   ├── index.css
 │   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
+│   │   └── main.jsx
 │   ├── package.json
 │   ├── vite.config.js
-│   ├── nginx.conf
 │   └── Dockerfile
 │
-└── tests/
-    ├── RagEvaluator.UnitTests/
-    │   ├── Application/
-    │   ├── Domain/
-    │   └── Infrastructure/
-    ├── RagEvaluator.IntegrationTests/
-    │   ├── API/
-    │   └── Infrastructure/
-    └── RagEvaluator.E2ETests/
-        └── Scenarios/
+├── RagEvaluator.Tests/                  # Test Project
+│
+├── docker-compose.yml
+├── .env.example
+└── ARCHITECTURE.md
 ```
 
 ## Layer Responsibilities
@@ -319,15 +297,15 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- EF Core DbContext and configurations (planned)
-- Repository implementations (planned)
+- EF Core DbContext and configurations
+- Repository implementations (DocumentRepository)
 - PDF processing services
 - Vector store implementations
 - External API clients
 
 **Implemented Services**:
 
-- `PdfLoader` - PDF text extraction using iText7
+- `PdfLoader` - PDF text extraction using PdfPig
 - `TextChunker` - Text chunking with configurable size and overlap
 - `SimpleVectorStore` - In-memory vector store with cosine similarity
 - `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel
@@ -451,23 +429,11 @@ CREATE TABLE QuerySources (
 
 ### Vector Store Options
 
-**Option 1: In-Memory (Current)**
-
-- Fast, simple
-- No persistence
-- Good for development/demos
-
-**Option 2: PostgreSQL with pgvector**
+**PostgreSQL with pgvector**
 
 - SQL + vector search in one database
 - ACID compliance
 - Good for moderate scale
-
-**Option 3: Dedicated Vector Database**
-
-- Qdrant, Milvus, or Weaviate
-- Optimized for vector operations
-- Scalable for production
 
 ## API Design
 
@@ -477,9 +443,9 @@ CREATE TABLE QuerySources (
 
 ```
 POST   /api/documents/upload       # Upload PDF document (IMPLEMENTED)
-GET    /api/documents              # List all documents (scaffolded)
-GET    /api/documents/{id}         # Get document details (scaffolded)
-DELETE /api/documents/{id}         # Delete document (scaffolded)
+GET    /api/documents              # List all documents (IMPLEMENTED)
+GET    /api/documents/{id}         # Get document details (IMPLEMENTED)
+DELETE /api/documents/{id}         # Delete document (IMPLEMENTED)
 GET    /api/documents/{id}/chunks  # Get document chunks (scaffolded)
 ```
 
@@ -491,7 +457,7 @@ GET    /api/query/history          # Get query history (scaffolded)
 GET    /api/query/{id}             # Get specific query (scaffolded)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Additional endpoints are scaffolded and return empty responses.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Document CRUD endpoints are implemented. Query history endpoints are scaffolded.
 
 ### Request/Response Examples
 
@@ -559,12 +525,12 @@ description: "Optional description"
 - **LLM Provider**: Ollama (local models)
   - **Embedding Model**: nomic-embed-text
   - **Chat Model**: qwen2.5:14b
-- **PDF Processing**: iText7 9.3.0
+- **PDF Processing**: PdfPig 0.1.9
 - **Vector Store**:
   - In-memory (SimpleVectorStore) - Current implementation with cosine similarity
   - PostgreSQL with pgvector - Planned for persistence
-- **Database**: PostgreSQL 18 (planned for metadata/history persistence)
-- **ORM**: Entity Framework Core 9.0 (planned)
+- **Database**: PostgreSQL 18
+- **ORM**: Entity Framework Core 10.0 with Npgsql
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore 9.0.6)
 - **Testing**: xUnit, FluentAssertions, NSubstitute (planned)
 
@@ -687,7 +653,7 @@ Containers communicate via Docker's internal network:
 
 - [x] Clean Architecture project structure
 - [x] Core RAG pipeline (upload PDF, ask questions)
-- [x] PDF text extraction with iText7
+- [x] PDF text extraction with PdfPig
 - [x] Text chunking with configurable size/overlap
 - [x] In-memory vector store with cosine similarity
 - [x] Ollama integration via Microsoft Semantic Kernel
@@ -699,23 +665,18 @@ Containers communicate via Docker's internal network:
 
 ### In Progress / Planned
 
-- [ ] Database persistence (EF Core + PostgreSQL)
-  - Document metadata storage
-  - Query history tracking
-  - User management
-- [ ] Repository pattern implementations
-- [ ] Additional API endpoints (list documents, delete, query history)
+- [x] Database persistence (EF Core + PostgreSQL)
+  - [x] Document metadata storage
+  - [ ] Query history tracking
+- [x] Repository pattern implementations (DocumentRepository)
+- [x] Document API endpoints (list, get, delete)
+- [ ] Query history API endpoints
 - [ ] React frontend UI components
-- [ ] PostgreSQL vector store (pgvector) for production
+- [ ] PostgreSQL vector store (pgvector)
 - [ ] Unit and integration tests
-- [ ] Authentication and authorization
 - [ ] Multi-document querying
-- [ ] Document versioning
-- [ ] Conversation memory/context
-- [ ] Support for more document formats (DOCX, TXT, MD)
 - [ ] Real-time streaming responses (SignalR)
-- [ ] Admin dashboard
-- [ ] Usage analytics and monitoring
+- [ ] Analytics and metrics Dashboard
 
 ## Resources
 

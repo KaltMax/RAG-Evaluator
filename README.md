@@ -135,7 +135,7 @@ Once running, the API is available at `http://localhost:5000`:
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload and question answering. Additional endpoints (list documents, query history, etc.) are scaffolded but not yet implemented.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload and question answering. Document management endpoints (list, get, delete) are implemented. Query history endpoints are scaffolded but not yet implemented.
 
 ## Using the API
 
@@ -210,8 +210,8 @@ Response:
 - **LLM Provider**: Ollama (local models)
   - Embedding Model: `nomic-embed-text`
   - Chat Model: `qwen2.5:14b`
-- **PDF Processing**: iText7 9.3.0
-- **Database**: PostgreSQL 18 (planned for persistence)
+- **PDF Processing**: PdfPig 0.1.9
+- **Database**: PostgreSQL 18 with Entity Framework Core 10.0
 - **Vector Store**: In-memory (SimpleVectorStore) with cosine similarity
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore)
 
