@@ -425,7 +425,6 @@ CREATE TABLE Documents (
     UploadedAt TIMESTAMP NOT NULL,
     ProcessedAt TIMESTAMP,
     Status VARCHAR(50), -- Pending, Processing, Completed, Failed
-    UserId UUID -- Future: multi-tenant support
 );
 
 -- Queries table (chat history)
