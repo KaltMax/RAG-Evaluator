@@ -1,10 +1,10 @@
 import axiosInstance from './axiosConfig';
 
 /**
- * Uploads a PDF document to the backend for RAG processing
- * @param {File} file - The PDF file to upload
- * @returns {Promise<Object>} Document response with metadata
- */
+* Uploads a PDF document to the backend for RAG processing
+* @param {File} file - The PDF file to upload
+* @returns {Promise<Object>} Document response with metadata
+*/
 export const uploadDocument = async (file) => {
   try {
     const formData = new FormData();

@@ -19,7 +19,12 @@ namespace RagEvaluator.API
 
             // Add services to the container.
 
-            // Configure RAG Configuration
+            // FileStorage Configuration
+            var fileStorageConfig = new Contract.Configurations.FileStorageConfiguration();
+            builder.Configuration.GetSection("FileStorageConfiguration").Bind(fileStorageConfig);
+            builder.Services.AddSingleton(fileStorageConfig);
+
+            // RAG Configuration
             var ragConfig = new Contract.Configurations.RagConfiguration();
             builder.Configuration.GetSection("RagConfiguration").Bind(ragConfig);
             builder.Services.AddSingleton(ragConfig);
@@ -36,11 +41,11 @@ namespace RagEvaluator.API
 
             // Register Infrastructure services (implementations)
             builder.Services.AddSingleton<IPdfLoader, PdfLoader>();
-            builder.Services.AddSingleton<ITextChunker>(sp =>
-                new TextChunker(ragConfig.ChunkSize, ragConfig.ChunkOverlap));
+            builder.Services.AddSingleton<ITextChunker, TextChunker>();
             builder.Services.AddSingleton<IVectorStore, SimpleVectorStore>();
             builder.Services.AddSingleton<IEmbeddingService, OllamaEmbeddingService>();
             builder.Services.AddSingleton<IChatService, OllamaChatService>();
+            builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
             // Register Application services (business logic)
             builder.Services.AddScoped<IDocumentService, DocumentService>();

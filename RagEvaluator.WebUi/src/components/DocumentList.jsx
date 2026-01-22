@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ArrowDownTrayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { getAllDocuments } from '../api/GetAllDocumentsService';
 import { deleteDocument } from '../api/DeleteDocumentService';
+import { downloadDocument } from '../api/DownloadDocumentService';
 
 function DocumentList() {
   const [documents, setDocuments] = useState([]);
@@ -26,6 +27,14 @@ function DocumentList() {
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  const handleDownload = async (id, fileName) => {
+    try {
+      await downloadDocument(id, fileName);
+    } catch (err) {
+      toast.error(err.message || 'Failed to download document');
+    }
+  };
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this document?')) {
@@ -159,6 +168,13 @@ function DocumentList() {
                       {formatDate(doc.uploadedAt)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right">
+                      <button
+                        onClick={() => handleDownload(doc.id, doc.fileName)}
+                        className="text-gray-400 hover:text-blue-400 transition-colors p-1 mr-2"
+                        title="Download document"
+                      >
+                        <ArrowDownTrayIcon className="w-5 h-5" />
+                      </button>
                       <button
                         onClick={() => handleDelete(doc.id)}
                         className="text-gray-400 hover:text-red-400 transition-colors p-1"

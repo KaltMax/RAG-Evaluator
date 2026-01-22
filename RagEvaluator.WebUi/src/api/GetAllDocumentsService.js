@@ -1,9 +1,9 @@
 import axiosInstance from './axiosConfig';
 
 /**
- * Fetches all documents from the backend
- * @returns {Promise<Array>} Array of document objects
- */
+* Fetches all documents from the backend
+* @returns {Promise<Array>} Array of document objects
+*/
 export const getAllDocuments = async () => {
   try {
     const response = await axiosInstance.get('/documents');

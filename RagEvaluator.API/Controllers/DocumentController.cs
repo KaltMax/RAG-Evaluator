@@ -95,6 +95,19 @@ namespace RagEvaluator.API.Controllers
             return NoContent();
         }
 
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> DownloadDocumentAsync(Guid id)
+        {
+            var document = await _documentService.GetByIdAsync(id);
+            if (document is null || document.FilePath is null)
+            {
+                return NotFound();
+            }
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(document.FilePath);
+            return File(fileBytes, document.MimeType ?? "application/pdf", document.FileName);
+        }
+
         [HttpGet("{id}/chunks")]
         public async Task<IActionResult> GetDocumentChunksAsync(Guid id)
         {

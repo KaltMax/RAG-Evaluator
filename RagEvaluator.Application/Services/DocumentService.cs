@@ -1,5 +1,6 @@
 ﻿using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
+using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Application.Services
@@ -7,24 +8,30 @@ namespace RagEvaluator.Application.Services
     public class DocumentService : IDocumentService
     {
         private readonly IDocumentRepository _documentRepository;
+        private readonly IFileStorageService _fileStorageService;
 
-        public DocumentService(IDocumentRepository documentRepository)
+        public DocumentService(IDocumentRepository documentRepository, IFileStorageService fileStorageService)
         {
             _documentRepository = documentRepository;
+            _fileStorageService = fileStorageService;
         }
 
-        public async Task<Document> CreateDocumentAsync(string fileName, string? filePath, long? fileSize, string? mimeType)
+        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType)
         {
             var document = new Document
             {
                 Id = Guid.NewGuid(),
                 FileName = fileName,
-                FilePath = filePath,
+                FilePath = null,
                 FileSize = fileSize,
                 MimeType = mimeType,
                 UploadedAt = DateTime.UtcNow,
                 Status = DocumentStatus.Pending
             };
+
+            // Save file to storage
+            var filePath = await _fileStorageService.SaveFileAsync(fileStream, document.Id, fileName);
+            document.FilePath = filePath;
 
             await _documentRepository.AddAsync(document);
             return document;
@@ -70,6 +77,11 @@ namespace RagEvaluator.Application.Services
 
         public async Task DeleteAsync(Guid id)
         {
+            var document = await _documentRepository.GetByIdAsync(id);
+            if (document?.FilePath != null)
+            {
+                await _fileStorageService.DeleteFileAsync(document.FilePath);
+            }
             await _documentRepository.DeleteAsync(id);
         }
     }

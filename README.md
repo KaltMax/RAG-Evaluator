@@ -128,6 +128,7 @@ Once running, the API is available at `http://localhost:5000`:
 
 ### Documents
 - `POST /api/documents/upload` - Upload PDF document for RAG processing
+- `GET /api/documents/{id}/download` - Download a previously uploaded document
 
 ### Query
 - `POST /api/query` - Ask questions using RAG (Retrieval-Augmented Generation)
@@ -135,7 +136,7 @@ Once running, the API is available at `http://localhost:5000`:
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload and question answering. Document management endpoints (list, get, delete) are implemented. Query history endpoints are scaffolded but not yet implemented.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload and question answering. Document management endpoints (list, get, delete, download) are fully implemented. Query history endpoints are scaffolded but not yet implemented.
 
 ## Using the API
 

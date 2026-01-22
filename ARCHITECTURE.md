@@ -59,6 +59,7 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
                                 │                            │
                                 │ • OllamaChatService        │
                                 │ • OllamaEmbeddingService   │
+                                │ • LocalFileStorageService  │
                                 │ • PdfLoader                │
                                 │ • TextChunker              │
                                 │ • SimpleVectorStore        │
@@ -108,12 +109,14 @@ RAG-Evaluator/
 │   │   ├── Services/
 │   │   │   ├── IChatService.cs          # Chat/LLM service interface
 │   │   │   ├── IEmbeddingService.cs     # Embedding generation interface
+│   │   │   ├── IFileStorageService.cs   # File storage interface
 │   │   │   ├── IPdfLoader.cs            # PDF loading interface
 │   │   │   └── ITextChunker.cs          # Text chunking interface
 │   │   └── Data/
 │   │       ├── IDocumentRepository.cs   # Document repository interface
 │   │       └── IVectorStore.cs          # Vector store interface
 │   ├── Configurations/
+│   │   ├── FileStorageConfiguration.cs  # File storage settings
 │   │   └── RagConfiguration.cs
 │   ├── Dtos/
 │   │   ├── Requests/
@@ -152,6 +155,7 @@ RAG-Evaluator/
 │   │   │   └── QueryConfiguration.cs    # (placeholder)
 │   │   └── Migrations/
 │   ├── Services/
+│   │   ├── LocalFileStorageService.cs   # Local file system storage
 │   │   ├── PdfLoader.cs                 # PDF text extraction (PdfPig)
 │   │   ├── TextChunker.cs               # Text splitting
 │   │   ├── SimpleVectorStore.cs         # In-memory vector store
@@ -254,9 +258,9 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- `Abstractions/Services/` - Service interfaces (IChatService, IEmbeddingService, IPdfLoader, ITextChunker)
+- `Abstractions/Services/` - Service interfaces (IChatService, IEmbeddingService, IFileStorageService, IPdfLoader, ITextChunker)
 - `Abstractions/Data/` - Data access interfaces (IVectorStore, IDocumentRepository)
-- `Configurations/` - Configuration models (RagConfiguration)
+- `Configurations/` - Configuration models (RagConfiguration, FileStorageConfiguration)
 - `Dtos/Requests/` - API request DTOs
 - `Dtos/Responses/` - API response DTOs
 - `Logger/` - Logger abstraction and implementation
@@ -305,6 +309,7 @@ RAG-Evaluator/
 
 **Implemented Services**:
 
+- `LocalFileStorageService` - Local file system storage with configurable directory
 - `PdfLoader` - PDF text extraction using PdfPig
 - `TextChunker` - Text chunking with configurable size and overlap
 - `SimpleVectorStore` - In-memory vector store with cosine similarity
@@ -366,11 +371,11 @@ RAG-Evaluator/
 ### Dependency Inversion in Action
 
 The Contract layer defines **what** needs to be done (interface abstractions):
-- Service interfaces: `IChatService`, `IEmbeddingService`, `IPdfLoader`, `ITextChunker`
+- Service interfaces: `IChatService`, `IEmbeddingService`, `IFileStorageService`, `IPdfLoader`, `ITextChunker`
 - Data interfaces: `IVectorStore`, `IDocumentRepository`
 
 The Infrastructure layer defines **how** it's done (concrete implementations):
-- `OllamaChatService`, `OllamaEmbeddingService`, `PdfLoader`, `TextChunker`, `SimpleVectorStore`
+- `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfLoader`, `TextChunker`, `SimpleVectorStore`
 
 The Application layer consumes these abstractions:
 - `RagService` uses IChatService, IEmbeddingService, IVectorStore, etc.
@@ -445,6 +450,7 @@ CREATE TABLE QuerySources (
 POST   /api/documents/upload       # Upload PDF document (IMPLEMENTED)
 GET    /api/documents              # List all documents (IMPLEMENTED)
 GET    /api/documents/{id}         # Get document details (IMPLEMENTED)
+GET    /api/documents/{id}/download # Download document file (IMPLEMENTED)
 DELETE /api/documents/{id}         # Delete document (IMPLEMENTED)
 GET    /api/documents/{id}/chunks  # Get document chunks (scaffolded)
 ```
@@ -457,7 +463,7 @@ GET    /api/query/history          # Get query history (scaffolded)
 GET    /api/query/{id}             # Get specific query (scaffolded)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Document CRUD endpoints are implemented. Query history endpoints are scaffolded.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Document CRUD endpoints (list, get, delete, download) are fully implemented. Query history endpoints are scaffolded.
 
 ### Request/Response Examples
 
@@ -588,6 +594,7 @@ environment:
   - ASPNETCORE_ENVIRONMENT=Development
   - ConnectionStrings__DefaultConnection=Host=postgres;Database=ragevaluator;...
   - RagConfiguration__OllamaEndpoint=http://ollama:11434/v1
+  - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
 **Note**: Configuration uses double underscores (`__`) to override nested JSON configuration in ASP.NET Core.
@@ -653,6 +660,8 @@ Containers communicate via Docker's internal network:
 
 - [x] Clean Architecture project structure
 - [x] Core RAG pipeline (upload PDF, ask questions)
+- [x] File storage service abstraction and local implementation
+- [x] Document download endpoint
 - [x] PDF text extraction with PdfPig
 - [x] Text chunking with configurable size/overlap
 - [x] In-memory vector store with cosine similarity
@@ -669,7 +678,7 @@ Containers communicate via Docker's internal network:
   - [x] Document metadata storage
   - [ ] Query history tracking
 - [x] Repository pattern implementations (DocumentRepository)
-- [x] Document API endpoints (list, get, delete)
+- [x] Document API endpoints (list, get, delete, download)
 - [ ] Query history API endpoints
 - [ ] React frontend UI components
 - [ ] PostgreSQL vector store (pgvector)

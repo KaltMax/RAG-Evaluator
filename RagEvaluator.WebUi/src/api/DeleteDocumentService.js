@@ -1,10 +1,10 @@
 import axiosInstance from './axiosConfig';
 
 /**
- * Deletes a document by its ID
- * @param {string} id - The document ID to delete
- * @returns {Promise<void>}
- */
+* Deletes a document by its ID
+* @param {string} id - The document ID to delete
+* @returns {Promise<void>}
+*/
 export const deleteDocument = async (id) => {
   try {
     await axiosInstance.delete(`/documents/${id}`);

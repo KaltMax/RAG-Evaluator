@@ -1,4 +1,5 @@
 ﻿using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Configurations;
 
 namespace RagEvaluator.Infrastructure.Services
 {
@@ -11,23 +12,22 @@ namespace RagEvaluator.Infrastructure.Services
         private readonly int _chunkOverlap;
 
         /// <summary>
-        /// Creates a new TextChunker with specified parameters
+        /// Creates a new TextChunker with specified configuration
         /// </summary>
-        /// <param name="chunkSize">Maximum size of each chunk in characters</param>
-        /// <param name="chunkOverlap">Number of overlapping characters between chunks</param>
-        public TextChunker(int chunkSize = 1000, int chunkOverlap = 200)
+        /// <param name="config">RAG configuration containing chunk size and overlap settings</param>
+        public TextChunker(RagConfiguration config)
         {
-            if (chunkSize <= 0)
-                throw new ArgumentException("Chunk size must be positive", nameof(chunkSize));
+            if (config.ChunkSize <= 0)
+                throw new ArgumentException("Chunk size must be positive", nameof(config.ChunkSize));
 
-            if (chunkOverlap < 0)
-                throw new ArgumentException("Chunk overlap cannot be negative", nameof(chunkOverlap));
+            if (config.ChunkOverlap < 0)
+                throw new ArgumentException("Chunk overlap cannot be negative", nameof(config.ChunkOverlap));
 
-            if (chunkOverlap >= chunkSize)
-                throw new ArgumentException("Chunk overlap must be less than chunk size", nameof(chunkOverlap));
+            if (config.ChunkOverlap >= config.ChunkSize)
+                throw new ArgumentException("Chunk overlap must be less than chunk size", nameof(config.ChunkOverlap));
 
-            _chunkSize = chunkSize;
-            _chunkOverlap = chunkOverlap;
+            _chunkSize = config.ChunkSize;
+            _chunkOverlap = config.ChunkOverlap;
         }
 
         /// <summary>

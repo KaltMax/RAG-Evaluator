@@ -1,5 +1,7 @@
-import { DocumentTextIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ClockIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { PropTypes } from 'prop-types';
+import { toast } from 'react-toastify';
+import { downloadDocument } from '../api/DownloadDocumentService';
 
 function SearchResults({ results }) {
   if (!results) {
@@ -14,6 +16,14 @@ function SearchResults({ results }) {
     if (similarity >= 0.8) return 'text-green-400';
     if (similarity >= 0.6) return 'text-yellow-400';
     return 'text-orange-400';
+  };
+
+  const handleDownload = async (documentId, fileName) => {
+    try {
+      await downloadDocument(documentId, fileName);
+    } catch (err) {
+      toast.error(err.message || 'Failed to download document');
+    }
   };
 
   return (
@@ -53,6 +63,15 @@ function SearchResults({ results }) {
                       <span className="text-xs text-gray-500">
                         ({source.metadata.fileName})
                       </span>
+                    )}
+                    {source.metadata?.documentId && (
+                      <button
+                        onClick={() => handleDownload(source.metadata.documentId, source.metadata.fileName)}
+                        className="text-gray-400 hover:text-blue-400 transition-colors"
+                        title="Download source document"
+                      >
+                        <ArrowDownTrayIcon className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                   <div className="flex items-center gap-2">

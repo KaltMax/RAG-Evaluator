@@ -48,12 +48,14 @@ namespace RagEvaluator.Application.Services
             }
 
             // Create document with Pending status
-            var document = await _documentService.CreateDocumentAsync(fileName, null, pdfStream.Length, "application/pdf");
+            var document = await _documentService.CreateDocumentAsync(pdfStream, fileName, pdfStream.Length, "application/pdf");
 
             try
             {
                 // Update status to Processing
                 await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Processing);
+
+                pdfStream.Position = 0;
 
                 // Load and process PDF
                 var pages = _pdfLoader.LoadPdf(pdfStream);

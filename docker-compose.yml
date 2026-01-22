@@ -58,6 +58,7 @@ services:
 
   ragevaluator-api:
     container_name: ragevaluator-api
+    user: "0:0"
     build:
       context: .
       dockerfile: RagEvaluator.API/Dockerfile
@@ -65,6 +66,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - RagConfiguration__OllamaEndpoint=http://ollama:${OLLAMA_PORT}/v1
+      - FileStorageConfiguration__BaseDirectory=${FILE_STORAGE_BASE_DIRECTORY}
     ports:
       - "${API_PORT}:8080"
     depends_on:
@@ -73,7 +75,7 @@ services:
       ollama:
         condition: service_healthy
     volumes:
-      - ./uploads:/app/uploads
+      - document_uploads:/app/uploads
 
   ragevaluator-web-ui:
     container_name: ragevaluator-web-ui
@@ -91,3 +93,4 @@ volumes:
   postgres_data:
   ollama_data:
   pgadmin_data:
+  document_uploads:
