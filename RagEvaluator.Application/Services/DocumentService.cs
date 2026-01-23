@@ -1,6 +1,8 @@
-﻿using RagEvaluator.Application.Services.Interfaces;
+﻿using RagEvaluator.Application.Mappers;
+using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Application.Services
@@ -16,7 +18,7 @@ namespace RagEvaluator.Application.Services
             _fileStorageService = fileStorageService;
         }
 
-        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType)
+        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language)
         {
             var document = new Document
             {
@@ -25,6 +27,7 @@ namespace RagEvaluator.Application.Services
                 FilePath = null,
                 FileSize = fileSize,
                 MimeType = mimeType,
+                Language = language,
                 UploadedAt = DateTime.UtcNow,
                 Status = DocumentStatus.Pending
             };
@@ -37,17 +40,35 @@ namespace RagEvaluator.Application.Services
             return document;
         }
 
-        public async Task<Document?> GetByIdAsync(Guid id)
+        public async Task<DocumentResponse?> GetByIdAsync(Guid id)
         {
-            return await _documentRepository.GetByIdAsync(id);
+            var document = await _documentRepository.GetByIdAsync(id);
+            return document?.ToResponse();
         }
 
-        public async Task<IReadOnlyList<Document>> GetAllAsync()
+        public async Task<IReadOnlyList<DocumentResponse>> GetAllAsync()
         {
-            return await _documentRepository.GetAllAsync();
+            var summaries = await _documentRepository.GetAllSummariesAsync();
+            return summaries.ToResponseList();
         }
 
-        public async Task UpdateStatusAsync(Guid id, DocumentStatus status, int? pageCount = null, int? chunkCount = null)
+        public async Task<DocumentFileInfo?> GetDocumentFileInfoAsync(Guid id)
+        {
+            var document = await _documentRepository.GetByIdAsync(id);
+            if (document?.FilePath is null)
+            {
+                return null;
+            }
+
+            return new DocumentFileInfo
+            {
+                FilePath = document.FilePath,
+                FileName = document.FileName,
+                MimeType = document.MimeType ?? "application/pdf"
+            };
+        }
+
+        public async Task UpdateStatusAsync(Guid id, DocumentStatus status, int? pageCount = null, int? chunkCount = null, string? content = null)
         {
             var document = await _documentRepository.GetByIdAsync(id);
             if (document is null)
@@ -65,6 +86,11 @@ namespace RagEvaluator.Application.Services
             if (chunkCount.HasValue)
             {
                 document.ChunkCount = chunkCount.Value;
+            }
+
+            if (content is not null)
+            {
+                document.Content = content;
             }
 
             if (status == DocumentStatus.Completed)

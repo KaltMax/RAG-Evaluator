@@ -40,7 +40,7 @@ namespace RagEvaluator.Application.Services
             _documentService = documentService;
         }
 
-        public async Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName)
+        public async Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string language)
         {
             if (!await _embeddingService.IsAvailableAsync())
             {
@@ -48,7 +48,7 @@ namespace RagEvaluator.Application.Services
             }
 
             // Create document with Pending status
-            var document = await _documentService.CreateDocumentAsync(pdfStream, fileName, pdfStream.Length, "application/pdf");
+            var document = await _documentService.CreateDocumentAsync(pdfStream, fileName, pdfStream.Length, "application/pdf", language);
 
             try
             {
@@ -60,6 +60,7 @@ namespace RagEvaluator.Application.Services
                 // Load and process PDF
                 var pages = _pdfLoader.LoadPdf(pdfStream);
                 var chunks = _textChunker.SplitDocuments(pages);
+                var content = string.Join("\n\n", pages);
 
                 // Generate embeddings and store chunks
                 foreach (var chunk in chunks)
@@ -77,16 +78,18 @@ namespace RagEvaluator.Application.Services
                     );
                 }
 
-                // Update status to Completed with page and chunk counts
-                await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Completed, pages.Count, chunks.Count);
+                // Update status to Completed with page count, chunk count, and content
+                await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Completed, pages.Count, chunks.Count, content);
 
                 return new DocumentResponse
                 {
-                    DocumentId = document.Id,
+                    Id = document.Id,
                     FileName = fileName,
+                    Language = language,
                     PageCount = pages.Count,
                     ChunkCount = chunks.Count,
-                    UploadedAt = document.UploadedAt
+                    UploadedAt = document.UploadedAt,
+                    Status = DocumentStatus.Completed.ToString()
                 };
             }
             catch

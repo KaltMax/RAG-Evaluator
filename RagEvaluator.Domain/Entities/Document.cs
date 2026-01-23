@@ -7,6 +7,8 @@
         public string? FilePath { get; set; }
         public long? FileSize { get; set; }
         public string? MimeType { get; set; }
+        public string? Content { get; set; }
+        public string? Language { get; set; }
         public int PageCount { get; set; }
         public int ChunkCount { get; set; }
         public DateTime UploadedAt { get; set; }

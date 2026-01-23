@@ -127,8 +127,11 @@ dotnet test
 Once running, the API is available at `http://localhost:5000`:
 
 ### Documents
-- `POST /api/documents/upload` - Upload PDF document for RAG processing
+- `POST /api/documents/upload` - Upload PDF document with language for RAG processing
+- `GET /api/documents` - List all documents
+- `GET /api/documents/{id}` - Get document details
 - `GET /api/documents/{id}/download` - Download a previously uploaded document
+- `DELETE /api/documents/{id}` - Delete a document
 
 ### Query
 - `POST /api/query` - Ask questions using RAG (Retrieval-Augmented Generation)
@@ -136,7 +139,7 @@ Once running, the API is available at `http://localhost:5000`:
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload and question answering. Document management endpoints (list, get, delete, download) are fully implemented. Query history endpoints are scaffolded but not yet implemented.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering. Document management endpoints (list, get, delete, download) are fully implemented. The frontend supports multi-file upload (up to 20 files) with per-file language selection. Query history endpoints are scaffolded but not yet implemented.
 
 ## Using the API
 
@@ -151,18 +154,19 @@ curl -X 'POST' \
   -H 'accept: */*' \
   -H 'Content-Type: multipart/form-data' \
   -F 'file=@your-document.pdf' \
-  -F 'description=Optional description'
+  -F 'language=en'
 ```
 
 Response:
 ```json
 {
-  "documentId": "guid",
+  "id": "guid",
   "fileName": "your-document.pdf",
-  "description": "Optional description",
+  "language": "en",
   "pageCount": 10,
   "chunkCount": 25,
-  "uploadedAt": "2025-01-04T12:00:00Z"
+  "uploadedAt": "2025-01-04T12:00:00Z",
+  "status": "Completed"
 }
 ```
 

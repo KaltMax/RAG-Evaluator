@@ -3,12 +3,14 @@ import axiosInstance from './axiosConfig';
 /**
 * Uploads a PDF document to the backend for RAG processing
 * @param {File} file - The PDF file to upload
+* @param {string} language - The document language ('en' or 'de')
 * @returns {Promise<Object>} Document response with metadata
 */
-export const uploadDocument = async (file) => {
+export const uploadDocument = async (file, language) => {
   try {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('language', language);
 
     const response = await axiosInstance.post('/documents/upload', formData, {
       headers: {

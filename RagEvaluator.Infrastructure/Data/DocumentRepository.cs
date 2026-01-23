@@ -23,6 +23,25 @@ namespace RagEvaluator.Infrastructure.Data
             return await _context.Documents.ToListAsync();
         }
 
+        public async Task<IReadOnlyList<DocumentSummary>> GetAllSummariesAsync()
+        {
+            return await _context.Documents
+                .Select(d => new DocumentSummary
+                {
+                    Id = d.Id,
+                    FileName = d.FileName,
+                    FileSize = d.FileSize,
+                    MimeType = d.MimeType,
+                    Language = d.Language,
+                    PageCount = d.PageCount,
+                    ChunkCount = d.ChunkCount,
+                    UploadedAt = d.UploadedAt,
+                    ProcessedAt = d.ProcessedAt,
+                    Status = d.Status
+                })
+                .ToListAsync();
+        }
+
         public async Task<IReadOnlyList<Document>> GetByStatusAsync(DocumentStatus status)
         {
             return await _context.Documents

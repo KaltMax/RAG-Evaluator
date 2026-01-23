@@ -29,15 +29,15 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      RagEvaluator.API                        │
-│                   (Controllers, Middleware)                  │
+│                      RagEvaluator.API                       │
+│                   (Controllers, Middleware)                 │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                  RagEvaluator.Application                    │
-│            (Business Logic & Orchestration)                  │
-│  Services: RagService, DocumentService, QueryService         │
+│                  RagEvaluator.Application                   │
+│            (Business Logic & Orchestration)                 │
+│  Services: RagService, DocumentService, QueryService        │
 └──────────┬────────────────────────────────┬─────────────────┘
            │                                │
            ↓                                ↓
@@ -92,6 +92,8 @@ RAG-Evaluator/
 │   └── Dockerfile
 │
 ├── RagEvaluator.Application/            # Business Logic & Orchestration
+│   ├── Mappers/
+│   │   └── DocumentMapper.cs            # Document → DTO mapping
 │   ├── Services/
 │   │   ├── Interfaces/
 │   │   │   ├── IRagService.cs
@@ -126,6 +128,7 @@ RAG-Evaluator/
 │   │   │   ├── QueryResponse.cs
 │   │   │   ├── SearchResultDto.cs
 │   │   │   ├── DocumentResponse.cs
+│   │   │   ├── DocumentFileInfo.cs      # File info for downloads
 │   │   │   └── ErrorResponse.cs
 │   │   └── PaginationDto.cs
 │   └── Logger/
@@ -135,6 +138,7 @@ RAG-Evaluator/
 ├── RagEvaluator.Domain/                 # Domain Models & Business Rules
 │   ├── Entities/
 │   │   ├── Document.cs                  # Document aggregate root
+│   │   ├── DocumentSummary.cs           # Lightweight document (for list views)
 │   │   ├── VectorEntry.cs               # Vector storage entity
 │   │   ├── Query.cs                     # User query entity (placeholder)
 │   │   └── ChatHistory.cs               # Conversation history (placeholder)
@@ -280,9 +284,15 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- Entities: `Document`, `VectorEntry`, `Query`, `ChatHistory`
+- Entities: `Document`, `DocumentSummary`, `VectorEntry`, `Query`, `ChatHistory`
 - Value Objects: `DocumentMetadata`, `SearchResult`, `Embedding`
 - Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
+
+**Document Entity Fields**:
+- `Id`, `FileName`, `FilePath`, `FileSize`, `MimeType`
+- `Content` - Full extracted text from PDF (for search/analysis)
+- `Language` - Document language (`en`, `de`)
+- `PageCount`, `ChunkCount`, `UploadedAt`, `ProcessedAt`, `Status`
 
 **Dependencies**: None (pure domain logic)
 
@@ -403,11 +413,13 @@ CREATE TABLE Documents (
     FilePath VARCHAR(500),
     FileSize BIGINT,
     MimeType VARCHAR(100),
+    Content TEXT,                -- Full extracted PDF text
+    Language VARCHAR(50),        -- Document language (en, de)
     PageCount INT,
     ChunkCount INT,
     UploadedAt TIMESTAMP NOT NULL,
     ProcessedAt TIMESTAMP,
-    Status VARCHAR(50), -- Pending, Processing, Completed, Failed
+    Status VARCHAR(50)           -- Pending, Processing, Completed, Failed
 );
 
 -- Queries table (chat history)
@@ -474,19 +486,20 @@ POST /api/documents/upload
 Content-Type: multipart/form-data
 
 file: <PDF file>
-description: "Optional description"
+language: "en" or "de"
 ```
 
 **Upload Document Response**:
 
 ```json
 {
-  "documentId": "123e4567-e89b-12d3-a456-426614174000",
+  "id": "123e4567-e89b-12d3-a456-426614174000",
   "fileName": "document.pdf",
-  "description": "Optional description",
+  "language": "en",
   "pageCount": 15,
   "chunkCount": 38,
-  "uploadedAt": "2025-01-04T12:00:00Z"
+  "uploadedAt": "2025-01-04T12:00:00Z",
+  "status": "Completed"
 }
 ```
 
@@ -671,16 +684,24 @@ Containers communicate via Docker's internal network:
 - [x] Docker Compose orchestration
 - [x] Dependency Inversion with interface-based services
 - [x] Domain Value Objects (DocumentMetadata, SearchResult, etc.)
+- [x] Document content extraction and storage
+- [x] Document language selection (en/de) with validation
+- [x] DTO mapping pattern (Application layer)
+- [x] DocumentSummary projection for optimized list queries
 
 ### In Progress / Planned
 
 - [x] Database persistence (EF Core + PostgreSQL)
   - [x] Document metadata storage
+  - [x] Document content storage
   - [ ] Query history tracking
 - [x] Repository pattern implementations (DocumentRepository)
 - [x] Document API endpoints (list, get, delete, download)
+- [x] React frontend UI components
+  - [x] Multi-file upload (up to 20 files)
+  - [x] Per-file language selection
+  - [x] Document list with language column
 - [ ] Query history API endpoints
-- [ ] React frontend UI components
 - [ ] PostgreSQL vector store (pgvector)
 - [ ] Unit and integration tests
 - [ ] Multi-document querying

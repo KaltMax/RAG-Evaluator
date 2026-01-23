@@ -77,6 +77,14 @@ function DocumentList() {
     );
   };
 
+  const formatLanguage = (lang) => {
+    const languages = {
+      en: 'English',
+      de: 'German',
+    };
+    return languages[lang] || lang || '-';
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center mb-8">
@@ -131,6 +139,9 @@ function DocumentList() {
                     Chunks
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    Language
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -160,6 +171,9 @@ function DocumentList() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
                       {doc.chunkCount}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                      {formatLanguage(doc.language)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       {getStatusBadge(doc.status)}

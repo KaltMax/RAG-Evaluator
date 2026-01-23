@@ -14,13 +14,16 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 
 - **Document Upload** - Upload PDF documents for processing
   - Drag-and-drop interface powered by react-dropzone
+  - Multi-file upload support (up to 20 files at once)
+  - Per-file language selection (English/German)
   - PDF-only validation
   - Real-time upload progress
-  - View processed document metadata (pages, chunks, etc.)
+  - View processed document metadata (pages, chunks, language, etc.)
 
 - **Document List**
   - View all uploaded documents
-  - See metadata like upload date, page count, chunk count, state
+  - See metadata: file name, size, pages, chunks, language, status, upload date
+  - Download documents
   - Delete documents
 
 - **Responsive Navigation**
@@ -140,10 +143,11 @@ src/
 ├── api/                                # API service layer
 │   ├── axiosConfig.js                  # Axios instance configuration
 │   ├── DeleteDocumentService.js        # Document deletion API service
+│   ├── DownloadDocumentService.js      # Document download API service
 │   ├── GetAllDocumentsService.js       # Fetch all documents API service
 │   ├── GetDocumentByIdService.js       # Fetch single document API service
 │   ├── PostQueryService.js             # Query API service
-│   └── UploadDocumentsService.js       # Upload API service
+│   └── UploadDocumentsService.js       # Upload API service (multi-file, with language)
 ├── components/                         # React components
 │   ├── DocumentList.jsx                # Document list page
 │   ├── Header.jsx                      # Top navigation bar
@@ -187,10 +191,13 @@ docker-compose up -d
 
 Brief summary of implemented API services (see `src/api`):
 
-- POST /api/query — send `{ Question, TopK }` → AI answer + sources
-- POST /api/documents/upload — upload PDF (multipart/form-data, field `file`); upload progress supported
-- GET /api/documents — list uploaded documents
-- DELETE /api/documents/{id} — delete a document
-- GET /api/documents/{id} — frontend helper is currently a placeholder
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/query` | Send `{ Question, TopK }` → AI answer + sources |
+| `POST /api/documents/upload` | Upload PDF with language (multipart/form-data: `file`, `language`) |
+| `GET /api/documents` | List all uploaded documents |
+| `GET /api/documents/{id}` | Get document details |
+| `GET /api/documents/{id}/download` | Download document file |
+| `DELETE /api/documents/{id}` | Delete a document |
 
 Axios base URL is controlled by `VITE_API_BASE_URL` (default `/api`). Timeout is 300000 ms (5 min).

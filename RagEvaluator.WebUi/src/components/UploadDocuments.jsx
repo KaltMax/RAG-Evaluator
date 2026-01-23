@@ -5,52 +5,83 @@ import { DocumentArrowUpIcon, DocumentTextIcon, XMarkIcon } from '@heroicons/rea
 import { uploadDocument } from '../api/UploadDocumentsService';
 
 function UploadDocuments() {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState(null);
+  const [uploadResults, setUploadResults] = useState([]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'application/pdf': ['.pdf'],
     },
-    maxFiles: 1,
+    maxFiles: 20,
     onDrop: (acceptedFiles, rejectedFiles) => {
       if (rejectedFiles.length > 0) {
         toast.error('Only PDF files are allowed');
         return;
       }
       if (acceptedFiles.length > 0) {
-        setSelectedFile(acceptedFiles[0]);
-        setUploadResult(null);
+        const newFiles = acceptedFiles.map((file) => ({
+          id: crypto.randomUUID(),
+          file,
+          language: 'en',
+        }));
+        setSelectedFiles((prev) => {
+          const combined = [...prev, ...newFiles];
+          if (combined.length > 20) {
+            toast.warning('Maximum 20 files allowed');
+            return combined.slice(0, 20);
+          }
+          return combined;
+        });
+        setUploadResults([]);
       }
     },
   });
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      toast.error('Please select a file first');
+    if (selectedFiles.length === 0) {
+      toast.error('Please select at least one file');
       return;
     }
 
     setIsUploading(true);
-    try {
-      const result = await uploadDocument(selectedFile);
-      setUploadResult(result);
-      toast.success('Document uploaded and processed successfully!');
+    const results = [];
 
-      // Reset form
-      setSelectedFile(null);
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(error.message || 'Failed to upload document');
-    } finally {
-      setIsUploading(false);
+    for (const { id, file, language } of selectedFiles) {
+      try {
+        const result = await uploadDocument(file, language);
+        results.push({ id, success: true, result });
+      } catch (error) {
+        console.error('Upload error:', error);
+        results.push({ id, success: false, fileName: file.name, error: error.message });
+      }
     }
+
+    setUploadResults(results);
+
+    const successCount = results.filter((r) => r.success).length;
+    const failCount = results.filter((r) => !r.success).length;
+
+    if (failCount === 0) {
+      toast.success(`All ${successCount} document(s) uploaded successfully!`);
+    } else if (successCount === 0) {
+      toast.error(`All ${failCount} document(s) failed to upload`);
+    } else {
+      toast.warning(`${successCount} succeeded, ${failCount} failed`);
+    }
+
+    setSelectedFiles([]);
+    setIsUploading(false);
   };
 
-  const handleRemoveFile = () => {
-    setSelectedFile(null);
-    setUploadResult(null);
+  const handleRemoveFile = (id) => {
+    setSelectedFiles((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const handleLanguageChange = (id, language) => {
+    setSelectedFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, language } : f))
+    );
   };
 
   const formatFileSize = (bytes) => {
@@ -66,8 +97,8 @@ function UploadDocuments() {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Upload Document</h1>
-        <p className="text-gray-400">Upload PDF documents for RAG processing</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Upload Documents</h1>
+        <p className="text-gray-400">Upload PDF documents for RAG processing (max 20 files)</p>
       </div>
 
       {/* Dropzone */}
@@ -84,44 +115,82 @@ function UploadDocuments() {
           <DocumentArrowUpIcon className={`w-16 h-16 mx-auto mb-4 transition-colors ${isDragActive ? 'text-blue-400' : 'text-gray-400'}`} />
           <div className="min-h-[56px] flex flex-col justify-center">
             {isDragActive ? (
-              <p className="text-lg text-blue-400">Drop the PDF file here...</p>
+              <p className="text-lg text-blue-400">Drop the PDF files here...</p>
             ) : (
               <>
                 <p className="text-lg text-gray-300 mb-2">
-                  Drag and drop a PDF file here, or click to select
+                  Drag and drop PDF files here, or click to select
                 </p>
-                <p className="text-sm text-gray-500">Only PDF files are supported</p>
+                <p className="text-sm text-gray-500">Only PDF files are supported (max 20 files)</p>
               </>
             )}
           </div>
         </div>
 
-        {/* Selected File Info */}
-        {selectedFile && (
-          <div className="mt-6 bg-[#1F1F1F] rounded-lg p-4 border border-gray-700">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3 flex-1">
-                <DocumentTextIcon className="w-8 h-8 text-blue-400 flex-shrink-0 mt-1" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">{selectedFile.name}</p>
-                  <p className="text-sm text-gray-400">
-                    {formatFileSize(selectedFile.size)} • PDF Document
-                  </p>
+        {/* Selected Files List */}
+        {selectedFiles.length > 0 && (
+          <div className="mt-6 space-y-4">
+            <p className="text-gray-300 font-medium">
+              Selected Files ({selectedFiles.length})
+            </p>
+            {selectedFiles.map(({ id, file, language }) => (
+              <div key={id} className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <DocumentTextIcon className="w-8 h-8 text-blue-400 flex-shrink-0 mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">{file.name}</p>
+                      <p className="text-sm text-gray-400">
+                        {formatFileSize(file.size)} • PDF Document
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveFile(id)}
+                    className="text-gray-400 hover:text-red-400 transition-colors ml-4"
+                    disabled={isUploading}
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Language Selection for this file */}
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <div className="flex items-center gap-6">
+                    <span className="text-gray-400 text-sm">Language:</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`language-${id}`}
+                        value="en"
+                        checked={language === 'en'}
+                        onChange={(e) => handleLanguageChange(id, e.target.value)}
+                        disabled={isUploading}
+                        className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
+                      />
+                      <span className="text-gray-200 text-sm">English</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`language-${id}`}
+                        value="de"
+                        checked={language === 'de'}
+                        onChange={(e) => handleLanguageChange(id, e.target.value)}
+                        disabled={isUploading}
+                        className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
+                      />
+                      <span className="text-gray-200 text-sm">German</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={handleRemoveFile}
-                className="text-gray-400 hover:text-red-400 transition-colors ml-4"
-                disabled={isUploading}
-              >
-                <XMarkIcon className="w-6 h-6" />
-              </button>
-            </div>
+            ))}
           </div>
         )}
 
         {/* Upload Button */}
-        {selectedFile && (
+        {selectedFiles.length > 0 && (
           <div className="mt-6">
             <button
               onClick={handleUpload}
@@ -136,7 +205,7 @@ function UploadDocuments() {
               ) : (
                 <>
                   <DocumentArrowUpIcon className="w-5 h-5" />
-                  <span>Upload Document</span>
+                  <span>Upload {selectedFiles.length} Document{selectedFiles.length > 1 ? 's' : ''}</span>
                 </>
               )}
             </button>
@@ -144,31 +213,51 @@ function UploadDocuments() {
         )}
       </div>
 
-      {/* Upload Result */}
-      {uploadResult && (
+      {/* Upload Results */}
+      {uploadResults.length > 0 && (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Upload Successful</h2>
-          <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Document ID:</span>
-              <span className="text-gray-200 font-mono text-sm">{uploadResult.documentId}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">File Name:</span>
-              <span className="text-gray-200">{uploadResult.fileName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Pages:</span>
-              <span className="text-gray-200">{uploadResult.pageCount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Chunks Created:</span>
-              <span className="text-gray-200">{uploadResult.chunkCount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Uploaded At:</span>
-              <span className="text-gray-200">{formatDate(uploadResult.uploadedAt)}</span>
-            </div>
+          <h2 className="text-xl font-semibold text-white mb-4">Upload Results</h2>
+          <div className="space-y-4">
+            {uploadResults.map((result) => (
+              <div
+                key={result.success ? result.result.id : result.id}
+                className={`bg-[#1F1F1F] rounded-lg p-4 border ${
+                  result.success ? 'border-green-700' : 'border-red-700'
+                }`}
+              >
+                {result.success ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-green-400 font-medium">Success</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <span className="text-gray-400">Document ID:</span>
+                      <span className="text-gray-200 font-mono text-xs">{result.result.id}</span>
+                      <span className="text-gray-400">File Name:</span>
+                      <span className="text-gray-200 truncate">{result.result.fileName}</span>
+                      <span className="text-gray-400">Language:</span>
+                      <span className="text-gray-200">{result.result.language === 'en' ? 'English' : 'German'}</span>
+                      <span className="text-gray-400">Pages:</span>
+                      <span className="text-gray-200">{result.result.pageCount}</span>
+                      <span className="text-gray-400">Chunks:</span>
+                      <span className="text-gray-200">{result.result.chunkCount}</span>
+                      <span className="text-gray-400">Uploaded At:</span>
+                      <span className="text-gray-200">{formatDate(result.result.uploadedAt)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      <span className="text-red-400 font-medium">Failed</span>
+                    </div>
+                    <p className="text-gray-300 text-sm">{result.fileName}</p>
+                    <p className="text-red-400 text-sm mt-1">{result.error}</p>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

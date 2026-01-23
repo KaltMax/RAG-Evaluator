@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
@@ -25,29 +26,29 @@ namespace RagEvaluator.API.Controllers
         /// <summary>
         /// Uploads a PDF document for RAG processing
         /// </summary>
-        /// <param name="file">The PDF file to upload</param>
+        /// <param name="request">The upload request containing file and language</param>
         [HttpPost("upload")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadDocumentAsync(IFormFile file)
+        public async Task<IActionResult> UploadDocumentAsync([FromForm] UploadDocumentRequest request)
         {
             try
             {
-                if (file.Length == 0)
+                if (request.File.Length == 0)
                 {
                     return BadRequest("No file uploaded.");
                 }
 
-                if (!file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                if (!request.File.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
                     return BadRequest("Only PDF files are supported.");
                 }
 
-                _logger.LogInformation("Uploading document: {FileName}", file.FileName);
+                _logger.LogInformation("Uploading document: {FileName}, Language: {Language}", request.File.FileName, request.Language);
 
-                using var stream = file.OpenReadStream();
-                var result = await _ragService.ProcessDocumentAsync(stream, file.FileName);
+                using var stream = request.File.OpenReadStream();
+                var result = await _ragService.ProcessDocumentAsync(stream, request.File.FileName, request.Language);
 
-                _logger.LogInformation("Document processed successfully: {DocumentId}", result.DocumentId);
+                _logger.LogInformation("Document processed successfully: {DocumentId}", result.Id);
 
                 return Ok(result);
             }
@@ -98,14 +99,14 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("{id}/download")]
         public async Task<IActionResult> DownloadDocumentAsync(Guid id)
         {
-            var document = await _documentService.GetByIdAsync(id);
-            if (document is null || document.FilePath is null)
+            var fileInfo = await _documentService.GetDocumentFileInfoAsync(id);
+            if (fileInfo is null)
             {
                 return NotFound();
             }
 
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(document.FilePath);
-            return File(fileBytes, document.MimeType ?? "application/pdf", document.FileName);
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(fileInfo.FilePath);
+            return File(fileBytes, fileInfo.MimeType, fileInfo.FileName);
         }
 
         [HttpGet("{id}/chunks")]

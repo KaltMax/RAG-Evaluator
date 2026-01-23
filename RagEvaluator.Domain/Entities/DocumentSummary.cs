@@ -1,12 +1,12 @@
-﻿namespace RagEvaluator.Contract.Dtos.Responses
+namespace RagEvaluator.Domain.Entities
 {
     /// <summary>
-    /// Represents the metadata and status information for a document that has been uploaded.
+    /// Lightweight document representation for list views, excluding content and file path.
     /// </summary>
-    public class DocumentResponse
+    public class DocumentSummary
     {
-        public required Guid Id { get; set; }
-        public required string FileName { get; set; }
+        public Guid Id { get; set; }
+        public string FileName { get; set; } = string.Empty;
         public long? FileSize { get; set; }
         public string? MimeType { get; set; }
         public string? Language { get; set; }
@@ -14,6 +14,6 @@
         public int ChunkCount { get; set; }
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
-        public string Status { get; set; } = string.Empty;
+        public DocumentStatus Status { get; set; }
     }
 }

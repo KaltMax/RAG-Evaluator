@@ -22,6 +22,11 @@ namespace RagEvaluator.Infrastructure.Data.Configurations
             builder.Property(d => d.MimeType)
                 .HasMaxLength(100);
 
+            builder.Property(d => d.Content);
+
+            builder.Property(d => d.Language)
+                .HasMaxLength(50);
+
             builder.Property(d => d.FileSize);
 
             builder.Property(d => d.PageCount);
