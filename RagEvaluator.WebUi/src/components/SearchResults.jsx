@@ -59,14 +59,14 @@ function SearchResults({ results }) {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-400">Source {index + 1}</span>
-                    {source.metadata?.fileName && (
+                    {source.fileName && (
                       <span className="text-xs text-gray-500">
-                        ({source.metadata.fileName})
+                        ({source.fileName})
                       </span>
                     )}
-                    {source.metadata?.documentId && (
+                    {source.documentId && (
                       <button
-                        onClick={() => handleDownload(source.metadata.documentId, source.metadata.fileName)}
+                        onClick={() => handleDownload(source.documentId, source.fileName)}
                         className="text-gray-400 hover:text-blue-400 transition-colors"
                         title="Download source document"
                       >
@@ -82,15 +82,20 @@ function SearchResults({ results }) {
                   </div>
                 </div>
                 <p className="text-gray-300 text-sm leading-relaxed">{source.text}</p>
-                {source.metadata && Object.keys(source.metadata).length > 0 && (
+                {(source.chunkingStrategy || source.embeddingModel) && (
                   <div className="mt-3 pt-3 border-t border-gray-700">
                     <details className="text-xs text-gray-500">
                       <summary className="cursor-pointer hover:text-gray-400">
-                        Metadata
+                        Details
                       </summary>
-                      <pre className="mt-2 bg-[#0D0D0D] p-2 rounded overflow-x-auto">
-                        {JSON.stringify(source.metadata, null, 2)}
-                      </pre>
+                      <div className="mt-2 space-y-1">
+                        {source.chunkingStrategy && (
+                          <p><span className="text-gray-400">Chunking Strategy:</span> {source.chunkingStrategy}</p>
+                        )}
+                        {source.embeddingModel && (
+                          <p><span className="text-gray-400">Embedding Model:</span> {source.embeddingModel}</p>
+                        )}
+                      </div>
                     </details>
                   </div>
                 )}
@@ -113,7 +118,10 @@ SearchResults.propTypes = {
                 id: PropTypes.string,
                 text: PropTypes.string.isRequired,
                 similarity: PropTypes.number.isRequired,
-                metadata: PropTypes.object,
+                documentId: PropTypes.string,
+                fileName: PropTypes.string,
+                chunkingStrategy: PropTypes.string,
+                embeddingModel: PropTypes.string,
             })
         ),
         timestamp: PropTypes.string.isRequired,

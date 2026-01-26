@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Domain.Entities;
 
-namespace RagEvaluator.Infrastructure.Data
+namespace RagEvaluator.Infrastructure.Data.Repositories
 {
     public class DocumentRepository : IDocumentRepository
     {

@@ -16,17 +16,16 @@ namespace RagEvaluator.Application.Services
         private readonly RagConfiguration _config;
         private readonly IPdfLoader _pdfLoader;
         private readonly ITextChunker _textChunker;
-        private readonly IVectorStore _vectorStore;
+        private readonly IDocumentChunkRepository _documentChunkRepository;
         private readonly IEmbeddingService _embeddingService;
         private readonly IChatService _chatService;
         private readonly IDocumentService _documentService;
-        private int _nextChunkId;
 
         public RagService(
             RagConfiguration config,
             IPdfLoader pdfLoader,
             ITextChunker textChunker,
-            IVectorStore vectorStore,
+            IDocumentChunkRepository documentChunkRepository,
             IEmbeddingService embeddingService,
             IChatService chatService,
             IDocumentService documentService)
@@ -34,7 +33,7 @@ namespace RagEvaluator.Application.Services
             _config = config;
             _pdfLoader = pdfLoader;
             _textChunker = textChunker;
-            _vectorStore = vectorStore;
+            _documentChunkRepository = documentChunkRepository;
             _embeddingService = embeddingService;
             _chatService = chatService;
             _documentService = documentService;
@@ -63,20 +62,21 @@ namespace RagEvaluator.Application.Services
                 var content = string.Join("\n\n", pages);
 
                 // Generate embeddings and store chunks
+                var documentChunks = new List<DocumentChunk>();
                 foreach (var chunk in chunks)
                 {
                     var embedding = await _embeddingService.GenerateEmbeddingAsync(chunk);
-                    _vectorStore.AddEntry(
-                        _nextChunkId++,
-                        chunk,
-                        embedding,
-                        new Dictionary<string, object>
-                        {
-                            ["documentId"] = document.Id.ToString(),
-                            ["fileName"] = fileName
-                        }
-                    );
+                    documentChunks.Add(new DocumentChunk
+                    {
+                        Id = Guid.NewGuid(),
+                        Text = chunk,
+                        Embedding = embedding,
+                        ChunkingStrategy = "fixed-size", // TODO: Make configurable
+                        EmbeddingModel = _config.EmbeddingModel,
+                        DocumentId = document.Id
+                    });
                 }
+                await _documentChunkRepository.AddRangeAsync(documentChunks);
 
                 // Update status to Completed with page count, chunk count, and content
                 await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Completed, pages.Count, chunks.Count, content);
@@ -112,8 +112,8 @@ namespace RagEvaluator.Application.Services
             // Generate embedding for the question
             var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync(question);
 
-            // Search for relevant documents
-            var searchResults = _vectorStore.Search(questionEmbedding, topK);
+            // Search for relevant document chunks
+            var searchResults = await _documentChunkRepository.SearchAsync(questionEmbedding, topK);
 
             if (searchResults.Count == 0)
             {
@@ -139,7 +139,10 @@ namespace RagEvaluator.Application.Services
                 Id = r.Id,
                 Text = r.Text,
                 Similarity = r.Similarity,
-                Metadata = r.Metadata
+                DocumentId = r.DocumentId,
+                FileName = r.FileName,
+                ChunkingStrategy = r.ChunkingStrategy,
+                EmbeddingModel = r.EmbeddingModel
             }).ToList();
 
             return new QueryResponse

@@ -7,6 +7,7 @@ using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Logger;
 using RagEvaluator.Infrastructure.Data;
+using RagEvaluator.Infrastructure.Data.Repositories;
 using RagEvaluator.Infrastructure.Services;
 
 namespace RagEvaluator.API
@@ -32,17 +33,19 @@ namespace RagEvaluator.API
             // Register logger wrapper
             builder.Services.AddSingleton(typeof(ILoggerWrapper<>), typeof(LoggerWrapper<>));
 
-            // Register DbContext with PostgreSQL
+            // Register DbContext with PostgreSQL and pgvector support
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    o => o.UseVector()));
 
             // Register repositories
             builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+            builder.Services.AddScoped<IDocumentChunkRepository, DocumentChunkRepository>();
 
             // Register Infrastructure services (implementations)
             builder.Services.AddSingleton<IPdfLoader, PdfLoader>();
             builder.Services.AddSingleton<ITextChunker, TextChunker>();
-            builder.Services.AddSingleton<IVectorStore, SimpleVectorStore>();
             builder.Services.AddSingleton<IEmbeddingService, OllamaEmbeddingService>();
             builder.Services.AddSingleton<IChatService, OllamaChatService>();
             builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();

@@ -2,13 +2,16 @@
 {
     /// <summary>
     /// Represents the result of a search operation, including the matched item's identifier, text, similarity score,
-    /// and optional metadata.
+    /// and document metadata.
     /// </summary>
     public class SearchResultDto
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public required string Text { get; set; }
-        public float Similarity { get; set; }
-        public Dictionary<string, object>? Metadata { get; set; }
+        public double Similarity { get; set; }
+        public Guid DocumentId { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string ChunkingStrategy { get; set; } = string.Empty;
+        public string EmbeddingModel { get; set; } = string.Empty;
     }
 }

@@ -11,10 +11,12 @@ namespace RagEvaluator.Infrastructure.Data
         }
 
         public DbSet<Document> Documents => Set<Document>();
+        public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.HasPostgresExtension("vector");
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
     }

@@ -86,7 +86,7 @@ The application uses 4 Docker containers:
 |---------|-------|------|---------|
 | **ragevaluator-api** | Custom (.NET 10) | 5000 | REST API backend |
 | **ragevaluator-web-ui** | Custom (Nginx + React) | 3000 | Frontend SPA |
-| **postgres** | postgres:18 | 5432 | Database |
+| **postgres** | pgvector/pgvector:0.8.1-pg18 | 5432 | Database with vector support |
 | **ollama** | ollama/ollama:0.13.5 | 11434 | Local LLM service |
 
 ## Development
@@ -139,7 +139,7 @@ Once running, the API is available at `http://localhost:5000`:
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering. Document management endpoints (list, get, delete, download) are fully implemented. The frontend supports multi-file upload (up to 20 files) with per-file language selection. Query history endpoints are scaffolded but not yet implemented.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. The frontend supports multi-file upload (up to 20 files) with per-file language selection. Query history endpoints are scaffolded but not yet implemented.
 
 ## Using the API
 
@@ -186,20 +186,20 @@ curl -X 'POST' \
 ```
 
 Response:
-```j
+```json
 {
   "queryId": "guid",
   "question": "What is the main topic of the document?",
   "answer": "The document discusses...",
   "sources": [
     {
-      "id": 0,
+      "id": "guid",
       "text": "Relevant chunk text...",
       "similarity": 0.89,
-      "metadata": {
-        "documentId": "guid",
-        "fileName": "your-document.pdf"
-      }
+      "documentId": "guid",
+      "fileName": "your-document.pdf",
+      "chunkingStrategy": "fixed-size",
+      "embeddingModel": "nomic-embed-text"
     }
   ],
   "timestamp": "2025-01-04T12:05:00Z"
@@ -217,7 +217,7 @@ Response:
   - Chat Model: `qwen2.5:14b`
 - **PDF Processing**: PdfPig 0.1.9
 - **Database**: PostgreSQL 18 with Entity Framework Core 10.0
-- **Vector Store**: In-memory (SimpleVectorStore) with cosine similarity
+- **Vector Store**: PostgreSQL with pgvector extension (cosine similarity search)
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore)
 
 ### Frontend

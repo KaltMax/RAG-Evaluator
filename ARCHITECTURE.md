@@ -62,8 +62,8 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
                                 │ • LocalFileStorageService  │
                                 │ • PdfLoader                │
                                 │ • TextChunker              │
-                                │ • SimpleVectorStore        │
                                 │ • DocumentRepository       │
+                                │ • DocumentChunkRepository  │
                                 └────────────────────────────┘
 ```
 
@@ -116,7 +116,7 @@ RAG-Evaluator/
 │   │   │   └── ITextChunker.cs          # Text chunking interface
 │   │   └── Data/
 │   │       ├── IDocumentRepository.cs   # Document repository interface
-│   │       └── IVectorStore.cs          # Vector store interface
+│   │       └── IDocumentChunkRepository.cs # Vector chunk repository interface
 │   ├── Configurations/
 │   │   ├── FileStorageConfiguration.cs  # File storage settings
 │   │   └── RagConfiguration.cs
@@ -139,33 +139,30 @@ RAG-Evaluator/
 │   ├── Entities/
 │   │   ├── Document.cs                  # Document aggregate root
 │   │   ├── DocumentSummary.cs           # Lightweight document (for list views)
-│   │   ├── VectorEntry.cs               # Vector storage entity
-│   │   ├── Query.cs                     # User query entity (placeholder)
-│   │   └── ChatHistory.cs               # Conversation history (placeholder)
+│   │   ├── DocumentChunk.cs             # Text chunk with vector embedding
+│   │   └── Query.cs                     # User query entity (placeholder)
 │   ├── ValueObjects/
-│   │   ├── DocumentMetadata.cs
-│   │   ├── SearchResult.cs
-│   │   └── Embedding.cs
+│   │   └── SearchResult.cs              # Search result with similarity score
 │   └── Exceptions/
 │       ├── DocumentNotFoundException.cs
 │       └── VectorStoreException.cs
 │
 ├── RagEvaluator.Infrastructure/         # Data Access & External Services
 │   ├── Data/
-│   │   ├── ApplicationDbContext.cs      # EF Core DbContext
+│   │   ├── ApplicationDbContext.cs      # EF Core DbContext with pgvector
 │   │   ├── DocumentRepository.cs        # Document repository implementation
+│   │   ├── Repositories/
+│   │   │   └── DocumentChunkRepository.cs # Vector chunk repository with pgvector
 │   │   ├── Configurations/
 │   │   │   ├── DocumentConfiguration.cs
-│   │   │   └── QueryConfiguration.cs    # (placeholder)
+│   │   │   └── DocumentChunkConfiguration.cs # pgvector mapping
 │   │   └── Migrations/
 │   ├── Services/
 │   │   ├── LocalFileStorageService.cs   # Local file system storage
 │   │   ├── PdfLoader.cs                 # PDF text extraction (PdfPig)
 │   │   ├── TextChunker.cs               # Text splitting
-│   │   ├── SimpleVectorStore.cs         # In-memory vector store
 │   │   ├── OllamaChatService.cs         # Ollama chat service
-│   │   ├── OllamaEmbeddingService.cs    # Ollama embedding service
-│   │   └── PgVectorStore.cs             # PostgreSQL vector store (placeholder)
+│   │   └── OllamaEmbeddingService.cs    # Ollama embedding service
 │   ├── External/
 │   │   └── OllamaClient.cs              # Ollama API client (placeholder)
 │   └── Extensions/
@@ -284,9 +281,17 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- Entities: `Document`, `DocumentSummary`, `VectorEntry`, `Query`, `ChatHistory`
-- Value Objects: `DocumentMetadata`, `SearchResult`, `Embedding`
+- Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`
+- Value Objects: `SearchResult`
 - Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
+
+**DocumentChunk Entity Fields**:
+- `Id` - Unique identifier (GUID)
+- `Text` - The text content of the chunk
+- `Embedding` - Vector embedding as `float[]` (converted to pgvector in Infrastructure)
+- `ChunkingStrategy` - Strategy used to create this chunk (e.g., "fixed-size")
+- `EmbeddingModel` - Model used to generate the embedding (e.g., "nomic-embed-text")
+- `DocumentId` - Foreign key to parent Document
 
 **Document Entity Fields**:
 - `Id`, `FileName`, `FilePath`, `FileSize`, `MimeType`
@@ -322,10 +327,14 @@ RAG-Evaluator/
 - `LocalFileStorageService` - Local file system storage with configurable directory
 - `PdfLoader` - PDF text extraction using PdfPig
 - `TextChunker` - Text chunking with configurable size and overlap
-- `SimpleVectorStore` - In-memory vector store with cosine similarity
+- `DocumentChunkRepository` - PostgreSQL vector store with pgvector for similarity search
 - `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel
 - `OllamaChatService` - Ollama chat completion via Semantic Kernel
-- `PgVectorStore` - PostgreSQL vector store (placeholder for future implementation)
+
+**Vector Storage Architecture**:
+- Domain layer uses `float[]` for embeddings (no external dependencies)
+- Infrastructure layer converts to pgvector `Vector` type via EF Core value converter
+- Similarity search uses raw SQL with pgvector's cosine distance operator (`<=>`)
 
 **Dependencies**: → Domain, Application
 
@@ -361,9 +370,10 @@ RAG-Evaluator/
       → 4. TextChunker.SplitDocuments() - Split into chunks (1000 chars, 200 overlap)
       → 5. For each chunk:
          → 6. OllamaEmbeddingService.GenerateEmbeddingAsync() - Create vector
-         → 7. SimpleVectorStore.AddEntry() - Store chunk + embedding
-      → 8. Store DocumentMetadata (Domain Value Object)
-   → 9. Return DocumentResponse (DTO)
+         → 7. Create DocumentChunk entity with embedding, strategy, model info
+      → 8. DocumentChunkRepository.AddRangeAsync() - Persist all chunks to PostgreSQL
+      → 9. Update Document status to Completed
+   → 10. Return DocumentResponse (DTO)
 ```
 
 ### Query Processing Pipeline
@@ -372,30 +382,34 @@ RAG-Evaluator/
 1. Question Submission (Controller)
    → 2. RagService.AskQuestionAsync() (Application Layer)
       → 3. OllamaEmbeddingService.GenerateEmbeddingAsync() - Embed question
-      → 4. SimpleVectorStore.Search() - Find top K similar chunks (cosine similarity)
-      → 5. Build context from retrieved chunks
-      → 6. OllamaChatService.GenerateResponseAsync() - Generate answer with context
-   → 7. Return QueryResponse with answer + sources (DTOs)
+      → 4. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
+         (uses pgvector cosine distance across ALL documents)
+      → 5. Fetch document file names for matched chunks
+      → 6. Build context from retrieved chunks
+      → 7. OllamaChatService.GenerateResponseAsync() - Generate answer with context
+   → 8. Return QueryResponse with answer + sources (includes fileName, chunkingStrategy, embeddingModel)
 ```
 
 ### Dependency Inversion in Action
 
 The Contract layer defines **what** needs to be done (interface abstractions):
 - Service interfaces: `IChatService`, `IEmbeddingService`, `IFileStorageService`, `IPdfLoader`, `ITextChunker`
-- Data interfaces: `IVectorStore`, `IDocumentRepository`
+- Data interfaces: `IDocumentRepository`, `IDocumentChunkRepository`
 
 The Infrastructure layer defines **how** it's done (concrete implementations):
-- `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfLoader`, `TextChunker`, `SimpleVectorStore`
+- `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfLoader`, `TextChunker`
+- `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration)
 
 The Application layer consumes these abstractions:
-- `RagService` uses IChatService, IEmbeddingService, IVectorStore, etc.
+- `RagService` uses IChatService, IEmbeddingService, IDocumentChunkRepository, etc.
 - No direct dependency on Infrastructure implementations
 
 This allows:
 - Testing Application layer with mocks
-- Swapping implementations (e.g., SimpleVectorStore → PgVectorStore)
+- Swapping implementations (e.g., PostgreSQL → another vector database)
 - Framework independence
 - Centralized interface management in the Contract layer
+- Domain layer remains free of infrastructure dependencies (uses `float[]` for embeddings)
 
 ## Database Design
 
@@ -422,7 +436,18 @@ CREATE TABLE Documents (
     Status VARCHAR(50)           -- Pending, Processing, Completed, Failed
 );
 
--- Queries table (chat history)
+-- DocumentChunks table (vector embeddings with pgvector)
+CREATE TABLE DocumentChunks (
+    Id UUID PRIMARY KEY,
+    Text TEXT NOT NULL,
+    Embedding VECTOR NOT NULL,   -- pgvector type for similarity search
+    ChunkingStrategy VARCHAR(100) NOT NULL,
+    EmbeddingModel VARCHAR(100) NOT NULL,
+    DocumentId UUID NOT NULL REFERENCES Documents(Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_DocumentChunks_DocumentId ON DocumentChunks(DocumentId);
+
+-- Queries table (chat history - placeholder)
 CREATE TABLE Queries (
     Id UUID PRIMARY KEY,
     DocumentId UUID REFERENCES Documents(Id),
@@ -433,24 +458,17 @@ CREATE TABLE Queries (
     ResponseTimeMs INT,
     UserId UUID
 );
-
--- Query Sources (many-to-many)
-CREATE TABLE QuerySources (
-    QueryId UUID REFERENCES Queries(Id),
-    ChunkId VARCHAR(100),
-    Similarity FLOAT,
-    TextPreview TEXT,
-    PRIMARY KEY (QueryId, ChunkId)
-);
 ```
 
-### Vector Store Options
+### Vector Store Implementation
 
-**PostgreSQL with pgvector**
+**PostgreSQL with pgvector** (Current Implementation)
 
 - SQL + vector search in one database
-- ACID compliance
-- Good for moderate scale
+- ACID compliance with cascade deletes
+- Cosine similarity search via `<=>` operator
+- EF Core integration with value converter (`float[]` ↔ `Vector`)
+- Supports multiple documents with cross-document similarity search
 
 ## API Design
 
@@ -521,13 +539,13 @@ language: "en" or "de"
   "answer": "The main conclusion is...",
   "sources": [
     {
-      "id": 0,
+      "id": "789e0123-e89b-12d3-a456-426614174002",
       "text": "...relevant text chunk...",
       "similarity": 0.892,
-      "metadata": {
-        "documentId": "123e4567-e89b-12d3-a456-426614174000",
-        "fileName": "document.pdf"
-      }
+      "documentId": "123e4567-e89b-12d3-a456-426614174000",
+      "fileName": "document.pdf",
+      "chunkingStrategy": "fixed-size",
+      "embeddingModel": "nomic-embed-text"
     }
   ],
   "timestamp": "2025-01-04T12:05:00Z"
@@ -545,10 +563,10 @@ language: "en" or "de"
   - **Embedding Model**: nomic-embed-text
   - **Chat Model**: qwen2.5:14b
 - **PDF Processing**: PdfPig 0.1.9
-- **Vector Store**:
-  - In-memory (SimpleVectorStore) - Current implementation with cosine similarity
-  - PostgreSQL with pgvector - Planned for persistence
-- **Database**: PostgreSQL 18
+- **Vector Store**: PostgreSQL with pgvector extension
+  - Persistent storage with cosine similarity search
+  - EF Core integration via Pgvector.EntityFrameworkCore
+- **Database**: PostgreSQL 18 (pgvector/pgvector:0.8.1-pg18)
 - **ORM**: Entity Framework Core 10.0 with Npgsql
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore 9.0.6)
 - **Testing**: xUnit, FluentAssertions, NSubstitute (planned)
@@ -578,9 +596,9 @@ The application uses 4 Docker containers orchestrated via Docker Compose:
 
 | Container | Image | Port Mapping | Purpose |
 |-----------|-------|--------------|---------|
-| ragevaluator-api | Custom (.NET 9) | 5000:8080 | ASP.NET Core Web API |
+| ragevaluator-api | Custom (.NET 10) | 5000:8080 | ASP.NET Core Web API |
 | ragevaluator-web-ui | Custom (Nginx + React) | 3000:80 | React frontend |
-| postgres | postgres:18 | 5432:5432 | PostgreSQL database |
+| postgres | pgvector/pgvector:0.8.1-pg18 | 5432:5432 | PostgreSQL with pgvector |
 | ollama | ollama/ollama:0.13.5 | 11434:11434 | Local LLM service |
 
 ### Ollama Initialization
@@ -677,36 +695,37 @@ Containers communicate via Docker's internal network:
 - [x] Document download endpoint
 - [x] PDF text extraction with PdfPig
 - [x] Text chunking with configurable size/overlap
-- [x] In-memory vector store with cosine similarity
+- [x] PostgreSQL vector store with pgvector (cosine similarity search)
 - [x] Ollama integration via Microsoft Semantic Kernel
 - [x] Automatic model downloading on first startup
 - [x] Swagger UI for API testing
 - [x] Docker Compose orchestration
 - [x] Dependency Inversion with interface-based services
-- [x] Domain Value Objects (DocumentMetadata, SearchResult, etc.)
+- [x] Domain Value Objects (SearchResult with fileName, chunkingStrategy, embeddingModel)
 - [x] Document content extraction and storage
 - [x] Document language selection (en/de) with validation
 - [x] DTO mapping pattern (Application layer)
 - [x] DocumentSummary projection for optimized list queries
-
-### In Progress / Planned
-
 - [x] Database persistence (EF Core + PostgreSQL)
   - [x] Document metadata storage
   - [x] Document content storage
-  - [ ] Query history tracking
-- [x] Repository pattern implementations (DocumentRepository)
+  - [x] DocumentChunk persistence with pgvector
+- [x] Repository pattern implementations (DocumentRepository, DocumentChunkRepository)
 - [x] Document API endpoints (list, get, delete, download)
 - [x] React frontend UI components
   - [x] Multi-file upload (up to 20 files)
   - [x] Per-file language selection
   - [x] Document list with language column
-- [ ] Query history API endpoints
-- [ ] PostgreSQL vector store (pgvector)
+  - [x] Search results with source details (chunking strategy, embedding model)
+- [x] Multi-document querying (similarity search across all documents)
+
+### In Progress / Planned
+
+- [ ] Query history tracking and API endpoints
 - [ ] Unit and integration tests
-- [ ] Multi-document querying
-- [ ] Real-time streaming responses (SignalR)
 - [ ] Analytics and metrics Dashboard
+- [ ] Configurable chunking strategies (for RAG evaluation)
+- [ ] Multiple embedding model support (for RAG evaluation)
 
 ## Resources
 
