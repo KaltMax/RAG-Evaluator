@@ -2,6 +2,9 @@
 
 namespace RagEvaluator.Application.Services.Interfaces
 {
+    /// <summary>
+    /// Core service for RAG operations: document processing and question answering.
+    /// </summary>
     public interface IRagService
     {
         Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string language);

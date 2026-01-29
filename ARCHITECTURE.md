@@ -86,8 +86,6 @@ RAG-Evaluator/
 │   │   └── ExceptionHandlingMiddleware.cs
 │   ├── Filters/
 │   │   └── ValidationFilter.cs
-│   ├── Extensions/
-│   │   └── ServiceCollectionExtension.cs
 │   ├── Program.cs
 │   ├── appsettings.json
 │   └── Dockerfile
@@ -105,9 +103,7 @@ RAG-Evaluator/
 │   │   ├── DocumentService.cs           # Document management
 │   │   ├── QueryService.cs              # Query handling (placeholder)
 │   │   └── MetricsService.cs            # Cosine similarity, MRR, Precision@K, etc.
-│   ├── Validators/
-│   │   └── AskQuestionValidator.cs
-│   └── Extensions/
+│   └── Validators/
 │
 ├── RagEvaluator.Contract/               # DTOs, Abstractions & Shared Contracts
 │   ├── Abstractions/
@@ -161,16 +157,12 @@ RAG-Evaluator/
 │   │   │   ├── DocumentConfiguration.cs
 │   │   │   └── DocumentChunkConfiguration.cs # pgvector mapping
 │   │   └── Migrations/
-│   ├── Services/
-│   │   ├── LocalFileStorageService.cs   # Local file system storage
-│   │   ├── PdfLoader.cs                 # PDF text extraction (PdfPig)
-│   │   ├── TextChunker.cs               # Text splitting
-│   │   ├── OllamaChatService.cs         # Ollama chat service
-│   │   └── OllamaEmbeddingService.cs    # Ollama embedding service
-│   ├── External/
-│   │   └── OllamaClient.cs              # Ollama API client (placeholder)
-│   └── Extensions/
-│       └── InfrastructureExtensions.cs
+│   └── Services/
+│       ├── LocalFileStorageService.cs   # Local file system storage
+│       ├── PdfLoader.cs                 # PDF text extraction (PdfPig)
+│       ├── TextChunker.cs               # Text splitting
+│       ├── OllamaChatService.cs         # Ollama chat service
+│       └── OllamaEmbeddingService.cs    # Ollama embedding service
 │
 ├── RagEvaluator.WebUi/                  # React Frontend (Vite)
 │   ├── src/

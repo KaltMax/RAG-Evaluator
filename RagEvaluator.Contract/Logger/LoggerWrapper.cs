@@ -6,7 +6,6 @@ namespace RagEvaluator.Contract.Logger
     /// Provides a strongly-typed wrapper for logging messages using a specified category type. Enables structured
     /// logging at various severity levels for the given category.
     /// </summary>
-    /// <typeparam name="TCategory">The type used to categorize log messages. </typeparam>
     public sealed class LoggerWrapper<TCategory> : ILoggerWrapper<TCategory>
     {
         private readonly ILogger<TCategory> _logger;

@@ -3,6 +3,9 @@ using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Contract.Abstractions.Data
 {
+    /// <summary>
+    /// Repository for document chunks with vector embeddings and similarity search.
+    /// </summary>
     public interface IDocumentChunkRepository
     {
         Task<DocumentChunk?> GetByIdAsync(Guid id);

@@ -4,6 +4,9 @@ using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Infrastructure.Data.Repositories
 {
+    /// <summary>
+    /// EF Core implementation of document repository using PostgreSQL.
+    /// </summary>
     public class DocumentRepository : IDocumentRepository
     {
         private readonly ApplicationDbContext _context;

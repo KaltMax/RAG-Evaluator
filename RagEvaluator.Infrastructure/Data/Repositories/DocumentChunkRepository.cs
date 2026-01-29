@@ -6,6 +6,9 @@ using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Infrastructure.Data.Repositories
 {
+    /// <summary>
+    /// EF Core implementation of chunk repository with pgvector similarity search.
+    /// </summary>
     public class DocumentChunkRepository : IDocumentChunkRepository
     {
         private readonly ApplicationDbContext _context;

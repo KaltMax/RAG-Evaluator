@@ -1,5 +1,8 @@
 ﻿namespace RagEvaluator.Domain.Entities
 {
+    /// <summary>
+    /// Represents a document uploaded by a user.
+    /// </summary>
     public class Document
     {
         public Guid Id { get; set; }

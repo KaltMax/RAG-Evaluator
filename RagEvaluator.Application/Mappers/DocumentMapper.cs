@@ -3,6 +3,9 @@ using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Application.Mappers
 {
+    /// <summary>
+    /// Extension methods for mapping Document entities to DTOs.
+    /// </summary>
     public static class DocumentMapper
     {
         public static DocumentResponse ToResponse(this Document document)

@@ -3,6 +3,9 @@ using RagEvaluator.Contract.Configurations;
 
 namespace RagEvaluator.Infrastructure.Services
 {
+    /// <summary>
+    /// File storage implementation using the local file system.
+    /// </summary>
     public class LocalFileStorageService : IFileStorageService
     {
         private readonly string _baseDirectory;

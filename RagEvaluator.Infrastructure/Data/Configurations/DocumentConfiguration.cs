@@ -4,6 +4,9 @@ using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Infrastructure.Data.Configurations
 {
+    /// <summary>
+    /// EF Core configuration for the Document entity.
+    /// </summary>
     public class DocumentConfiguration : IEntityTypeConfiguration<Document>
     {
         public void Configure(EntityTypeBuilder<Document> builder)

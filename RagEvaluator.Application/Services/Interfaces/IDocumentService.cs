@@ -3,6 +3,9 @@ using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {
+    /// <summary>
+    /// Service for document CRUD operations and file management.
+    /// </summary>
     public interface IDocumentService
     {
         Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language);

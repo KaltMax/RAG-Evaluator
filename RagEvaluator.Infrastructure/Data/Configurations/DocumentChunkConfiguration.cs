@@ -5,6 +5,9 @@ using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Infrastructure.Data.Configurations
 {
+    /// <summary>
+    /// EF Core configuration for the DocumentChunk entity with pgvector conversion.
+    /// </summary>
     public class DocumentChunkConfiguration : IEntityTypeConfiguration<DocumentChunk>
     {
         public void Configure(EntityTypeBuilder<DocumentChunk> builder)
