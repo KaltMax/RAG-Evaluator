@@ -37,7 +37,8 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 ┌─────────────────────────────────────────────────────────────┐
 │                  RagEvaluator.Application                   │
 │            (Business Logic & Orchestration)                 │
-│  Services: RagService, DocumentService, QueryService        │
+│  Services: RagService, DocumentService, QueryService,       │
+│            MetricsService                                   │
 └──────────┬────────────────────────────────┬─────────────────┘
            │                                │
            ↓                                ↓
@@ -98,10 +99,12 @@ RAG-Evaluator/
 │   │   ├── Interfaces/
 │   │   │   ├── IRagService.cs
 │   │   │   ├── IDocumentService.cs
-│   │   │   └── IQueryService.cs
+│   │   │   ├── IQueryService.cs
+│   │   │   └── IMetricsService.cs       # Similarity & evaluation metrics
 │   │   ├── RagService.cs                # Core RAG orchestration
 │   │   ├── DocumentService.cs           # Document management
-│   │   └── QueryService.cs              # Query handling (placeholder)
+│   │   ├── QueryService.cs              # Query handling (placeholder)
+│   │   └── MetricsService.cs            # Cosine similarity, MRR, Precision@K, etc.
 │   ├── Validators/
 │   │   └── AskQuestionValidator.cs
 │   └── Extensions/
@@ -142,7 +145,8 @@ RAG-Evaluator/
 │   │   ├── DocumentChunk.cs             # Text chunk with vector embedding
 │   │   └── Query.cs                     # User query entity (placeholder)
 │   ├── ValueObjects/
-│   │   └── SearchResult.cs              # Search result with similarity score
+│   │   ├── SearchResult.cs              # Search result with similarity score
+│   │   └── ChunkSearchMatch.cs          # Raw chunk match (before similarity calculation)
 │   └── Exceptions/
 │       ├── DocumentNotFoundException.cs
 │       └── VectorStoreException.cs
@@ -241,6 +245,11 @@ RAG-Evaluator/
   - `GetDocumentCountAsync()` - Returns document count
 - `IDocumentService` - Document management operations
 - `IQueryService` - Query handling and history management
+- `IMetricsService` - Similarity and retrieval evaluation metrics
+  - `CosineSimilarity()` / `CosineDistance()` - Vector similarity calculations
+  - `MeanReciprocalRank()` - MRR for retrieval evaluation
+  - `PrecisionAtK()` / `RecallAtK()` - Precision and recall metrics
+  - `NormalizedDiscountedCumulativeGainAtK()` - NDCG for ranking quality
 
 **Dependencies**: → Domain, Contract
 
@@ -282,7 +291,7 @@ RAG-Evaluator/
 **Key Components**:
 
 - Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`
-- Value Objects: `SearchResult`
+- Value Objects: `SearchResult`, `ChunkSearchMatch`
 - Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
 
 **DocumentChunk Entity Fields**:
@@ -334,7 +343,8 @@ RAG-Evaluator/
 **Vector Storage Architecture**:
 - Domain layer uses `float[]` for embeddings (no external dependencies)
 - Infrastructure layer converts to pgvector `Vector` type via EF Core value converter
-- Similarity search uses raw SQL with pgvector's cosine distance operator (`<=>`)
+- Similarity search uses raw SQL with pgvector's cosine distance operator (`<=>`) for ordering
+- Repository returns `ChunkSearchMatch` with raw embeddings; similarity scores calculated by `MetricsService` in Application layer
 
 **Dependencies**: → Domain, Application
 
@@ -383,11 +393,11 @@ RAG-Evaluator/
    → 2. RagService.AskQuestionAsync() (Application Layer)
       → 3. OllamaEmbeddingService.GenerateEmbeddingAsync() - Embed question
       → 4. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
-         (uses pgvector cosine distance across ALL documents)
-      → 5. Fetch document file names for matched chunks
+         (uses pgvector cosine distance for ordering, returns ChunkSearchMatch)
+      → 5. MetricsService.CosineSimilarity() - Calculate similarity scores
       → 6. Build context from retrieved chunks
       → 7. OllamaChatService.GenerateResponseAsync() - Generate answer with context
-   → 8. Return QueryResponse with answer + sources (includes fileName, chunkingStrategy, embeddingModel)
+   → 8. Return QueryResponse with answer + sources (includes similarity, fileName, chunkingStrategy, embeddingModel)
 ```
 
 ### Dependency Inversion in Action
@@ -401,7 +411,8 @@ The Infrastructure layer defines **how** it's done (concrete implementations):
 - `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration)
 
 The Application layer consumes these abstractions:
-- `RagService` uses IChatService, IEmbeddingService, IDocumentChunkRepository, etc.
+- `RagService` uses IChatService, IEmbeddingService, IDocumentChunkRepository, IMetricsService, etc.
+- `MetricsService` provides similarity and evaluation metric calculations (CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K)
 - No direct dependency on Infrastructure implementations
 
 This allows:
@@ -711,6 +722,7 @@ Containers communicate via Docker's internal network:
   - [x] Document content storage
   - [x] DocumentChunk persistence with pgvector
 - [x] Repository pattern implementations (DocumentRepository, DocumentChunkRepository)
+- [x] MetricsService for similarity and evaluation metrics (CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K)
 - [x] Document API endpoints (list, get, delete, download)
 - [x] React frontend UI components
   - [x] Multi-file upload (up to 20 files)
@@ -722,6 +734,8 @@ Containers communicate via Docker's internal network:
 ### In Progress / Planned
 
 - [ ] Query history tracking and API endpoints
+- [ ] Metrics calculation integration in query workflow
+- [ ] Metrics persistence in database for each query
 - [ ] Unit and integration tests
 - [ ] Analytics and metrics Dashboard
 - [ ] Configurable chunking strategies (for RAG evaluation)

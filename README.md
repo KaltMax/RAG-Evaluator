@@ -65,7 +65,7 @@ git add ollama-init.sh
 ```
 RAG-Evaluator/
 ├── RagEvaluator.API/          # ASP.NET Core Web API
-├── RagEvaluator.Application/  # Business logic layer
+├── RagEvaluator.Application/  # Business logic & metrics (MetricsService)
 ├── RagEvaluator.Contract/     # DTOs and contracts
 ├── RagEvaluator.Domain/       # Domain entities
 ├── RagEvaluator.Infrastructure/ # Data access & external services
@@ -139,7 +139,7 @@ Once running, the API is available at `http://localhost:5000`:
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. The frontend supports multi-file upload (up to 20 files) with per-file language selection. Query history endpoints are scaffolded but not yet implemented.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. The frontend supports multi-file upload (up to 20 files) with per-file language selection. A dedicated `MetricsService` in the Application layer handles similarity calculations (cosine similarity) and provides retrieval evaluation metrics (MRR, Precision@K, Recall@K, NDCG@K) for future RAG evaluation features. Query history endpoints are scaffolded but not yet implemented.
 
 ## Using the API
 
@@ -218,6 +218,7 @@ Response:
 - **PDF Processing**: PdfPig 0.1.9
 - **Database**: PostgreSQL 18 with Entity Framework Core 10.0
 - **Vector Store**: PostgreSQL with pgvector extension (cosine similarity search)
+- **Evaluation Metrics**: MetricsService (Cosine Similarity, MRR, Precision@K, Recall@K, NDCG@K)
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore)
 
 ### Frontend

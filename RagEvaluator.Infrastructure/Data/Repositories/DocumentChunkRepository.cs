@@ -57,7 +57,7 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             }
         }
 
-        public async Task<IReadOnlyList<SearchResult>> SearchAsync(float[] queryEmbedding, int topK = 3)
+        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchAsync(float[] queryEmbedding, int topK = 3)
         {
             // Convert float[] to pgvector format string: [0.1,0.2,0.3,...]
             var vectorString = "[" + string.Join(",", queryEmbedding.Select(v => v.ToString(CultureInfo.InvariantCulture))) + "]";
@@ -81,47 +81,17 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                 .Where(d => documentIds.Contains(d.Id))
                 .ToDictionaryAsync(d => d.Id, d => d.FileName);
 
-            // Calculate similarity scores (1 - cosine distance) and map to SearchResult
-            return chunks.Select(c => new SearchResult
+            // Map to ChunkSearchMatch
+            return chunks.Select(c => new ChunkSearchMatch
             {
                 Id = c.Id,
                 Text = c.Text,
-                Similarity = 1 - CosineDistance(queryEmbedding, c.Embedding),
+                Embedding = c.Embedding,
                 DocumentId = c.DocumentId,
                 FileName = documents.GetValueOrDefault(c.DocumentId, string.Empty),
                 ChunkingStrategy = c.ChunkingStrategy,
                 EmbeddingModel = c.EmbeddingModel
             }).ToList();
-        }
-
-        private static double CosineDistance(float[] a, float[] b)
-        {
-            if (a.Length != b.Length)
-            {
-                return 1.0;
-            }
-
-            double dotProduct = 0;
-            double magnitudeA = 0;
-            double magnitudeB = 0;
-
-            for (int i = 0; i < a.Length; i++)
-            {
-                dotProduct += a[i] * b[i];
-                magnitudeA += a[i] * a[i];
-                magnitudeB += b[i] * b[i];
-            }
-
-            magnitudeA = Math.Sqrt(magnitudeA);
-            magnitudeB = Math.Sqrt(magnitudeB);
-
-            if (magnitudeA == 0 || magnitudeB == 0)
-            {
-                return 1.0;
-            }
-
-            var similarity = dotProduct / (magnitudeA * magnitudeB);
-            return 1 - similarity;
         }
     }
 }

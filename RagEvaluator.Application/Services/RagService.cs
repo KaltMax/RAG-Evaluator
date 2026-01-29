@@ -20,6 +20,7 @@ namespace RagEvaluator.Application.Services
         private readonly IEmbeddingService _embeddingService;
         private readonly IChatService _chatService;
         private readonly IDocumentService _documentService;
+        private readonly IMetricsService _metricsService;
 
         public RagService(
             RagConfiguration config,
@@ -28,7 +29,8 @@ namespace RagEvaluator.Application.Services
             IDocumentChunkRepository documentChunkRepository,
             IEmbeddingService embeddingService,
             IChatService chatService,
-            IDocumentService documentService)
+            IDocumentService documentService,
+            IMetricsService metricsService)
         {
             _config = config;
             _pdfLoader = pdfLoader;
@@ -37,6 +39,7 @@ namespace RagEvaluator.Application.Services
             _embeddingService = embeddingService;
             _chatService = chatService;
             _documentService = documentService;
+            _metricsService = metricsService;
         }
 
         public async Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string language)
@@ -113,9 +116,9 @@ namespace RagEvaluator.Application.Services
             var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync(question);
 
             // Search for relevant document chunks
-            var searchResults = await _documentChunkRepository.SearchAsync(questionEmbedding, topK);
+            var chunkMatches = await _documentChunkRepository.SearchAsync(questionEmbedding, topK);
 
-            if (searchResults.Count == 0)
+            if (chunkMatches.Count == 0)
             {
                 return new QueryResponse
                 {
@@ -127,22 +130,22 @@ namespace RagEvaluator.Application.Services
             }
 
             // Build context from search results
-            var context = string.Join("\n\n", searchResults.Select(r => r.Text));
+            var context = string.Join("\n\n", chunkMatches.Select(r => r.Text));
 
             // Generate answer using LLM
             var userMessage = $"Context:\n{context}\n\nQuestion: {question}\n\nAnswer:";
             var answer = await _chatService.GenerateResponseAsync(_config.SystemPrompt, userMessage);
 
-            // Convert search results to DTOs
-            var sourceDtos = searchResults.Select(r => new SearchResultDto
+            // Convert chunk matches to DTOs with similarity calculated by MetricsService
+            var sourceDtos = chunkMatches.Select(match => new SearchResultDto
             {
-                Id = r.Id,
-                Text = r.Text,
-                Similarity = r.Similarity,
-                DocumentId = r.DocumentId,
-                FileName = r.FileName,
-                ChunkingStrategy = r.ChunkingStrategy,
-                EmbeddingModel = r.EmbeddingModel
+                Id = match.Id,
+                Text = match.Text,
+                Similarity = _metricsService.CosineSimilarity(questionEmbedding, match.Embedding),
+                DocumentId = match.DocumentId,
+                FileName = match.FileName,
+                ChunkingStrategy = match.ChunkingStrategy,
+                EmbeddingModel = match.EmbeddingModel
             }).ToList();
 
             return new QueryResponse

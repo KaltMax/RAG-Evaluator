@@ -53,6 +53,7 @@ namespace RagEvaluator.API
             // Register Application services (business logic)
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IRagService, RagService>();
+            builder.Services.AddSingleton<IMetricsService, MetricsService>();
 
             // Add CORS for development
             builder.Services.AddCors(options =>
