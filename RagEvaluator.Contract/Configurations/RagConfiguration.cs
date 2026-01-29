@@ -7,7 +7,7 @@
     public class RagConfiguration
     {
         public string OllamaEndpoint { get; set; } = "http://localhost:11434/v1";
-        public string EmbeddingModel { get; set; } = "nomic-embed-text";
+        public string EmbeddingModel { get; set; } = "nomic-embed-text-v2-moe";
         public string ChatModel { get; set; } = "qwen2.5:14b";
         public int ChunkSize { get; set; } = 1000;
         public int ChunkOverlap { get; set; } = 200;

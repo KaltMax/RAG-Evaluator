@@ -14,7 +14,7 @@ A full-stack application using C#/.NET and React to evaluate RAG-based search wi
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js 20+](https://nodejs.org/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) with WSL2 backend (Windows)
-- [Visual Studio 2022](https://visualstudio.microsoft.com/) (recommended) or VS Code
+- [Visual Studio 2026](https://visualstudio.microsoft.com/) (recommended) or VS Code
 - **NVIDIA GPU** with CUDA support (12GB+ VRAM recommended for Qwen2.5-14b)
   - RTX 3060 (12GB) or better
   - NVIDIA drivers installed
@@ -42,7 +42,7 @@ This will start:
 - **PostgreSQL** on `localhost:5432`
 - **Ollama** on `localhost:11434`
 
-**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 9 GB total: `nomic-embed-text` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume.
+**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 10 GB total: `nomic-embed-text-v2-moe` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume. Models are configurable via `.env`.
 
 **GPU Verification**: After startup, verify GPU access with:
 ```bash
@@ -199,7 +199,7 @@ Response:
       "documentId": "guid",
       "fileName": "your-document.pdf",
       "chunkingStrategy": "fixed-size",
-      "embeddingModel": "nomic-embed-text"
+      "embeddingModel": "nomic-embed-text-v2-moe"
     }
   ],
   "timestamp": "2025-01-04T12:05:00Z"
@@ -212,8 +212,8 @@ Response:
 - **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML**: Microsoft Semantic Kernel 1.66.0
-- **LLM Provider**: Ollama (local models)
-  - Embedding Model: `nomic-embed-text`
+- **LLM Provider**: Ollama (local models, configurable via `.env`)
+  - Embedding Model: `nomic-embed-text-v2-moe` (multilingual, MoE architecture)
   - Chat Model: `qwen2.5:14b`
 - **PDF Processing**: PdfPig 0.1.9
 - **Database**: PostgreSQL 18 with Entity Framework Core 10.0

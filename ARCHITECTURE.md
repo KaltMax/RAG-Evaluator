@@ -291,7 +291,7 @@ RAG-Evaluator/
 - `Text` - The text content of the chunk
 - `Embedding` - Vector embedding as `float[]` (converted to pgvector in Infrastructure)
 - `ChunkingStrategy` - Strategy used to create this chunk (e.g., "fixed-size")
-- `EmbeddingModel` - Model used to generate the embedding (e.g., "nomic-embed-text")
+- `EmbeddingModel` - Model used to generate the embedding (e.g., "nomic-embed-text-v2-moe")
 - `DocumentId` - Foreign key to parent Document
 
 **Document Entity Fields**:
@@ -326,7 +326,7 @@ RAG-Evaluator/
 **Implemented Services**:
 
 - `LocalFileStorageService` - Local file system storage with configurable directory
-- `PdfLoader` - PDF text extraction using PdfPig
+- `PdfLoader` - PDF text extraction using PdfPig with ContentOrderTextExtractor for proper reading order
 - `TextChunker` - Text chunking with configurable size and overlap
 - `DocumentChunkRepository` - PostgreSQL vector store with pgvector for similarity search
 - `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel
@@ -368,10 +368,10 @@ RAG-Evaluator/
 ```
 1. PDF Upload (Controller)
    → 2. RagService.ProcessDocumentAsync() (Application Layer)
-      → 3. PdfLoader.LoadPdf() - Extract text from pages
+      → 3. PdfLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
       → 4. TextChunker.SplitDocuments() - Split into chunks (1000 chars, 200 overlap)
       → 5. For each chunk:
-         → 6. OllamaEmbeddingService.GenerateEmbeddingAsync() - Create vector
+         → 6. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
          → 7. Create DocumentChunk entity with embedding, strategy, model info
       → 8. DocumentChunkRepository.AddRangeAsync() - Persist all chunks to PostgreSQL
       → 9. Update Document status to Completed
@@ -383,7 +383,7 @@ RAG-Evaluator/
 ```
 1. Question Submission (Controller)
    → 2. RagService.AskQuestionAsync() (Application Layer)
-      → 3. OllamaEmbeddingService.GenerateEmbeddingAsync() - Embed question
+      → 3. OllamaEmbeddingService.GenerateEmbeddingAsync("search_query: " + question)
       → 4. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
          (uses pgvector cosine distance for ordering, returns ChunkSearchMatch)
       → 5. MetricsService.CosineSimilarity() - Calculate similarity scores
@@ -548,7 +548,7 @@ language: "en" or "de"
       "documentId": "123e4567-e89b-12d3-a456-426614174000",
       "fileName": "document.pdf",
       "chunkingStrategy": "fixed-size",
-      "embeddingModel": "nomic-embed-text"
+      "embeddingModel": "nomic-embed-text-v2-moe"
     }
   ],
   "timestamp": "2025-01-04T12:05:00Z"
@@ -562,8 +562,8 @@ language: "en" or "de"
 - **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML Framework**: Microsoft Semantic Kernel 1.66.0
-- **LLM Provider**: Ollama (local models)
-  - **Embedding Model**: nomic-embed-text
+- **LLM Provider**: Ollama (local models, configurable via `.env`)
+  - **Embedding Model**: nomic-embed-text-v2-moe (multilingual MoE, uses asymmetric prefixes)
   - **Chat Model**: qwen2.5:14b
 - **PDF Processing**: PdfPig 0.1.9
 - **Vector Store**: PostgreSQL with pgvector extension
@@ -610,12 +610,12 @@ The Ollama container uses a custom initialization script (`ollama-init.sh`) that
 
 1. Starts the Ollama service in the background
 2. Waits for the service to be ready
-3. Checks for required models and pulls them if missing:
-   - `nomic-embed-text` - Text embedding model (approximately 274 MB)
-   - `qwen2.5:14b` - Chat completion model (approximately 1.3 GB)
+3. Checks for required models (configured via `.env`) and pulls them if missing:
+   - `nomic-embed-text-v2-moe` - Text embedding model (approximately 958 MB)
+   - `qwen2.5:14b` - Chat completion model (approximately 9 GB)
 4. Models are persisted in the `ollama_data` Docker volume
 
-**First Startup**: Initial container startup takes 5-10 minutes to download models (approximately 1.5 GB total).
+**First Startup**: Initial container startup takes 5-10 minutes to download models (approximately 10 GB total).
 
 **Subsequent Startups**: Nearly instant as models are cached in the persistent volume.
 
@@ -628,6 +628,8 @@ environment:
   - ASPNETCORE_ENVIRONMENT=Development
   - ConnectionStrings__DefaultConnection=Host=postgres;Database=ragevaluator;...
   - RagConfiguration__OllamaEndpoint=http://ollama:11434/v1
+  - RagConfiguration__EmbeddingModel=${OLLAMA_EMBEDDING_MODEL}
+  - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 

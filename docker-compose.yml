@@ -36,6 +36,8 @@ services:
     container_name: ragevaluator-ollama
     environment:
       - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
+      - OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL}
+      - OLLAMA_CHAT_MODEL=${OLLAMA_CHAT_MODEL}
     volumes:
       - ollama_data:/root/.ollama
       - ./ollama-init.sh:/ollama-init.sh
@@ -66,6 +68,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - RagConfiguration__OllamaEndpoint=http://ollama:${OLLAMA_PORT}/v1
+      - RagConfiguration__EmbeddingModel=${OLLAMA_EMBEDDING_MODEL}
+      - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
       - FileStorageConfiguration__BaseDirectory=${FILE_STORAGE_BASE_DIRECTORY}
     ports:
       - "${API_PORT}:8080"

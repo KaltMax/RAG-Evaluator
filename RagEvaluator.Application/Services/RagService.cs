@@ -68,7 +68,7 @@ namespace RagEvaluator.Application.Services
                 var documentChunks = new List<DocumentChunk>();
                 foreach (var chunk in chunks)
                 {
-                    var embedding = await _embeddingService.GenerateEmbeddingAsync(chunk);
+                    var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunk}");
                     documentChunks.Add(new DocumentChunk
                     {
                         Id = Guid.NewGuid(),
@@ -113,7 +113,7 @@ namespace RagEvaluator.Application.Services
             var queryId = Guid.NewGuid();
 
             // Generate embedding for the question
-            var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync(question);
+            var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {question}");
 
             // Search for relevant document chunks
             var chunkMatches = await _documentChunkRepository.SearchAsync(questionEmbedding, topK);

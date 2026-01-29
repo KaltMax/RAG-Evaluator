@@ -2,6 +2,10 @@
 # Ollama initialization script
 # Pulls required models if they don't exist
 
+# Use environment variables with defaults
+EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text-v2-moe}
+CHAT_MODEL=${OLLAMA_CHAT_MODEL:-qwen2.5:14b}
+
 echo "Starting Ollama service..."
 /bin/ollama serve &
 OLLAMA_PID=$!
@@ -10,21 +14,23 @@ echo "Waiting for Ollama to be ready..."
 sleep 5
 
 echo "Checking and pulling required models..."
+echo "Embedding model: $EMBEDDING_MODEL"
+echo "Chat model: $CHAT_MODEL"
 
-# Check if nomic-embed-text exists
-if ! /bin/ollama list | grep -q "nomic-embed-text"; then
-    echo "Pulling nomic-embed-text model..."
-    /bin/ollama pull nomic-embed-text
+# Check if embedding model exists
+if ! /bin/ollama list | grep -q "$EMBEDDING_MODEL"; then
+    echo "Pulling $EMBEDDING_MODEL model..."
+    /bin/ollama pull "$EMBEDDING_MODEL"
 else
-    echo "nomic-embed-text model already exists"
+    echo "$EMBEDDING_MODEL model already exists"
 fi
 
-# Check if qwen2.5:14b exists
-if ! /bin/ollama list | grep -q "qwen2.5:14b"; then
-    echo "Pulling Qwen2.5:14B model..."
-    /bin/ollama pull qwen2.5:14b
+# Check if chat model exists
+if ! /bin/ollama list | grep -q "$CHAT_MODEL"; then
+    echo "Pulling $CHAT_MODEL model..."
+    /bin/ollama pull "$CHAT_MODEL"
 else
-    echo "qwen2.5:14b model already exists"
+    echo "$CHAT_MODEL model already exists"
 fi
 
 echo "Ollama initialization complete!"

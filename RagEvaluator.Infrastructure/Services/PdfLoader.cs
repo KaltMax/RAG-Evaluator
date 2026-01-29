@@ -1,10 +1,11 @@
 ﻿using UglyToad.PdfPig;
+using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 using RagEvaluator.Contract.Abstractions.Services;
 
 namespace RagEvaluator.Infrastructure.Services
 {
     /// <summary>
-    /// Service for loading and extracting text from PDF documents
+    /// Service for loading and extracting text from PDF documents using ContentOrderTextExtractor.
     /// </summary>
     public class PdfLoader : IPdfLoader
     {
@@ -27,7 +28,8 @@ namespace RagEvaluator.Infrastructure.Services
 
             foreach (var page in pdfDocument.GetPages())
             {
-                pages.Add(page.Text);
+                var text = ContentOrderTextExtractor.GetText(page, addDoubleNewline: true);
+                pages.Add(text);
             }
 
             return pages;
@@ -46,7 +48,8 @@ namespace RagEvaluator.Infrastructure.Services
 
             foreach (var page in pdfDocument.GetPages())
             {
-                pages.Add(page.Text);
+                var text = ContentOrderTextExtractor.GetText(page, addDoubleNewline: true);
+                pages.Add(text);
             }
 
             return pages;
