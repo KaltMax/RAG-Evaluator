@@ -11,6 +11,11 @@ namespace RagEvaluator.Contract.Dtos.Requests
         [MinLength(3)]
         public required string Question { get; set; }
 
-        public int TopK { get; set; } = 3;
+        [Required]
+        public required string Language { get; set; }
+
+        [Required]
+        [Range(1, 100)]
+        public required int TopK { get; set; } = 3;
     }
 }

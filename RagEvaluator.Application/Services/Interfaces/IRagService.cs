@@ -1,4 +1,5 @@
-﻿using RagEvaluator.Contract.Dtos.Responses;
+﻿using RagEvaluator.Contract.Dtos.Requests;
+using RagEvaluator.Contract.Dtos.Responses;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {
@@ -8,7 +9,7 @@ namespace RagEvaluator.Application.Services.Interfaces
     public interface IRagService
     {
         Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string language);
-        Task<QueryResponse> AskQuestionAsync(string question, int topK = 3);
+        Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request);
         Task<bool> IsInitializedAsync();
         Task<int> GetDocumentCountAsync();
     }

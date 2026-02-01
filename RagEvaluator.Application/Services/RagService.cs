@@ -1,6 +1,7 @@
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Domain.Entities;
@@ -20,6 +21,7 @@ namespace RagEvaluator.Application.Services
         private readonly IEmbeddingService _embeddingService;
         private readonly IChatService _chatService;
         private readonly IDocumentService _documentService;
+        private readonly IQueryService _queryService;
         private readonly IMetricsService _metricsService;
 
         public RagService(
@@ -30,6 +32,7 @@ namespace RagEvaluator.Application.Services
             IEmbeddingService embeddingService,
             IChatService chatService,
             IDocumentService documentService,
+            IQueryService queryService,
             IMetricsService metricsService)
         {
             _config = config;
@@ -39,6 +42,7 @@ namespace RagEvaluator.Application.Services
             _embeddingService = embeddingService;
             _chatService = chatService;
             _documentService = documentService;
+            _queryService = queryService;
             _metricsService = metricsService;
         }
 
@@ -103,27 +107,34 @@ namespace RagEvaluator.Application.Services
             }
         }
 
-        public async Task<QueryResponse> AskQuestionAsync(string question, int topK = 3)
+        public async Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request)
         {
             if (!await _chatService.IsAvailableAsync() || !await _embeddingService.IsAvailableAsync())
             {
                 throw new InvalidOperationException("RAG services not available. Ensure Ollama is running with the required models.");
             }
 
-            var queryId = Guid.NewGuid();
+            // Create and persist the query with configuration snapshot
+            var query = await _queryService.CreateQueryAsync(
+                request.Question,
+                request.Language,
+                request.TopK,
+                _config.SystemPrompt,
+                _config.EmbeddingModel,
+                _config.ChatModel);
 
             // Generate embedding for the question
-            var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {question}");
+            var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {request.Question}");
 
             // Search for relevant document chunks
-            var chunkMatches = await _documentChunkRepository.SearchAsync(questionEmbedding, topK);
+            var chunkMatches = await _documentChunkRepository.SearchAsync(questionEmbedding, request.TopK);
 
             if (chunkMatches.Count == 0)
             {
                 return new QueryResponse
                 {
-                    QueryId = queryId,
-                    Question = question,
+                    QueryId = query.Id,
+                    Question = request.Question,
                     Answer = "No relevant documents found in the knowledge base. Please upload documents first.",
                     Sources = new List<SearchResultDto>()
                 };
@@ -133,7 +144,7 @@ namespace RagEvaluator.Application.Services
             var context = string.Join("\n\n", chunkMatches.Select(r => r.Text));
 
             // Generate answer using LLM
-            var userMessage = $"Context:\n{context}\n\nQuestion: {question}\n\nAnswer:";
+            var userMessage = $"Context:\n{context}\n\nQuestion: {request.Question}\n\nAnswer:";
             var answer = await _chatService.GenerateResponseAsync(_config.SystemPrompt, userMessage);
 
             // Convert chunk matches to DTOs with similarity calculated by MetricsService
@@ -150,8 +161,8 @@ namespace RagEvaluator.Application.Services
 
             return new QueryResponse
             {
-                QueryId = queryId,
-                Question = question,
+                QueryId = query.Id,
+                Question = request.Question,
                 Answer = answer,
                 Sources = sourceDtos
             };

@@ -1,10 +1,16 @@
-﻿namespace RagEvaluator.Application.Services.Interfaces
+﻿using RagEvaluator.Contract.Dtos.Responses;
+using RagEvaluator.Domain.Entities;
+
+namespace RagEvaluator.Application.Services.Interfaces
 {
     /// <summary>
-    /// Service for query history tracking and management.
+    /// Service for query CRUD operations.
     /// </summary>
     public interface IQueryService
     {
-        // TODO: Define methods for querying the document database and retrieving relevant information.
+        Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string embeddingModel, string chatModel);
+        Task<QuerySummaryResponse?> GetByIdAsync(Guid id);
+        Task<IReadOnlyList<QuerySummaryResponse>> GetAllAsync();
+        Task DeleteAsync(Guid id);
     }
 }

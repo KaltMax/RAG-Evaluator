@@ -11,11 +11,16 @@ namespace RagEvaluator.API.Controllers
     {
         private readonly ILoggerWrapper<QueryController> _logger;
         private readonly IRagService _ragService;
+        private readonly IQueryService _queryService;
 
-        public QueryController(ILoggerWrapper<QueryController> logger, IRagService ragService)
+        public QueryController(
+            ILoggerWrapper<QueryController> logger,
+            IRagService ragService,
+            IQueryService queryService)
         {
             _logger = logger;
             _ragService = ragService;
+            _queryService = queryService;
         }
 
         /// <summary>
@@ -34,7 +39,7 @@ namespace RagEvaluator.API.Controllers
 
                 _logger.LogInformation($"Processing query: {request.Question}");
 
-                var result = await _ragService.AskQuestionAsync(request.Question, request.TopK);
+                var result = await _ragService.AskQuestionAsync(request);
 
                 _logger.LogInformation($"Query processed successfully: {result.QueryId}");
 
@@ -52,18 +57,29 @@ namespace RagEvaluator.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves the history of all executed queries
+        /// </summary>
         [HttpGet("history")]
         public async Task<IActionResult> GetQueryHistoryAsync()
         {
-            // TODO: Implement retrieval of query history
-            return Ok();
+            var queries = await _queryService.GetAllAsync();
+            return Ok(queries);
         }
 
+        /// <summary>
+        /// Retrieves a specific query by its ID
+        /// </summary>
+        /// <param name="id">The unique identifier of the query</param>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetQueryByIdAsync(Guid id)
         {
-            // TODO: Implement retrieval of a specific query by ID
-            return Ok();
+            var query = await _queryService.GetByIdAsync(id);
+            if (query is null)
+            {
+                return NotFound();
+            }
+            return Ok(query);
         }
     }
 }

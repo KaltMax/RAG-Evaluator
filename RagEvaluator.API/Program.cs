@@ -42,6 +42,7 @@ namespace RagEvaluator.API
             // Register repositories
             builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
             builder.Services.AddScoped<IDocumentChunkRepository, DocumentChunkRepository>();
+            builder.Services.AddScoped<IQueryRepository, QueryRepository>();
 
             // Register Infrastructure services (implementations)
             builder.Services.AddSingleton<IPdfLoader, PdfLoader>();
@@ -52,6 +53,7 @@ namespace RagEvaluator.API
 
             // Register Application services (business logic)
             builder.Services.AddScoped<IDocumentService, DocumentService>();
+            builder.Services.AddScoped<IQueryService, QueryService>();
             builder.Services.AddScoped<IRagService, RagService>();
             builder.Services.AddSingleton<IMetricsService, MetricsService>();
 
