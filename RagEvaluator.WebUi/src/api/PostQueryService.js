@@ -4,13 +4,15 @@ import axiosInstance from './axiosConfig';
 * Sends a query to the backend RAG service
 * @param {string} question - The question to ask
 * @param {number} topK - Number of top results to retrieve (default: 3)
+* @param {string} language - Language for the query ('en' or 'de', default: 'en')
 * @returns {Promise<Object>} Query response with answer and sources
 */
-export const postQuery = async (question, topK = 3) => {
+export const postQuery = async (question, topK = 3, language = 'en') => {
   try {
     const response = await axiosInstance.post('/query', {
       Question: question,
       TopK: topK,
+      Language: language,
     });
     return response.data;
   } catch (error) {

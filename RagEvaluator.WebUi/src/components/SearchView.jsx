@@ -8,12 +8,12 @@ function SearchView() {
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = async (question, topK) => {
+  const handleSearch = async (question, topK, language) => {
     setIsLoading(true);
     setResults(null);
 
     try {
-      const response = await postQuery(question, topK);
+      const response = await postQuery(question, topK, language);
 
       // Transform the response to match our component's expected format
       const formattedResults = {

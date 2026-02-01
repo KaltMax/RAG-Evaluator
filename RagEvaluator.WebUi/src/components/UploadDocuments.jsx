@@ -156,32 +156,18 @@ function UploadDocuments() {
 
                 {/* Language Selection for this file */}
                 <div className="mt-3 pt-3 border-t border-gray-700">
-                  <div className="flex items-center gap-6">
-                    <span className="text-gray-400 text-sm">Language:</span>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`language-${id}`}
-                        value="en"
-                        checked={language === 'en'}
-                        onChange={(e) => handleLanguageChange(id, e.target.value)}
-                        disabled={isUploading}
-                        className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
-                      />
-                      <span className="text-gray-200 text-sm">English</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`language-${id}`}
-                        value="de"
-                        checked={language === 'de'}
-                        onChange={(e) => handleLanguageChange(id, e.target.value)}
-                        disabled={isUploading}
-                        className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
-                      />
-                      <span className="text-gray-200 text-sm">German</span>
-                    </label>
+                  <div className="flex items-center gap-4">
+                    <label htmlFor={`language-${id}`} className="text-gray-400 text-sm">Language:</label>
+                    <select
+                      id={`language-${id}`}
+                      value={language}
+                      onChange={(e) => handleLanguageChange(id, e.target.value)}
+                      disabled={isUploading}
+                      className="px-3 py-1.5 bg-[#2D2D2D] border border-gray-600 rounded-lg text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="en">English</option>
+                      <option value="de">German</option>
+                    </select>
                   </div>
                 </div>
               </div>

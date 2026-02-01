@@ -5,11 +5,12 @@ import { PropTypes } from 'prop-types';
 function Searchbar({ onSearch, isLoading }) {
   const [question, setQuestion] = useState('');
   const [topK, setTopK] = useState(3);
+  const [language, setLanguage] = useState('en');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (question.trim().length >= 3) {
-      onSearch(question, topK);
+      onSearch(question, topK, language);
     }
   };
 
@@ -49,6 +50,22 @@ function Searchbar({ onSearch, isLoading }) {
               <option value={3}>3</option>
               <option value={5}>5</option>
               <option value={10}>10</option>
+            </select>
+          </div>
+
+          <div className="w-full md:w-32">
+            <label htmlFor="language" className="block text-sm font-medium text-gray-300 mb-2">
+              Language
+            </label>
+            <select
+              id="language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full px-4 py-3 bg-[#1F1F1F] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
+            >
+              <option value="en">English</option>
+              <option value="de">German</option>
             </select>
           </div>
 
