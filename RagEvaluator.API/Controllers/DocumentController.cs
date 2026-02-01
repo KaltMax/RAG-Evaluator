@@ -64,6 +64,9 @@ namespace RagEvaluator.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves all documents
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAllDocumentsAsync()
         {
@@ -71,6 +74,10 @@ namespace RagEvaluator.API.Controllers
             return Ok(documents);
         }
 
+        /// <summary>
+        /// Retrieves a specific document by its ID
+        /// </summary>
+        /// <param name="id">The unique identifier of the document</param>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDocumentByIdAsync(Guid id)
         {
@@ -82,6 +89,10 @@ namespace RagEvaluator.API.Controllers
             return Ok(document);
         }
 
+        /// <summary>
+        /// Deletes a document and its associated chunks
+        /// </summary>
+        /// <param name="id">The unique identifier of the document</param>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocumentAsync(Guid id)
         {
@@ -96,6 +107,10 @@ namespace RagEvaluator.API.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Downloads the original PDF file for a document
+        /// </summary>
+        /// <param name="id">The unique identifier of the document</param>
         [HttpGet("{id}/download")]
         public async Task<IActionResult> DownloadDocumentAsync(Guid id)
         {
@@ -109,11 +124,21 @@ namespace RagEvaluator.API.Controllers
             return File(fileBytes, fileInfo.MimeType, fileInfo.FileName);
         }
 
+        /// <summary>
+        /// Retrieves all chunks for a specific document
+        /// </summary>
+        /// <param name="id">The unique identifier of the document</param>
         [HttpGet("{id}/chunks")]
         public async Task<IActionResult> GetDocumentChunksAsync(Guid id)
         {
-            // TODO: Implement retrieval of document chunks by document ID
-            return Ok();
+            var document = await _documentService.GetByIdAsync(id);
+            if (document is null)
+            {
+                return NotFound();
+            }
+
+            var chunks = await _documentService.GetChunksByDocumentIdAsync(id);
+            return Ok(chunks);
         }
     }
 }

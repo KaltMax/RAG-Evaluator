@@ -2,20 +2,42 @@
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services
 {
+    /// <summary>
+    /// Service for document and chunk operations including PDF processing, chunking, and embedding.
+    /// </summary>
     public class DocumentService : IDocumentService
     {
         private readonly IDocumentRepository _documentRepository;
+        private readonly IDocumentChunkRepository _documentChunkRepository;
         private readonly IFileStorageService _fileStorageService;
+        private readonly IPdfLoader _pdfLoader;
+        private readonly ITextChunker _textChunker;
+        private readonly IEmbeddingService _embeddingService;
+        private readonly RagConfiguration _config;
 
-        public DocumentService(IDocumentRepository documentRepository, IFileStorageService fileStorageService)
+        public DocumentService(
+            IDocumentRepository documentRepository,
+            IDocumentChunkRepository documentChunkRepository,
+            IFileStorageService fileStorageService,
+            IPdfLoader pdfLoader,
+            ITextChunker textChunker,
+            IEmbeddingService embeddingService,
+            RagConfiguration config)
         {
             _documentRepository = documentRepository;
+            _documentChunkRepository = documentChunkRepository;
             _fileStorageService = fileStorageService;
+            _pdfLoader = pdfLoader;
+            _textChunker = textChunker;
+            _embeddingService = embeddingService;
+            _config = config;
         }
 
         public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language)
@@ -108,7 +130,56 @@ namespace RagEvaluator.Application.Services
             {
                 await _fileStorageService.DeleteFileAsync(document.FilePath);
             }
+            await _documentChunkRepository.DeleteByDocumentIdAsync(id);
             await _documentRepository.DeleteAsync(id);
+        }
+
+        public async Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream)
+        {
+            if (!await _embeddingService.IsAvailableAsync())
+            {
+                throw new InvalidOperationException("Embedding service not available. Ensure Ollama is running with the required model.");
+            }
+
+            // Load and extract text from PDF
+            var pages = _pdfLoader.LoadPdf(pdfStream);
+            var content = string.Join("\n\n", pages);
+
+            // Split into chunks
+            var textChunks = _textChunker.SplitDocuments(pages);
+
+            // Generate embeddings and create chunk entities
+            var documentChunks = new List<DocumentChunk>();
+            foreach (var chunkText in textChunks)
+            {
+                var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}");
+                documentChunks.Add(new DocumentChunk
+                {
+                    Id = Guid.NewGuid(),
+                    Text = chunkText,
+                    Embedding = embedding,
+                    ChunkingStrategy = "fixed-size",
+                    EmbeddingModel = _config.EmbeddingModel,
+                    DocumentId = documentId
+                });
+            }
+
+            // Store chunks
+            await _documentChunkRepository.AddRangeAsync(documentChunks);
+
+            // Update document status to Completed
+            await UpdateStatusAsync(documentId, DocumentStatus.Completed, pages.Count, textChunks.Count, content);
+        }
+
+        public async Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId)
+        {
+            var chunks = await _documentChunkRepository.GetByDocumentIdAsync(documentId);
+            return chunks.ToResponseList();
+        }
+
+        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchChunksAsync(float[] queryEmbedding, int topK)
+        {
+            return await _documentChunkRepository.SearchAsync(queryEmbedding, topK);
         }
     }
 }

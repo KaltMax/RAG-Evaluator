@@ -51,5 +51,22 @@ namespace RagEvaluator.Application.Mappers
         {
             return summaries.Select(s => s.ToResponse()).ToList();
         }
+
+        public static DocumentChunkResponse ToResponse(this DocumentChunk chunk)
+        {
+            return new DocumentChunkResponse
+            {
+                Id = chunk.Id,
+                Text = chunk.Text,
+                ChunkingStrategy = chunk.ChunkingStrategy,
+                EmbeddingModel = chunk.EmbeddingModel,
+                DocumentId = chunk.DocumentId
+            };
+        }
+
+        public static IReadOnlyList<DocumentChunkResponse> ToResponseList(this IEnumerable<DocumentChunk> chunks)
+        {
+            return chunks.Select(c => c.ToResponse()).ToList();
+        }
     }
 }
