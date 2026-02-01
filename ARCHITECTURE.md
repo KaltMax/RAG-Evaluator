@@ -92,7 +92,8 @@ RAG-Evaluator/
 │
 ├── RagEvaluator.Application/            # Business Logic & Orchestration
 │   ├── Mappers/
-│   │   └── DocumentMapper.cs            # Document → DTO mapping
+│   │   ├── DocumentMapper.cs            # Document → DTO mapping
+│   │   └── QueryMapper.cs               # Query → DTO mapping
 │   ├── Services/
 │   │   ├── Interfaces/
 │   │   │   ├── IRagService.cs
@@ -100,8 +101,8 @@ RAG-Evaluator/
 │   │   │   ├── IQueryService.cs
 │   │   │   └── IMetricsService.cs       # Similarity & evaluation metrics
 │   │   ├── RagService.cs                # Core RAG orchestration
-│   │   ├── DocumentService.cs           # Document management
-│   │   ├── QueryService.cs              # Query handling (placeholder)
+│   │   ├── DocumentService.cs           # Document processing & management
+│   │   ├── QueryService.cs              # Query handling & persistence
 │   │   └── MetricsService.cs            # Cosine similarity, MRR, Precision@K, etc.
 │   └── Validators/
 │
@@ -115,7 +116,8 @@ RAG-Evaluator/
 │   │   │   └── ITextChunker.cs          # Text chunking interface
 │   │   └── Data/
 │   │       ├── IDocumentRepository.cs   # Document repository interface
-│   │       └── IDocumentChunkRepository.cs # Vector chunk repository interface
+│   │       ├── IDocumentChunkRepository.cs # Vector chunk repository interface
+│   │       └── IQueryRepository.cs      # Query repository interface
 │   ├── Configurations/
 │   │   ├── FileStorageConfiguration.cs  # File storage settings
 │   │   └── RagConfiguration.cs
@@ -125,8 +127,10 @@ RAG-Evaluator/
 │   │   │   └── UploadDocumentRequest.cs
 │   │   ├── Responses/
 │   │   │   ├── QueryResponse.cs
+│   │   │   ├── QuerySummaryResponse.cs  # Query history list item
 │   │   │   ├── SearchResultDto.cs
 │   │   │   ├── DocumentResponse.cs
+│   │   │   ├── DocumentChunkResponse.cs # Document chunk details
 │   │   │   ├── DocumentFileInfo.cs      # File info for downloads
 │   │   │   └── ErrorResponse.cs
 │   │   └── PaginationDto.cs
@@ -139,7 +143,7 @@ RAG-Evaluator/
 │   │   ├── Document.cs                  # Document aggregate root
 │   │   ├── DocumentSummary.cs           # Lightweight document (for list views)
 │   │   ├── DocumentChunk.cs             # Text chunk with vector embedding
-│   │   └── Query.cs                     # User query entity (placeholder)
+│   │   └── Query.cs                     # User query entity
 │   ├── ValueObjects/
 │   │   ├── SearchResult.cs              # Search result with similarity score
 │   │   └── ChunkSearchMatch.cs          # Raw chunk match (before similarity calculation)
@@ -152,10 +156,12 @@ RAG-Evaluator/
 │   │   ├── ApplicationDbContext.cs      # EF Core DbContext with pgvector
 │   │   ├── DocumentRepository.cs        # Document repository implementation
 │   │   ├── Repositories/
-│   │   │   └── DocumentChunkRepository.cs # Vector chunk repository with pgvector
+│   │   │   ├── DocumentChunkRepository.cs # Vector chunk repository with pgvector
+│   │   │   └── QueryRepository.cs       # Query persistence repository
 │   │   ├── Configurations/
 │   │   │   ├── DocumentConfiguration.cs
-│   │   │   └── DocumentChunkConfiguration.cs # pgvector mapping
+│   │   │   ├── DocumentChunkConfiguration.cs # pgvector mapping
+│   │   │   └── QueryConfiguration.cs    # Query entity mapping
 │   │   └── Migrations/
 │   └── Services/
 │       ├── LocalFileStorageService.cs   # Local file system storage
@@ -235,8 +241,13 @@ RAG-Evaluator/
   - `AskQuestionAsync()` - Orchestrates RAG query workflow
   - `IsInitializedAsync()` - Checks service availability
   - `GetDocumentCountAsync()` - Returns document count
-- `IDocumentService` - Document management operations
-- `IQueryService` - Query handling and history management
+- `IDocumentService` - Document processing and management operations
+  - `ProcessDocumentAsync()` - Orchestrates PDF processing workflow
+  - `GetDocumentChunksAsync()` - Retrieves document chunks
+- `IQueryService` - Query handling, persistence, and history management
+  - `CreateQueryAsync()` - Persists a new query
+  - `GetQueryByIdAsync()` - Retrieves query by ID
+  - `GetQueryHistoryAsync()` - Returns paginated query history
 - `IMetricsService` - Similarity and retrieval evaluation metrics
   - `CosineSimilarity()` / `CosineDistance()` - Vector similarity calculations
   - `MeanReciprocalRank()` - MRR for retrieval evaluation
@@ -485,18 +496,18 @@ GET    /api/documents              # List all documents (IMPLEMENTED)
 GET    /api/documents/{id}         # Get document details (IMPLEMENTED)
 GET    /api/documents/{id}/download # Download document file (IMPLEMENTED)
 DELETE /api/documents/{id}         # Delete document (IMPLEMENTED)
-GET    /api/documents/{id}/chunks  # Get document chunks (scaffolded)
+GET    /api/documents/{id}/chunks  # Get document chunks (IMPLEMENTED)
 ```
 
 #### Query API
 
 ```
 POST   /api/query                  # Ask question using RAG (IMPLEMENTED)
-GET    /api/query/history          # Get query history (scaffolded)
-GET    /api/query/{id}             # Get specific query (scaffolded)
+GET    /api/query/history          # Get query history (IMPLEMENTED)
+GET    /api/query/{id}             # Get specific query (IMPLEMENTED)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Document CRUD endpoints (list, get, delete, download) are fully implemented. Query history endpoints are scaffolded.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
 
 ### Request/Response Examples
 
@@ -529,7 +540,8 @@ language: "en" or "de"
 ```json
 {
   "question": "What is the main conclusion?",
-  "topK": 3
+  "topK": 3,
+  "language": "en"
 }
 ```
 
@@ -576,14 +588,13 @@ language: "en" or "de"
 
 ### Frontend
 
-- **Framework**: React 18+
+- **Framework**: React 19
 - **Language**: JavaScript
-- **Build Tool**: Vite
-- **State Management**: TanStack Query + Context
-- **Routing**: React Router v6
-- **UI Library**: Tailwind CSS / Material-UI
+- **Build Tool**: Vite 7
+- **Routing**: React Router DOM 7
+- **UI Library**: Tailwind CSS 4
 - **HTTP Client**: Axios
-- **Form Handling**: React Hook Form + Zod
+- **UI Libraries**: React Dropzone, React Toastify, Heroicons
 
 ### DevOps
 
@@ -630,10 +641,13 @@ environment:
   - RagConfiguration__OllamaEndpoint=http://ollama:11434/v1
   - RagConfiguration__EmbeddingModel=${OLLAMA_EMBEDDING_MODEL}
   - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
+  - RagConfiguration__SystemPrompt=${RAG_SYSTEM_PROMPT}
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
 **Note**: Configuration uses double underscores (`__`) to override nested JSON configuration in ASP.NET Core.
+
+**System Prompt**: The RAG system prompt can be customized via the `RAG_SYSTEM_PROMPT` environment variable in `.env`. This allows tailoring the LLM's behavior for different use cases.
 
 ### Docker Networking
 
@@ -715,25 +729,32 @@ Containers communicate via Docker's internal network:
   - [x] Document metadata storage
   - [x] Document content storage
   - [x] DocumentChunk persistence with pgvector
-- [x] Repository pattern implementations (DocumentRepository, DocumentChunkRepository)
+- [x] Repository pattern implementations (DocumentRepository, DocumentChunkRepository, QueryRepository)
 - [x] MetricsService for similarity and evaluation metrics (CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K)
-- [x] Document API endpoints (list, get, delete, download)
+- [x] Document API endpoints (list, get, delete, download, chunks)
+- [x] Query history tracking and API endpoints (list, get)
+- [x] Query persistence with QueryService and QueryRepository
+- [x] System prompt configuration via `.env` file
+- [x] Query language selection (en/de) in API and WebUI
 - [x] React frontend UI components
   - [x] Multi-file upload (up to 20 files)
-  - [x] Per-file language selection
+  - [x] Per-file language selection (dropdown)
   - [x] Document list with language column
   - [x] Search results with source details (chunking strategy, embedding model)
+  - [x] Query language selector (dropdown)
 - [x] Multi-document querying (similarity search across all documents)
+- [x] Refactored RagService - document/query processing moved to dedicated services
 
 ### In Progress / Planned
 
-- [ ] Query history tracking and API endpoints
+- [ ] Query responses persistence with source details
 - [ ] Metrics calculation integration in query workflow
 - [ ] Metrics persistence in database for each query
 - [ ] Unit and integration tests
 - [ ] Analytics and metrics Dashboard
 - [ ] Configurable chunking strategies (for RAG evaluation)
 - [ ] Multiple embedding model support (for RAG evaluation)
+- [ ] Configurable System Prompt templates (for different use cases)
 
 ## Resources
 

@@ -42,7 +42,7 @@ This will start:
 - **PostgreSQL** on `localhost:5432`
 - **Ollama** on `localhost:11434`
 
-**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 10 GB total: `nomic-embed-text-v2-moe` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume. Models are configurable via `.env`.
+**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 10 GB total: `nomic-embed-text-v2-moe` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume. Models and system prompt are configurable via `.env`.
 
 **GPU Verification**: After startup, verify GPU access with:
 ```bash
@@ -130,16 +130,19 @@ Once running, the API is available at `http://localhost:5000`:
 - `POST /api/documents/upload` - Upload PDF document with language for RAG processing
 - `GET /api/documents` - List all documents
 - `GET /api/documents/{id}` - Get document details
+- `GET /api/documents/{id}/chunks` - Get document chunks with embeddings
 - `GET /api/documents/{id}/download` - Download a previously uploaded document
 - `DELETE /api/documents/{id}` - Delete a document
 
 ### Query
 - `POST /api/query` - Ask questions using RAG (Retrieval-Augmented Generation)
+- `GET /api/query/history` - Get query history
+- `GET /api/query/{id}` - Get specific query details
 
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. The frontend supports multi-file upload (up to 20 files) with per-file language selection. A dedicated `MetricsService` in the Application layer handles similarity calculations (cosine similarity) and provides retrieval evaluation metrics (MRR, Precision@K, Recall@K, NDCG@K) for future RAG evaluation features. Query history endpoints are scaffolded but not yet implemented.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering with language selection. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. Query history is persisted and retrievable via API endpoints. The frontend supports multi-file upload (up to 20 files) with per-file language selection. A dedicated `MetricsService` in the Application layer handles similarity calculations (cosine similarity) and provides retrieval evaluation metrics (MRR, Precision@K, Recall@K, NDCG@K) for future RAG evaluation features. System prompts are configurable via `.env` file.
 
 ## Using the API
 
@@ -181,7 +184,8 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "question": "What is the main topic of the document?",
-  "topK": 3
+  "topK": 3,
+  "language": "en"
 }'
 ```
 

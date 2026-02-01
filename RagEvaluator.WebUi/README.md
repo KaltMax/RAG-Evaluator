@@ -11,6 +11,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Get AI-generated answers with source citations
   - View similarity scores for retrieved chunks
   - Adjustable top-K results (1, 3, 5, 10)
+  - Language selection (English/German)
 
 - **Document Upload** - Upload PDF documents for processing
   - Drag-and-drop interface powered by react-dropzone
@@ -193,7 +194,7 @@ Brief summary of implemented API services (see `src/api`):
 
 | Endpoint | Description |
 |----------|-------------|
-| `POST /api/query` | Send `{ Question, TopK }` → AI answer + sources |
+| `POST /api/query` | Send `{ Question, TopK, Language }` → AI answer + sources |
 | `POST /api/documents/upload` | Upload PDF with language (multipart/form-data: `file`, `language`) |
 | `GET /api/documents` | List all uploaded documents |
 | `GET /api/documents/{id}` | Get document details |
