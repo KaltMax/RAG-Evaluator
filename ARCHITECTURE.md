@@ -293,7 +293,7 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`
+- Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`, `QueryResult`
 - Value Objects: `SearchResult`, `ChunkSearchMatch`
 - Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
 
@@ -310,6 +310,21 @@ RAG-Evaluator/
 - `Content` - Full extracted text from PDF (for search/analysis)
 - `Language` - Document language (`en`, `de`)
 - `PageCount`, `ChunkCount`, `UploadedAt`, `ProcessedAt`, `Status`
+
+**Query Entity Fields**:
+- `Id`, `Question`, `Language`, `TopK` - Query parameters
+- `SystemPrompt`, `ChunkingStrategy`, `EmbeddingModel`, `ChatModel` - Configuration tracking
+- `Answer` - LLM-generated response
+- `QueryEmbedding` - Vector embedding as `float[]` for offline analysis
+- `ResponseTimeMs`, `CreatedAt` - Performance and timing
+- `MRR`, `PrecisionAtK`, `RecallAtK`, `NDCGAtK` - Evaluation metrics (nullable, calculated after relevance labeling)
+- `Results` - Navigation to `QueryResult` collection
+
+**QueryResult Entity Fields**:
+- `Id`, `QueryId` - Primary key and foreign key to Query
+- `DocumentChunkId`, `DocumentId`, `FileName`, `ChunkText`, `ChunkingStrategy`, `EmbeddingModel` - Denormalized chunk data (preserved for reproducible evaluation even if original chunks are modified or deleted)
+- `Rank`, `SimilarityScore` - Retrieval position and cosine similarity
+- `IsRelevant`, `RelevanceGrade` - Relevance labeling for metrics calculation (nullable)
 
 **Dependencies**: None (pure domain logic)
 
@@ -461,17 +476,43 @@ CREATE TABLE DocumentChunks (
 );
 CREATE INDEX IX_DocumentChunks_DocumentId ON DocumentChunks(DocumentId);
 
--- Queries table (chat history - placeholder)
+-- Queries table (query history with response and metrics)
 CREATE TABLE Queries (
     Id UUID PRIMARY KEY,
-    DocumentId UUID REFERENCES Documents(Id),
     Question TEXT NOT NULL,
-    Answer TEXT,
-    SourceCount INT,
+    Language VARCHAR(10) NOT NULL,
+    TopK INT NOT NULL,
+    SystemPrompt TEXT NOT NULL,
+    ChunkingStrategy VARCHAR(100) NOT NULL,
+    EmbeddingModel VARCHAR(100) NOT NULL,
+    ChatModel VARCHAR(100) NOT NULL,
     CreatedAt TIMESTAMP NOT NULL,
-    ResponseTimeMs INT,
-    UserId UUID
+    Answer TEXT NOT NULL,
+    QueryEmbedding VECTOR NOT NULL,      -- pgvector type for offline analysis
+    ResponseTimeMs INT NOT NULL,
+    MRR DOUBLE PRECISION,                -- Nullable metrics (calculated after relevance labeling)
+    PrecisionAtK DOUBLE PRECISION,
+    RecallAtK DOUBLE PRECISION,
+    NDCGAtK DOUBLE PRECISION
 );
+
+-- QueryResults table (retrieved chunks with relevance labeling)
+CREATE TABLE QueryResults (
+    Id UUID PRIMARY KEY,
+    QueryId UUID NOT NULL REFERENCES Queries(Id) ON DELETE CASCADE,
+    DocumentChunkId UUID NOT NULL,       -- Reference only (denormalized data below)
+    DocumentId UUID NOT NULL,
+    FileName VARCHAR(255) NOT NULL,
+    ChunkText TEXT NOT NULL,
+    ChunkingStrategy VARCHAR(100) NOT NULL,
+    EmbeddingModel VARCHAR(100) NOT NULL,
+    Rank INT NOT NULL,
+    SimilarityScore DOUBLE PRECISION NOT NULL,
+    IsRelevant BOOLEAN,                  -- Nullable (for relevance labeling)
+    RelevanceGrade INT                   -- Nullable (0-3 scale for NDCG)
+);
+CREATE INDEX IX_QueryResults_QueryId ON QueryResults(QueryId);
+CREATE INDEX IX_QueryResults_DocumentId ON QueryResults(DocumentId);
 ```
 
 ### Vector Store Implementation
@@ -734,6 +775,9 @@ Containers communicate via Docker's internal network:
 - [x] Document API endpoints (list, get, delete, download, chunks)
 - [x] Query history tracking and API endpoints (list, get)
 - [x] Query persistence with QueryService and QueryRepository
+- [x] Query response and retrieved chunks persistence (QueryResult entity)
+- [x] Query metrics fields (MRR, Precision@K, Recall@K, NDCG@K) with database schema
+- [x] Query embedding storage for offline analysis
 - [x] System prompt configuration via `.env` file
 - [x] Query language selection (en/de) in API and WebUI
 - [x] React frontend UI components
@@ -747,9 +791,8 @@ Containers communicate via Docker's internal network:
 
 ### In Progress / Planned
 
-- [ ] Query responses persistence with source details
 - [ ] Metrics calculation integration in query workflow
-- [ ] Metrics persistence in database for each query
+- [ ] Relevance labeling UI for query results
 - [ ] Unit and integration tests
 - [ ] Analytics and metrics Dashboard
 - [ ] Configurable chunking strategies (for RAG evaluation)

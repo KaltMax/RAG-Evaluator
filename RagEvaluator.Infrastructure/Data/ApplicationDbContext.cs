@@ -13,6 +13,7 @@ namespace RagEvaluator.Infrastructure.Data
         public DbSet<Document> Documents => Set<Document>();
         public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
         public DbSet<Query> Queries => Set<Query>();
+        public DbSet<QueryResult> QueryResults => Set<QueryResult>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
