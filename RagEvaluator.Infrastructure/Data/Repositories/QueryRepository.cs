@@ -34,12 +34,6 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Query query)
-        {
-            _context.Queries.Update(query);
-            await _context.SaveChangesAsync();
-        }
-
         public async Task DeleteAsync(Guid id)
         {
             var query = await _context.Queries.FindAsync(id);

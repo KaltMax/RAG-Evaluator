@@ -72,8 +72,8 @@ namespace RagEvaluator.Application.Services
 
             var stopwatch = Stopwatch.StartNew();
 
-            // Create and persist the query with configuration snapshot
-            var query = await _queryService.CreateQueryAsync(
+            // Create query object with configuration snapshot
+            var query = _queryService.CreateQuery(
                 request.Question,
                 request.Language,
                 request.TopK,

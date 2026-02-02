@@ -247,8 +247,8 @@ RAG-Evaluator/
   - `ProcessDocumentAsync()` - Orchestrates PDF processing workflow
   - `GetDocumentChunksAsync()` - Retrieves document chunks
 - `IQueryService` - Query handling, persistence, and history management
-  - `CreateQueryAsync()` - Persists a new query with configuration snapshot
-  - `CompleteQueryAsync()` - Updates query with answer, embedding, response time, and retrieved chunks
+  - `CreateQuery()` - Creates a query object with configuration snapshot (no persistence)
+  - `CompleteQueryAsync()` - Populates query with answer, embedding, response time, retrieved chunks, and persists to database
   - `GetQueryByIdAsync()` - Retrieves query by ID
   - `GetQueryHistoryAsync()` - Returns paginated query history
 - `IMetricsService` - Similarity and retrieval evaluation metrics
@@ -413,14 +413,14 @@ RAG-Evaluator/
 1. Question Submission (Controller)
    → 2. RagService.AskQuestionAsync() (Application Layer)
       → 3. Start timing with Stopwatch
-      → 4. QueryService.CreateQueryAsync() - Persist query with configuration snapshot
+      → 4. QueryService.CreateQuery() - Create query object with configuration snapshot (no DB)
       → 5. OllamaEmbeddingService.GenerateEmbeddingAsync("search_query: " + question)
       → 6. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
          (uses pgvector cosine distance for ordering, returns ChunkSearchMatch)
       → 7. Build context from retrieved chunks
       → 8. OllamaChatService.GenerateResponseAsync() - Generate answer with context
       → 9. Stop timing, calculate response time
-      → 10. QueryService.CompleteQueryAsync() - Persist answer, embedding, response time, and QueryResults
+      → 10. QueryService.CompleteQueryAsync() - Populate and persist query with answer, embedding, response time, and QueryResults
    → 11. Return QueryResponse with answer + sources (includes similarity, fileName, chunkingStrategy, embeddingModel)
 ```
 

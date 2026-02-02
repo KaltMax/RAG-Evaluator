@@ -11,7 +11,7 @@ namespace RagEvaluator.Application.Services.Interfaces
     {
         Task<QuerySummaryResponse?> GetByIdAsync(Guid id);
         Task<IReadOnlyList<QuerySummaryResponse>> GetAllAsync();
-        Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel);
+        Query CreateQuery(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel);
         Task CompleteQueryAsync(Query query, string answer, float[] queryEmbedding, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches);
         Task DeleteAsync(Guid id);
     }

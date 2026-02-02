@@ -21,9 +21,9 @@ namespace RagEvaluator.Application.Services
             _metricsService = metricsService;
         }
 
-        public async Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel)
+        public Query CreateQuery(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel)
         {
-            var query = new Query
+            return new Query
             {
                 Id = Guid.NewGuid(),
                 Question = question,
@@ -35,9 +35,6 @@ namespace RagEvaluator.Application.Services
                 ChatModel = chatModel,
                 CreatedAt = DateTime.UtcNow
             };
-
-            await _queryRepository.AddAsync(query);
-            return query;
         }
 
         public async Task CompleteQueryAsync(Query query, string answer, float[] queryEmbedding, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches)
@@ -55,7 +52,7 @@ namespace RagEvaluator.Application.Services
                 query.Results.Add(result);
             }
 
-            await _queryRepository.UpdateAsync(query);
+            await _queryRepository.AddAsync(query);
         }
 
         public async Task<QuerySummaryResponse?> GetByIdAsync(Guid id)
