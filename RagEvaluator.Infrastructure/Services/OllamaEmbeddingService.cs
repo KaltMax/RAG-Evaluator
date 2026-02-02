@@ -24,21 +24,11 @@ namespace RagEvaluator.Infrastructure.Services
         {
             try
             {
-                var kernelBuilder = Kernel.CreateBuilder();
-
-#pragma warning disable SKEXP0010
-                var httpClient = new HttpClient
-                {
-                    BaseAddress = new Uri(_config.OllamaEndpoint),
-                    Timeout = TimeSpan.FromMinutes(5) // Allow time for model loading and inference
-                };
-
-                kernelBuilder.AddOpenAIEmbeddingGenerator(
-                    modelId: _config.EmbeddingModel,
-                    apiKey: "ollama",
-                    httpClient: httpClient
-                );
-#pragma warning restore SKEXP0010
+                var kernelBuilder = Kernel.CreateBuilder()
+                    .AddOllamaEmbeddingGenerator(
+                        endpoint: new Uri(_config.OllamaEndpoint),
+                        modelId: _config.EmbeddingModel
+                    );
 
                 var kernel = kernelBuilder.Build();
                 _embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();

@@ -24,19 +24,11 @@ namespace RagEvaluator.Infrastructure.Services
         {
             try
             {
-                var kernelBuilder = Kernel.CreateBuilder();
-
-                var httpClient = new HttpClient
-                {
-                    BaseAddress = new Uri(_config.OllamaEndpoint),
-                    Timeout = TimeSpan.FromMinutes(5) // Allow time for model loading and inference
-                };
-
-                kernelBuilder.AddOpenAIChatCompletion(
-                    modelId: _config.ChatModel,
-                    apiKey: "ollama",
-                    httpClient: httpClient
-                );
+                var kernelBuilder = Kernel.CreateBuilder()
+                    .AddOllamaChatCompletion(
+                        endpoint: new Uri(_config.OllamaEndpoint),
+                        modelId: _config.ChatModel
+                    );
 
                 var kernel = kernelBuilder.Build();
                 _chatService = kernel.GetRequiredService<IChatCompletionService>();
