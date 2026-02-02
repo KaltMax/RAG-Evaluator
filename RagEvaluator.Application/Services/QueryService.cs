@@ -3,6 +3,7 @@ using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services
 {
@@ -12,13 +13,15 @@ namespace RagEvaluator.Application.Services
     public class QueryService : IQueryService
     {
         private readonly IQueryRepository _queryRepository;
+        private readonly IMetricsService _metricsService;
 
-        public QueryService(IQueryRepository queryRepository)
+        public QueryService(IQueryRepository queryRepository, IMetricsService metricsService)
         {
             _queryRepository = queryRepository;
+            _metricsService = metricsService;
         }
 
-        public async Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string embeddingModel, string chatModel)
+        public async Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel)
         {
             var query = new Query
             {
@@ -27,6 +30,7 @@ namespace RagEvaluator.Application.Services
                 Language = language,
                 TopK = topK,
                 SystemPrompt = systemPrompt,
+                ChunkingStrategy = chunkingStrategy,
                 EmbeddingModel = embeddingModel,
                 ChatModel = chatModel,
                 CreatedAt = DateTime.UtcNow
@@ -34,6 +38,24 @@ namespace RagEvaluator.Application.Services
 
             await _queryRepository.AddAsync(query);
             return query;
+        }
+
+        public async Task CompleteQueryAsync(Query query, string answer, float[] queryEmbedding, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches)
+        {
+            query.Answer = answer;
+            query.QueryEmbedding = queryEmbedding;
+            query.ResponseTimeMs = responseTimeMs;
+
+            // Create QueryResult entities from chunk matches
+            var rank = 1;
+            foreach (var match in chunkMatches)
+            {
+                var similarity = _metricsService.CosineSimilarity(queryEmbedding, match.Embedding);
+                var result = match.ToQueryResult(query.Id, rank++, similarity);
+                query.Results.Add(result);
+            }
+
+            await _queryRepository.UpdateAsync(query);
         }
 
         public async Task<QuerySummaryResponse?> GetByIdAsync(Guid id)

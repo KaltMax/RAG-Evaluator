@@ -143,7 +143,8 @@ RAG-Evaluator/
 │   │   ├── Document.cs                  # Document aggregate root
 │   │   ├── DocumentSummary.cs           # Lightweight document (for list views)
 │   │   ├── DocumentChunk.cs             # Text chunk with vector embedding
-│   │   └── Query.cs                     # User query entity
+│   │   ├── Query.cs                     # User query entity
+│   │   └── QueryResult.cs               # Retrieved chunk result with relevance
 │   ├── ValueObjects/
 │   │   ├── SearchResult.cs              # Search result with similarity score
 │   │   └── ChunkSearchMatch.cs          # Raw chunk match (before similarity calculation)
@@ -161,7 +162,8 @@ RAG-Evaluator/
 │   │   ├── Configurations/
 │   │   │   ├── DocumentConfiguration.cs
 │   │   │   ├── DocumentChunkConfiguration.cs # pgvector mapping
-│   │   │   └── QueryConfiguration.cs    # Query entity mapping
+│   │   │   ├── QueryConfiguration.cs    # Query entity mapping
+│   │   │   └── QueryResultConfiguration.cs # QueryResult entity mapping
 │   │   └── Migrations/
 │   └── Services/
 │       ├── LocalFileStorageService.cs   # Local file system storage
@@ -245,7 +247,8 @@ RAG-Evaluator/
   - `ProcessDocumentAsync()` - Orchestrates PDF processing workflow
   - `GetDocumentChunksAsync()` - Retrieves document chunks
 - `IQueryService` - Query handling, persistence, and history management
-  - `CreateQueryAsync()` - Persists a new query
+  - `CreateQueryAsync()` - Persists a new query with configuration snapshot
+  - `CompleteQueryAsync()` - Updates query with answer, embedding, response time, and retrieved chunks
   - `GetQueryByIdAsync()` - Retrieves query by ID
   - `GetQueryHistoryAsync()` - Returns paginated query history
 - `IMetricsService` - Similarity and retrieval evaluation metrics
@@ -409,13 +412,16 @@ RAG-Evaluator/
 ```
 1. Question Submission (Controller)
    → 2. RagService.AskQuestionAsync() (Application Layer)
-      → 3. OllamaEmbeddingService.GenerateEmbeddingAsync("search_query: " + question)
-      → 4. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
+      → 3. Start timing with Stopwatch
+      → 4. QueryService.CreateQueryAsync() - Persist query with configuration snapshot
+      → 5. OllamaEmbeddingService.GenerateEmbeddingAsync("search_query: " + question)
+      → 6. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
          (uses pgvector cosine distance for ordering, returns ChunkSearchMatch)
-      → 5. MetricsService.CosineSimilarity() - Calculate similarity scores
-      → 6. Build context from retrieved chunks
-      → 7. OllamaChatService.GenerateResponseAsync() - Generate answer with context
-   → 8. Return QueryResponse with answer + sources (includes similarity, fileName, chunkingStrategy, embeddingModel)
+      → 7. Build context from retrieved chunks
+      → 8. OllamaChatService.GenerateResponseAsync() - Generate answer with context
+      → 9. Stop timing, calculate response time
+      → 10. QueryService.CompleteQueryAsync() - Persist answer, embedding, response time, and QueryResults
+   → 11. Return QueryResponse with answer + sources (includes similarity, fileName, chunkingStrategy, embeddingModel)
 ```
 
 ### Dependency Inversion in Action
@@ -683,6 +689,7 @@ environment:
   - RagConfiguration__EmbeddingModel=${OLLAMA_EMBEDDING_MODEL}
   - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
   - RagConfiguration__SystemPrompt=${RAG_SYSTEM_PROMPT}
+  - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
@@ -779,6 +786,7 @@ Containers communicate via Docker's internal network:
 - [x] Query metrics fields (MRR, Precision@K, Recall@K, NDCG@K) with database schema
 - [x] Query embedding storage for offline analysis
 - [x] System prompt configuration via `.env` file
+- [x] Chunking strategy configuration via `.env` file
 - [x] Query language selection (en/de) in API and WebUI
 - [x] React frontend UI components
   - [x] Multi-file upload (up to 20 files)
@@ -792,12 +800,13 @@ Containers communicate via Docker's internal network:
 ### In Progress / Planned
 
 - [ ] Metrics calculation integration in query workflow
+- [ ] Semantic Chunking Strategy implementation
 - [ ] Relevance labeling UI for query results
 - [ ] Unit and integration tests
-- [ ] Analytics and metrics Dashboard
 - [ ] Configurable chunking strategies (for RAG evaluation)
 - [ ] Multiple embedding model support (for RAG evaluation)
 - [ ] Configurable System Prompt templates (for different use cases)
+- [ ] Analytics and metrics Dashboard
 
 ## Resources
 

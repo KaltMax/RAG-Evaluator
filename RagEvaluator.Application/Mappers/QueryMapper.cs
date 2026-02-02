@@ -63,5 +63,22 @@ namespace RagEvaluator.Application.Mappers
                 .Select(m => m.ToSearchResultDto(similarityFunc(questionEmbedding, m.Embedding)))
                 .ToList();
         }
+
+        public static QueryResult ToQueryResult(this ChunkSearchMatch match, Guid queryId, int rank, double similarity)
+        {
+            return new QueryResult
+            {
+                Id = Guid.NewGuid(),
+                QueryId = queryId,
+                DocumentChunkId = match.Id,
+                DocumentId = match.DocumentId,
+                FileName = match.FileName,
+                ChunkText = match.Text,
+                ChunkingStrategy = match.ChunkingStrategy,
+                EmbeddingModel = match.EmbeddingModel,
+                Rank = rank,
+                SimilarityScore = similarity
+            };
+        }
     }
 }

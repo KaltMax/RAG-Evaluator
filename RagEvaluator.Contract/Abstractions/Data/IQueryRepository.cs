@@ -10,6 +10,7 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task<Query?> GetByIdAsync(Guid id);
         Task<IReadOnlyList<Query>> GetAllAsync();
         Task AddAsync(Query query);
+        Task UpdateAsync(Query query);
         Task DeleteAsync(Guid id);
     }
 }

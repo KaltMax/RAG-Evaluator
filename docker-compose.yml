@@ -71,6 +71,7 @@ services:
       - RagConfiguration__EmbeddingModel=${OLLAMA_EMBEDDING_MODEL}
       - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
       - RagConfiguration__SystemPrompt=${RAG_SYSTEM_PROMPT}
+      - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
       - FileStorageConfiguration__BaseDirectory=${FILE_STORAGE_BASE_DIRECTORY}
     ports:
       - "${API_PORT}:8080"

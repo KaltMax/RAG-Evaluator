@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Services;
@@ -69,12 +70,15 @@ namespace RagEvaluator.Application.Services
                 throw new InvalidOperationException("RAG services not available. Ensure Ollama is running with the required models.");
             }
 
+            var stopwatch = Stopwatch.StartNew();
+
             // Create and persist the query with configuration snapshot
             var query = await _queryService.CreateQueryAsync(
                 request.Question,
                 request.Language,
                 request.TopK,
                 _config.SystemPrompt,
+                _config.ChunkingStrategy,
                 _config.EmbeddingModel,
                 _config.ChatModel);
 
@@ -84,19 +88,27 @@ namespace RagEvaluator.Application.Services
             // Search for relevant document chunks
             var chunkMatches = await _documentService.SearchChunksAsync(questionEmbedding, request.TopK);
 
+            string answer;
             if (chunkMatches.Count == 0)
             {
-                return query.ToResponse(
-                    "No relevant documents found in the knowledge base. Please upload documents first.",
-                    []);
+                answer = "No relevant documents found in the knowledge base. Please upload documents first.";
+            }
+            else
+            {
+                // Build context from search results
+                var context = string.Join("\n\n", chunkMatches.Select(r => r.Text));
+
+                // Generate answer using LLM
+                var userMessage = $"Context:\n{context}\n\nQuestion: {request.Question}\n\nAnswer:";
+                answer = await _chatService.GenerateResponseAsync(_config.SystemPrompt, userMessage);
             }
 
-            // Build context from search results
-            var context = string.Join("\n\n", chunkMatches.Select(r => r.Text));
+            // Calculate response time
+            stopwatch.Stop();
+            var responseTimeMs = (int)stopwatch.ElapsedMilliseconds;
 
-            // Generate answer using LLM
-            var userMessage = $"Context:\n{context}\n\nQuestion: {request.Question}\n\nAnswer:";
-            var answer = await _chatService.GenerateResponseAsync(_config.SystemPrompt, userMessage);
+            // Persist query results (answer, embedding, retrieved chunks)
+            await _queryService.CompleteQueryAsync(query, answer, questionEmbedding, responseTimeMs, chunkMatches);
 
             // Map results using QueryMapper
             var sources = chunkMatches.ToSearchResultDtoList(questionEmbedding, _metricsService.CosineSimilarity);

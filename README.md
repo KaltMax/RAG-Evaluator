@@ -42,7 +42,7 @@ This will start:
 - **PostgreSQL** on `localhost:5432`
 - **Ollama** on `localhost:11434`
 
-**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 10 GB total: `nomic-embed-text-v2-moe` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume. Models and system prompt are configurable via `.env`.
+**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 10 GB total: `nomic-embed-text-v2-moe` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume. Models, system prompt, and chunking strategy are configurable via `.env`.
 
 **GPU Verification**: After startup, verify GPU access with:
 ```bash
