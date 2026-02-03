@@ -81,6 +81,7 @@ RAG-Evaluator/
 ├── RagEvaluator.API/                    # ASP.NET Core Web API
 │   ├── Controllers/
 │   │   ├── DocumentController.cs        # Upload PDFs, manage docs
+│   │   ├── HealthController.cs          # Service health check
 │   │   └── QueryController.cs           # Ask questions, RAG queries
 │   ├── Middleware/
 │   │   └── ExceptionHandlingMiddleware.cs
@@ -243,8 +244,7 @@ RAG-Evaluator/
 - `IRagService` - Core RAG orchestration (business logic)
   - `ProcessDocumentAsync()` - Orchestrates document upload workflow
   - `AskQuestionAsync()` - Orchestrates RAG query workflow
-  - `IsInitializedAsync()` - Checks service availability
-  - `GetDocumentCountAsync()` - Returns document count
+  - `IsInitializedAsync()` - Checks if Ollama services are available (used by health endpoint)
 - `IDocumentService` - Document processing and management operations
   - `ProcessDocumentAsync()` - Orchestrates PDF processing workflow
   - `GetDocumentChunksAsync()` - Retrieves document chunks
@@ -558,6 +558,12 @@ POST   /api/query                   # Ask question using RAG (IMPLEMENTED)
 GET    /api/query/history           # Get query history (IMPLEMENTED)
 GET    /api/query/{id}              # Get specific query (IMPLEMENTED)
 PATCH  /api/query/{id}/results      # Annotate results with relevance and calculate metrics (IMPLEMENTED)
+```
+
+#### Health API
+
+```
+GET    /api/health                   # Check if RAG services are ready (IMPLEMENTED)
 ```
 
 **Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation and metrics calculation are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.

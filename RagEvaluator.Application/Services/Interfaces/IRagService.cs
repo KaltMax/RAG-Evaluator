@@ -22,10 +22,5 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// Checks if the RAG service is fully initialized and ready by verifying both query and chat services are available.
         /// </summary>
         Task<bool> IsInitializedAsync();
-        
-        /// <summary>
-        /// Gets the total count of documents in the system.
-        /// </summary>
-        Task<int> GetDocumentCountAsync();
     }
 }

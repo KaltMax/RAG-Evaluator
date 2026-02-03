@@ -114,11 +114,5 @@ namespace RagEvaluator.Application.Services
         {
             return await _queryService.IsReadyAsync() && await _chatService.IsAvailableAsync();
         }
-
-        public async Task<int> GetDocumentCountAsync()
-        {
-            var documents = await _documentService.GetAllAsync();
-            return documents.Count;
-        }
     }
 }

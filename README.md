@@ -140,6 +140,9 @@ Once running, the API is available at `http://localhost:5000`:
 - `GET /api/query/{id}` - Get specific query details
 - `PATCH /api/query/{id}/results` - Annotate query results with relevance labels and calculate metrics
 
+### Health
+- `GET /api/health` - Check if RAG services (Ollama) are ready
+
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
