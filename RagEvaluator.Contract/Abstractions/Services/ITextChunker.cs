@@ -5,7 +5,14 @@ namespace RagEvaluator.Contract.Abstractions.Services
     /// </summary>
     public interface ITextChunker
     {
+        /// <summary>
+        /// Splits a list of documents into smaller text chunks.
+        /// </summary>
         List<string> SplitDocuments(List<string> documents);
+        
+        /// <summary>
+        /// Splits a single text into smaller chunks.
+        /// </summary>
         List<string> SplitText(string text);
     }
 }

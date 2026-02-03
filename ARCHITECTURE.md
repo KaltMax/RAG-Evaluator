@@ -124,16 +124,15 @@ RAG-Evaluator/
 │   ├── Dtos/
 │   │   ├── Requests/
 │   │   │   ├── AskQuestionRequest.cs
-│   │   │   └── UploadDocumentRequest.cs
-│   │   ├── Responses/
-│   │   │   ├── QueryResponse.cs
-│   │   │   ├── QuerySummaryResponse.cs  # Query history list item
-│   │   │   ├── SearchResultDto.cs
-│   │   │   ├── DocumentResponse.cs
-│   │   │   ├── DocumentChunkResponse.cs # Document chunk details
-│   │   │   ├── DocumentFileInfo.cs      # File info for downloads
-│   │   │   └── ErrorResponse.cs
-│   │   └── PaginationDto.cs
+│   │   │   ├── UploadDocumentRequest.cs
+│   │   │   └── AnnotateQueryResultsRequest.cs  # Relevance annotations
+│   │   └── Responses/
+│   │       ├── QueryResponse.cs
+│   │       ├── QuerySummaryResponse.cs  # Query history list item
+│   │       ├── SearchResultDto.cs
+│   │       ├── DocumentResponse.cs
+│   │       ├── DocumentChunkResponse.cs # Document chunk details
+│   │       └── DocumentFileInfo.cs      # File info for downloads
 │   └── Logger/
 │       ├── ILoggerWrapper.cs
 │       └── LoggerWrapper.cs
@@ -145,9 +144,13 @@ RAG-Evaluator/
 │   │   ├── DocumentChunk.cs             # Text chunk with vector embedding
 │   │   ├── Query.cs                     # User query entity
 │   │   └── QueryResult.cs               # Retrieved chunk result with relevance
+│   ├── Enums/
+│   │   ├── DocumentStatus.cs            # Document processing status
+│   │   └── RelevanceGrade.cs            # Graded relevance scale (0-3) for NDCG
 │   ├── ValueObjects/
 │   │   ├── SearchResult.cs              # Search result with similarity score
-│   │   └── ChunkSearchMatch.cs          # Raw chunk match (before similarity calculation)
+│   │   ├── ChunkSearchMatch.cs          # Raw chunk match (before similarity calculation)
+│   │   └── QueryMetrics.cs              # RAG metrics container (MRR, P@K, R@K, NDCG@K)
 │   └── Exceptions/
 │       ├── DocumentNotFoundException.cs
 │       └── VectorStoreException.cs
@@ -250,11 +253,14 @@ RAG-Evaluator/
   - `CompleteQueryAsync()` - Populates query with answer, embedding, response time, retrieved chunks, and persists to database
   - `GetQueryByIdAsync()` - Retrieves query by ID
   - `GetQueryHistoryAsync()` - Returns paginated query history
+  - `AnnotateResultsAsync()` - Updates query results with relevance grades
+  - `CalculateMetricsAsync()` - Calculates MRR, Precision@K, Recall@K, NDCG@K based on relevance labels
 - `IMetricsService` - Similarity and retrieval evaluation metrics
   - `CosineSimilarity()` / `CosineDistance()` - Vector similarity calculations
   - `MeanReciprocalRank()` - MRR for retrieval evaluation
   - `PrecisionAtK()` / `RecallAtK()` - Precision and recall metrics
   - `NormalizedDiscountedCumulativeGainAtK()` - NDCG for ranking quality
+  - `CalculateQueryMetrics()` - Calculates all metrics for a query from its results
 
 **Dependencies**: → Domain, Contract
 
@@ -326,7 +332,7 @@ RAG-Evaluator/
 - `Id`, `QueryId` - Primary key and foreign key to Query
 - `DocumentChunkId`, `DocumentId`, `FileName`, `ChunkText`, `ChunkingStrategy`, `EmbeddingModel` - Denormalized chunk data (preserved for reproducible evaluation even if original chunks are modified or deleted)
 - `Rank`, `SimilarityScore` - Retrieval position and cosine similarity
-- `IsRelevant`, `RelevanceGrade` - Relevance labeling for metrics calculation (nullable)
+- `IsRelevant`, `RelevanceGrade` - Relevance labeling for metrics calculation (nullable). `RelevanceGrade` is a `RelevanceGrade` enum (NotRelevant=0, MarginallyRelevant=1, FairlyRelevant=2, HighlyRelevant=3)
 
 **Dependencies**: None (pure domain logic)
 
@@ -514,7 +520,7 @@ CREATE TABLE QueryResults (
     Rank INT NOT NULL,
     SimilarityScore DOUBLE PRECISION NOT NULL,
     IsRelevant BOOLEAN,                  -- Nullable (for relevance labeling)
-    RelevanceGrade INT                   -- Nullable (0-3 scale for NDCG)
+    RelevanceGrade INT                   -- Nullable (RelevanceGrade enum: 0=NotRelevant, 1=MarginallyRelevant, 2=FairlyRelevant, 3=HighlyRelevant)
 );
 CREATE INDEX IX_QueryResults_QueryId ON QueryResults(QueryId);
 CREATE INDEX IX_QueryResults_DocumentId ON QueryResults(DocumentId);
@@ -551,9 +557,10 @@ GET    /api/documents/{id}/chunks   # Get document chunks (IMPLEMENTED)
 POST   /api/query                   # Ask question using RAG (IMPLEMENTED)
 GET    /api/query/history           # Get query history (IMPLEMENTED)
 GET    /api/query/{id}              # Get specific query (IMPLEMENTED)
+PATCH  /api/query/{id}/results      # Annotate results with relevance and calculate metrics (IMPLEMENTED)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation and metrics calculation are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
 
 ### Request/Response Examples
 
@@ -713,10 +720,10 @@ Containers communicate via Docker's internal network:
 - [x] **API**: Full CRUD for documents and queries, Swagger UI, Docker Compose orchestration
 - [x] **Frontend**: React UI with multi-file upload, language selection, search results with source details
 - [x] **Configuration**: System prompt, embedding model, and chunking strategy via `.env`
+- [x] **Relevance Annotation**: API endpoint for labeling query results with graded relevance (RelevanceGrade enum), automatic metrics calculation
 
 ### In Progress / Planned
 
-- [ ] Metrics calculation integration in query workflow and add api endpoint
 - [ ] Relevance labeling UI for query results
 - [ ] Improve FixedSizeTextChunker
 - [ ] Semantic Chunking Strategy implementation

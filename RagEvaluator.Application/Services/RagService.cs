@@ -5,7 +5,7 @@ using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Application.Services
 {

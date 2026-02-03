@@ -8,9 +8,24 @@ namespace RagEvaluator.Application.Services.Interfaces
     /// </summary>
     public interface IRagService
     {
+        /// <summary>
+        /// Processes a document by creating it, extracting content, generating chunks with embeddings, and storing them.
+        /// </summary>
         Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language);
+        
+        /// <summary>
+        /// Answers a question using RAG: searches for relevant document chunks and generates an answer using the LLM with retrieved context.
+        /// </summary>
         Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request);
+        
+        /// <summary>
+        /// Checks if the RAG service is fully initialized and ready by verifying both query and chat services are available.
+        /// </summary>
         Task<bool> IsInitializedAsync();
+        
+        /// <summary>
+        /// Gets the total count of documents in the system.
+        /// </summary>
         Task<int> GetDocumentCountAsync();
     }
 }

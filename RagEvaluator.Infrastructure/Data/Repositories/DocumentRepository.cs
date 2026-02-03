@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Infrastructure.Data.Repositories
 {

@@ -1,3 +1,5 @@
+using RagEvaluator.Domain.Enums;
+
 namespace RagEvaluator.Domain.Entities
 {
     /// <summary>

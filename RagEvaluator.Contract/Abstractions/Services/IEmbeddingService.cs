@@ -5,7 +5,14 @@ namespace RagEvaluator.Contract.Abstractions.Services
     /// </summary>
     public interface IEmbeddingService
     {
+        /// <summary>
+        /// Generates a vector embedding from the provided text.
+        /// </summary>
         Task<float[]> GenerateEmbeddingAsync(string text);
+        
+        /// <summary>
+        /// Checks whether the embedding service is available and ready to generate embeddings.
+        /// </summary>
         Task<bool> IsAvailableAsync();
     }
 }

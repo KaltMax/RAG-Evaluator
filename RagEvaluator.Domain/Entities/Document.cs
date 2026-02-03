@@ -1,4 +1,6 @@
-﻿namespace RagEvaluator.Domain.Entities
+﻿using RagEvaluator.Domain.Enums;
+
+namespace RagEvaluator.Domain.Entities
 {
     /// <summary>
     /// Represents a document uploaded by a user.
@@ -17,13 +19,5 @@
         public DateTime UploadedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
         public DocumentStatus Status { get; set; } = DocumentStatus.Pending;
-    }
-
-    public enum DocumentStatus
-    {
-        Pending,
-        Processing,
-        Completed,
-        Failed
     }
 }
