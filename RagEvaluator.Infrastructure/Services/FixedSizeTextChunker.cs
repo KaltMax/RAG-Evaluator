@@ -6,7 +6,7 @@ namespace RagEvaluator.Infrastructure.Services
     /// <summary>
     /// Service for splitting text into manageable chunks with overlap
     /// </summary>
-    public class TextChunker : ITextChunker
+    public class FixedSizeTextChunker : ITextChunker
     {
         private readonly int _chunkSize;
         private readonly int _chunkOverlap;
@@ -15,16 +15,22 @@ namespace RagEvaluator.Infrastructure.Services
         /// Creates a new TextChunker with specified configuration
         /// </summary>
         /// <param name="config">RAG configuration containing chunk size and overlap settings</param>
-        public TextChunker(RagConfiguration config)
+        public FixedSizeTextChunker(RagConfiguration config)
         {
             if (config.ChunkSize <= 0)
+            {
                 throw new ArgumentException("Chunk size must be positive", nameof(config.ChunkSize));
-
+            }
+                
             if (config.ChunkOverlap < 0)
+            {
                 throw new ArgumentException("Chunk overlap cannot be negative", nameof(config.ChunkOverlap));
+            }
 
             if (config.ChunkOverlap >= config.ChunkSize)
+            {
                 throw new ArgumentException("Chunk overlap must be less than chunk size", nameof(config.ChunkOverlap));
+            }
 
             _chunkSize = config.ChunkSize;
             _chunkOverlap = config.ChunkOverlap;

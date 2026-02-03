@@ -61,8 +61,8 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
                                 │ • OllamaChatService        │
                                 │ • OllamaEmbeddingService   │
                                 │ • LocalFileStorageService  │
-                                │ • PdfLoader                │
-                                │ • TextChunker              │
+                                │ • PdfPigLoader             │
+                                │ • FixedSizeTextChunker     │
                                 │ • DocumentRepository       │
                                 │ • DocumentChunkRepository  │
                                 └────────────────────────────┘
@@ -167,8 +167,8 @@ RAG-Evaluator/
 │   │   └── Migrations/
 │   └── Services/
 │       ├── LocalFileStorageService.cs   # Local file system storage
-│       ├── PdfLoader.cs                 # PDF text extraction (PdfPig)
-│       ├── TextChunker.cs               # Text splitting
+│       ├── PdfPigLoader.cs              # PDF text extraction (PdfPig)
+│       ├── FixedSizeTextChunker.cs      # Text splitting
 │       ├── OllamaChatService.cs         # Ollama chat service
 │       └── OllamaEmbeddingService.cs    # Ollama embedding service
 │
@@ -355,8 +355,8 @@ RAG-Evaluator/
 **Implemented Services**:
 
 - `LocalFileStorageService` - Local file system storage with configurable directory
-- `PdfLoader` - PDF text extraction using PdfPig with ContentOrderTextExtractor for proper reading order
-- `TextChunker` - Text chunking with configurable size and overlap
+- `PdfPigLoader` - PDF text extraction using PdfPig with ContentOrderTextExtractor for proper reading order
+- `FixedSizeTextChunker` - Text chunking with configurable size and overlap
 - `DocumentChunkRepository` - PostgreSQL vector store with pgvector for similarity search
 - `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel
 - `OllamaChatService` - Ollama chat completion via Semantic Kernel
@@ -397,8 +397,8 @@ RAG-Evaluator/
 ```
 1. PDF Upload (Controller)
    → 2. RagService.ProcessDocumentAsync() (Application Layer)
-      → 3. PdfLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
-      → 4. TextChunker.SplitDocuments() - Split into chunks (1000 chars, 200 overlap)
+      → 3. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
+      → 4. FixedSizeTextChunker.SplitDocuments() - Split into chunks (1000 chars, 200 overlap)
       → 5. For each chunk:
          → 6. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
          → 7. Create DocumentChunk entity with embedding, strategy, model info
@@ -431,7 +431,7 @@ The Contract layer defines **what** needs to be done (interface abstractions):
 - Data interfaces: `IDocumentRepository`, `IDocumentChunkRepository`
 
 The Infrastructure layer defines **how** it's done (concrete implementations):
-- `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfLoader`, `TextChunker`
+- `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfPigLoader`, `FixedSizeTextChunker`
 - `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration)
 
 The Application layer consumes these abstractions:
@@ -807,6 +807,7 @@ Containers communicate via Docker's internal network:
 - [ ] Multiple embedding model support (for RAG evaluation)
 - [ ] Configurable System Prompt templates (for different use cases)
 - [ ] Analytics and metrics Dashboard
+- [ ] Logging and Error Handling with custom exceptions
 
 ## Resources
 

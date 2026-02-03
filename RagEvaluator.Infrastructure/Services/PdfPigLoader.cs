@@ -7,7 +7,7 @@ namespace RagEvaluator.Infrastructure.Services
     /// <summary>
     /// Service for loading and extracting text from PDF documents using ContentOrderTextExtractor.
     /// </summary>
-    public class PdfLoader : IPdfLoader
+    public class PdfPigLoader : IPdfLoader
     {
         /// <summary>
         /// Loads a PDF file and extracts text from each page

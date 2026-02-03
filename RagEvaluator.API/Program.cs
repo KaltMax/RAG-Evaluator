@@ -45,8 +45,8 @@ namespace RagEvaluator.API
             builder.Services.AddScoped<IQueryRepository, QueryRepository>();
 
             // Register Infrastructure services (implementations)
-            builder.Services.AddSingleton<IPdfLoader, PdfLoader>();
-            builder.Services.AddSingleton<ITextChunker, TextChunker>();
+            builder.Services.AddSingleton<IPdfLoader, PdfPigLoader>();
+            builder.Services.AddSingleton<ITextChunker, FixedSizeTextChunker>();
             builder.Services.AddSingleton<IEmbeddingService, OllamaEmbeddingService>();
             builder.Services.AddSingleton<IChatService, OllamaChatService>();
             builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
