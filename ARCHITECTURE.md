@@ -716,14 +716,16 @@ Containers communicate via Docker's internal network:
 
 ### In Progress / Planned
 
-- [ ] Metrics calculation integration in query workflow
-- [ ] Semantic Chunking Strategy implementation
+- [ ] Metrics calculation integration in query workflow and add api endpoint
 - [ ] Relevance labeling UI for query results
-- [ ] Unit and integration tests
+- [ ] Improve FixedSizeTextChunker
+- [ ] Semantic Chunking Strategy implementation
 - [ ] Configurable chunking strategies (for RAG evaluation)
 - [ ] Multiple embedding model support (for RAG evaluation)
 - [ ] Configurable System Prompt templates (for different use cases)
+- [ ] Settings page in WebUI for runtime configuration
 - [ ] Analytics and metrics Dashboard
+- [ ] Unit and integration tests
 - [ ] Logging and Error Handling with custom exceptions
 
 ## Resources

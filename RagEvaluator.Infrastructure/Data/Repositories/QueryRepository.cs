@@ -21,6 +21,13 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             return await _context.Queries.FindAsync(id);
         }
 
+        public async Task<Query?> GetByIdWithResultsAsync(Guid id)
+        {
+            return await _context.Queries
+                .Include(q => q.Results)
+                .FirstOrDefaultAsync(q => q.Id == id);
+        }
+
         public async Task<IReadOnlyList<Query>> GetAllAsync()
         {
             return await _context.Queries
@@ -31,6 +38,12 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
         public async Task AddAsync(Query query)
         {
             await _context.Queries.AddAsync(query);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Query query)
+        {
+            _context.Queries.Update(query);
             await _context.SaveChangesAsync();
         }
 

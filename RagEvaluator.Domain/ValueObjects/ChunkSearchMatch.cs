@@ -5,12 +5,12 @@ namespace RagEvaluator.Domain.ValueObjects
     /// </summary>
     public class ChunkSearchMatch
     {
-        public Guid Id { get; set; }
-        public string Text { get; set; } = string.Empty;
-        public float[] Embedding { get; set; } = [];
-        public Guid DocumentId { get; set; }
-        public string FileName { get; set; } = string.Empty;
-        public string ChunkingStrategy { get; set; } = string.Empty;
-        public string EmbeddingModel { get; set; } = string.Empty;
+        public Guid Id { get; init; }
+        public string Text { get; init; } = string.Empty;
+        public float[] Embedding { get; init; } = [];
+        public Guid DocumentId { get; init; }
+        public string FileName { get; init; } = string.Empty;
+        public string ChunkingStrategy { get; init; } = string.Empty;
+        public string EmbeddingModel { get; init; } = string.Empty;
     }
 }

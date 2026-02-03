@@ -1,4 +1,6 @@
 using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services
 {
@@ -125,6 +127,47 @@ namespace RagEvaluator.Application.Services
             }
 
             return dcg / idcg;
+        }
+
+        public QueryMetrics CalculateQueryMetrics(IReadOnlyList<QueryResult> results, int topK)
+        {
+            // Order results by rank for metric calculations
+            var orderedResults = results.OrderBy(r => r.Rank).ToList();
+
+            // Calculate MRR: 1/rank of first relevant result (0 if none)
+            var firstRelevantRank = orderedResults
+                .Where(r => r.IsRelevant == true)
+                .Select(r => (int?)r.Rank)
+                .FirstOrDefault();
+            var mrr = MeanReciprocalRank([firstRelevantRank]);
+
+            // Calculate Precision@K and Recall@K
+            var retrievedIds = orderedResults
+                .Select(r => r.DocumentChunkId.ToString())
+                .ToList();
+            var relevantIds = orderedResults
+                .Where(r => r.IsRelevant == true)
+                .Select(r => r.DocumentChunkId.ToString())
+                .ToList();
+
+            var precisionAtK = PrecisionAtK(retrievedIds, relevantIds, topK);
+            var recallAtK = RecallAtK(retrievedIds, relevantIds, topK);
+
+            // Calculate NDCG@K using RelevanceGrade if available, otherwise binary (1.0 for relevant, 0.0 for not)
+            var relevanceScores = orderedResults
+                .Select(r => r.RelevanceGrade.HasValue
+                    ? (double)r.RelevanceGrade.Value
+                    : (r.IsRelevant == true ? 1.0 : 0.0))
+                .ToList();
+            var ndcgAtK = NormalizedDiscountedCumulativeGainAtK(relevanceScores, topK);
+
+            return new QueryMetrics
+            {
+                MRR = mrr,
+                PrecisionAtK = precisionAtK,
+                RecallAtK = recallAtK,
+                NDCGAtK = ndcgAtK
+            };
         }
     }
 }

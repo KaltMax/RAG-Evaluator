@@ -8,8 +8,10 @@ namespace RagEvaluator.Contract.Abstractions.Data
     public interface IQueryRepository
     {
         Task<Query?> GetByIdAsync(Guid id);
+        Task<Query?> GetByIdWithResultsAsync(Guid id);
         Task<IReadOnlyList<Query>> GetAllAsync();
         Task AddAsync(Query query);
+        Task UpdateAsync(Query query);
         Task DeleteAsync(Guid id);
     }
 }

@@ -77,6 +77,31 @@ namespace RagEvaluator.Application.Services
             return queries.ToSummaryList();
         }
 
+        public async Task CalculateMetricsAsync(Guid queryId)
+        {
+            var query = await _queryRepository.GetByIdWithResultsAsync(queryId);
+            if (query == null)
+            {
+                throw new ArgumentException($"Query with id {queryId} not found");
+            }
+
+            // Check if any results have been labeled
+            var hasLabels = query.Results.Any(r => r.IsRelevant.HasValue);
+            if (!hasLabels)
+            {
+                return; // No relevance labels, nothing to calculate
+            }
+
+            var metrics = _metricsService.CalculateQueryMetrics(query.Results.ToList(), query.TopK);
+
+            query.MRR = metrics.MRR;
+            query.PrecisionAtK = metrics.PrecisionAtK;
+            query.RecallAtK = metrics.RecallAtK;
+            query.NDCGAtK = metrics.NDCGAtK;
+
+            await _queryRepository.UpdateAsync(query);
+        }
+
         public async Task DeleteAsync(Guid id)
         {
             await _queryRepository.DeleteAsync(id);

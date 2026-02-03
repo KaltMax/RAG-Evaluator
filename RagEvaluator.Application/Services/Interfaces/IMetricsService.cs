@@ -1,3 +1,6 @@
+using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.ValueObjects;
+
 namespace RagEvaluator.Application.Services.Interfaces
 {
     /// <summary>
@@ -11,5 +14,6 @@ namespace RagEvaluator.Application.Services.Interfaces
         double PrecisionAtK(IReadOnlyList<string> retrievedIds, IReadOnlyList<string> relevantIds, int k);
         double RecallAtK(IReadOnlyList<string> retrievedIds, IReadOnlyList<string> relevantIds, int k);
         double NormalizedDiscountedCumulativeGainAtK(IReadOnlyList<double> relevanceScores, int k);
+        QueryMetrics CalculateQueryMetrics(IReadOnlyList<QueryResult> results, int topK);
     }
 }
