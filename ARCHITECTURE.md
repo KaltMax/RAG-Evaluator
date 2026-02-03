@@ -227,7 +227,6 @@ RAG-Evaluator/
 - Service coordination
 - Business validation
 - Transaction management
-- Caching strategies
 
 **Key Components**:
 
@@ -340,9 +339,7 @@ RAG-Evaluator/
 - Data persistence (Entity Framework Core)
 - External service integration (Ollama)
 - File system operations (PDF loading)
-- Caching implementation
 - Vector store implementation
-- Email/notification services
 
 **Key Components**:
 
@@ -435,7 +432,9 @@ The Infrastructure layer defines **how** it's done (concrete implementations):
 - `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration)
 
 The Application layer consumes these abstractions:
-- `RagService` uses IChatService, IEmbeddingService, IDocumentChunkRepository, IMetricsService, etc.
+- `RagService` uses IChatService
+- `DocumentService` uses IPdfLoader, ITextChunker, IFileStorageService, IEmbeddingService
+- `QueryService` uses IQueryRepository, IEmbeddingService, IQueryRepository
 - `MetricsService` provides similarity and evaluation metric calculations (CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K)
 - No direct dependency on Infrastructure implementations
 
@@ -538,20 +537,20 @@ CREATE INDEX IX_QueryResults_DocumentId ON QueryResults(DocumentId);
 #### Documents API
 
 ```
-POST   /api/documents/upload       # Upload PDF document (IMPLEMENTED)
-GET    /api/documents              # List all documents (IMPLEMENTED)
-GET    /api/documents/{id}         # Get document details (IMPLEMENTED)
+POST   /api/documents/upload        # Upload PDF document (IMPLEMENTED)
+GET    /api/documents               # List all documents (IMPLEMENTED)
+GET    /api/documents/{id}          # Get document details (IMPLEMENTED)
 GET    /api/documents/{id}/download # Download document file (IMPLEMENTED)
-DELETE /api/documents/{id}         # Delete document (IMPLEMENTED)
-GET    /api/documents/{id}/chunks  # Get document chunks (IMPLEMENTED)
+DELETE /api/documents/{id}          # Delete document (IMPLEMENTED)
+GET    /api/documents/{id}/chunks   # Get document chunks (IMPLEMENTED)
 ```
 
 #### Query API
 
 ```
-POST   /api/query                  # Ask question using RAG (IMPLEMENTED)
-GET    /api/query/history          # Get query history (IMPLEMENTED)
-GET    /api/query/{id}             # Get specific query (IMPLEMENTED)
+POST   /api/query                   # Ask question using RAG (IMPLEMENTED)
+GET    /api/query/history           # Get query history (IMPLEMENTED)
+GET    /api/query/{id}              # Get specific query (IMPLEMENTED)
 ```
 
 **Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
@@ -620,17 +619,17 @@ language: "en" or "de"
 
 - **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
-- **AI/ML Framework**: Microsoft Semantic Kernel 1.66.0
+- **AI/ML Framework**: Microsoft Semantic Kernel 1.70.0
 - **LLM Provider**: Ollama (local models, configurable via `.env`)
   - **Embedding Model**: nomic-embed-text-v2-moe (multilingual MoE, uses asymmetric prefixes)
   - **Chat Model**: qwen2.5:14b
-- **PDF Processing**: PdfPig 0.1.9
+- **PDF Processing**: PdfPig 0.1.13
 - **Vector Store**: PostgreSQL with pgvector extension
   - Persistent storage with cosine similarity search
   - EF Core integration via Pgvector.EntityFrameworkCore
 - **Database**: PostgreSQL 18 (pgvector/pgvector:0.8.1-pg18)
 - **ORM**: Entity Framework Core 10.0 with Npgsql
-- **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore 9.0.6)
+- **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore 10.1.0)
 - **Testing**: xUnit, FluentAssertions, NSubstitute (planned)
 
 ### Frontend
@@ -693,9 +692,7 @@ environment:
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
-**Note**: Configuration uses double underscores (`__`) to override nested JSON configuration in ASP.NET Core.
-
-**System Prompt**: The RAG system prompt can be customized via the `RAG_SYSTEM_PROMPT` environment variable in `.env`. This allows tailoring the LLM's behavior for different use cases.
+**System Prompt**: The RAG system prompt can be customized via the `RAG_SYSTEM_PROMPT` environment variable in `.env`.
 
 ### Docker Networking
 
@@ -704,98 +701,18 @@ Containers communicate via Docker's internal network:
 - API connects to PostgreSQL at `postgres:5432`
 - External access via port mappings (5000, 3000, etc.)
 
-## Security Considerations
-
-### Authentication & Authorization
-
-- ASP.NET Core Identity for user management
-- JWT tokens for API authentication
-- Role-based access control (RBAC)
-- Rate limiting for API endpoints
-
-### Data Protection
-
-- Encrypt sensitive data at rest
-- HTTPS/TLS for data in transit
-- Secure file upload validation
-- Input sanitization for LLM prompts
-
-### API Security
-
-- CORS configuration
-- API key authentication (optional)
-- Request size limits
-- Anti-forgery tokens
-
-## Scalability Considerations
-
-### Horizontal Scaling
-
-- Stateless API design
-- External session storage (Redis)
-- Load balancer configuration
-- Distributed caching
-
-### Performance Optimization
-
-- Background job processing (Hangfire/Quartz)
-- Response caching
-- Database indexing
-- Connection pooling
-- CDN for static assets
-
-### Monitoring & Observability
-
-- Application Performance Monitoring (APM)
-- Distributed tracing (OpenTelemetry)
-- Structured logging (Serilog)
-- Health checks
-- Metrics collection (Prometheus)
-
 ## Current Implementation Status
 
 ### Completed
 
-- [x] Clean Architecture project structure
-- [x] Core RAG pipeline (upload PDF, ask questions)
-- [x] File storage service abstraction and local implementation
-- [x] Document download endpoint
-- [x] PDF text extraction with PdfPig
-- [x] Text chunking with configurable size/overlap
-- [x] PostgreSQL vector store with pgvector (cosine similarity search)
-- [x] Ollama integration via Microsoft Semantic Kernel
-- [x] Automatic model downloading on first startup
-- [x] Swagger UI for API testing
-- [x] Docker Compose orchestration
-- [x] Dependency Inversion with interface-based services
-- [x] Domain Value Objects (SearchResult with fileName, chunkingStrategy, embeddingModel)
-- [x] Document content extraction and storage
-- [x] Document language selection (en/de) with validation
-- [x] DTO mapping pattern (Application layer)
-- [x] DocumentSummary projection for optimized list queries
-- [x] Database persistence (EF Core + PostgreSQL)
-  - [x] Document metadata storage
-  - [x] Document content storage
-  - [x] DocumentChunk persistence with pgvector
-- [x] Repository pattern implementations (DocumentRepository, DocumentChunkRepository, QueryRepository)
-- [x] MetricsService for similarity and evaluation metrics (CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K)
-- [x] Document API endpoints (list, get, delete, download, chunks)
-- [x] Query history tracking and API endpoints (list, get)
-- [x] Query persistence with QueryService and QueryRepository
-- [x] Query response and retrieved chunks persistence (QueryResult entity)
-- [x] Query metrics fields (MRR, Precision@K, Recall@K, NDCG@K) with database schema
-- [x] Query embedding storage for offline analysis
-- [x] System prompt configuration via `.env` file
-- [x] Chunking strategy configuration via `.env` file
-- [x] Query language selection (en/de) in API and WebUI
-- [x] React frontend UI components
-  - [x] Multi-file upload (up to 20 files)
-  - [x] Per-file language selection (dropdown)
-  - [x] Document list with language column
-  - [x] Search results with source details (chunking strategy, embedding model)
-  - [x] Query language selector (dropdown)
-- [x] Multi-document querying (similarity search across all documents)
-- [x] Refactored RagService - document/query processing moved to dedicated services
+- [x] **Architecture**: Clean Architecture with Dependency Inversion, Repository pattern, DTO mapping
+- [x] **Document Processing**: PDF extraction (PdfPig), text chunking, file storage, language selection (en/de)
+- [x] **Database**: PostgreSQL + pgvector, EF Core persistence (Documents, Chunks, Queries, QueryResults)
+- [x] **RAG Pipeline**: Ollama integration (Semantic Kernel), multi-document similarity search, query embedding storage
+- [x] **Metrics**: CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K
+- [x] **API**: Full CRUD for documents and queries, Swagger UI, Docker Compose orchestration
+- [x] **Frontend**: React UI with multi-file upload, language selection, search results with source details
+- [x] **Configuration**: System prompt, embedding model, and chunking strategy via `.env`
 
 ### In Progress / Planned
 

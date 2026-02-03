@@ -1,6 +1,7 @@
 ﻿using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
+using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.ValueObjects;
@@ -12,17 +13,26 @@ namespace RagEvaluator.Application.Services
     /// </summary>
     public class QueryService : IQueryService
     {
+        private readonly IEmbeddingService _embeddingService;
         private readonly IQueryRepository _queryRepository;
         private readonly IMetricsService _metricsService;
 
-        public QueryService(IQueryRepository queryRepository, IMetricsService metricsService)
+        public QueryService(IEmbeddingService embeddingService, IQueryRepository queryRepository, IMetricsService metricsService)
         {
+            _embeddingService = embeddingService;
             _queryRepository = queryRepository;
             _metricsService = metricsService;
         }
 
-        public Query CreateQuery(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel)
+        public async Task<bool> IsReadyAsync()
         {
+            return await _embeddingService.IsAvailableAsync();
+        }
+
+        public async Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel)
+        {
+            var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {question}");
+
             return new Query
             {
                 Id = Guid.NewGuid(),
@@ -33,21 +43,21 @@ namespace RagEvaluator.Application.Services
                 ChunkingStrategy = chunkingStrategy,
                 EmbeddingModel = embeddingModel,
                 ChatModel = chatModel,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                QueryEmbedding = embedding
             };
         }
 
-        public async Task CompleteQueryAsync(Query query, string answer, float[] queryEmbedding, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches)
+        public async Task CompleteQueryAsync(Query query, string answer, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches)
         {
             query.Answer = answer;
-            query.QueryEmbedding = queryEmbedding;
             query.ResponseTimeMs = responseTimeMs;
 
             // Create QueryResult entities from chunk matches
             var rank = 1;
             foreach (var match in chunkMatches)
             {
-                var similarity = _metricsService.CosineSimilarity(queryEmbedding, match.Embedding);
+                var similarity = _metricsService.CosineSimilarity(query.QueryEmbedding, match.Embedding);
                 var result = match.ToQueryResult(query.Id, rank++, similarity);
                 query.Results.Add(result);
             }

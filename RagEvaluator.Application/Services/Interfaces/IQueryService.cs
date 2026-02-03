@@ -5,14 +5,15 @@ using RagEvaluator.Domain.ValueObjects;
 namespace RagEvaluator.Application.Services.Interfaces
 {
     /// <summary>
-    /// Service for query CRUD operations.
+    /// Service for query operations including creation, embedding generation, and persistence.
     /// </summary>
     public interface IQueryService
     {
+        Task<bool> IsReadyAsync();
         Task<QuerySummaryResponse?> GetByIdAsync(Guid id);
         Task<IReadOnlyList<QuerySummaryResponse>> GetAllAsync();
-        Query CreateQuery(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel);
-        Task CompleteQueryAsync(Query query, string answer, float[] queryEmbedding, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches);
+        Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel);
+        Task CompleteQueryAsync(Query query, string answer, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches);
         Task DeleteAsync(Guid id);
     }
 }

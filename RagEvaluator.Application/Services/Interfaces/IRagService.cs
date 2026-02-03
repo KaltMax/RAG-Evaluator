@@ -8,7 +8,7 @@ namespace RagEvaluator.Application.Services.Interfaces
     /// </summary>
     public interface IRagService
     {
-        Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string language);
+        Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language);
         Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request);
         Task<bool> IsInitializedAsync();
         Task<int> GetDocumentCountAsync();

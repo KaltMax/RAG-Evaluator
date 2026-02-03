@@ -64,16 +64,16 @@ git add ollama-init.sh
 
 ```
 RAG-Evaluator/
-├── RagEvaluator.API/          # ASP.NET Core Web API
-├── RagEvaluator.Application/  # Business logic & metrics (MetricsService)
-├── RagEvaluator.Contract/     # DTOs and contracts
-├── RagEvaluator.Domain/       # Domain entities
-├── RagEvaluator.Infrastructure/ # Data access & external services
-├── RagEvaluator.WebUi/        # React frontend
-├── RagEvaluator.Tests/        # Unit and integration tests
-├── docker-compose.yml         # Production compose config
-├── docker-compose.override.yml # Development overrides
-└── ARCHITECTURE.md            # Detailed architecture docs
+├── RagEvaluator.API/               # ASP.NET Core Web API
+├── RagEvaluator.Application/       # Business logic & metrics (MetricsService)
+├── RagEvaluator.Contract/          # DTOs and contracts
+├── RagEvaluator.Domain/            # Domain entities
+├── RagEvaluator.Infrastructure/    # Data access & external services
+├── RagEvaluator.WebUi/             # React frontend
+├── RagEvaluator.Tests/             # Unit and integration tests
+├── docker-compose.yml              # Production compose config
+├── docker-compose.override.yml     # Development overrides
+└── ARCHITECTURE.md                 # Detailed architecture docs
 ```
 
 ## Docker Configuration
@@ -239,15 +239,5 @@ For detailed frontend documentation, see [RagEvaluator.WebUi/README.md](RagEvalu
 ### DevOps
 - Docker & Docker Compose
 - GitHub Actions
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for complete technology stack details.
-
-### Production
-
-For production deployment:
-1. Update environment variables in `docker-compose.yml`
-2. Configure proper database credentials
-3. Set up reverse proxy (nginx/Caddy) for HTTPS
-4. Enable authentication and security features
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed overview of the architecture, design patterns, and technical decisions.

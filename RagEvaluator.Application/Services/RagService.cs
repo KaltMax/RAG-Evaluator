@@ -2,9 +2,9 @@ using System.Diagnostics;
 using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Application.Services
@@ -16,7 +16,6 @@ namespace RagEvaluator.Application.Services
     public class RagService : IRagService
     {
         private readonly RagConfiguration _config;
-        private readonly IEmbeddingService _embeddingService;
         private readonly IChatService _chatService;
         private readonly IDocumentService _documentService;
         private readonly IQueryService _queryService;
@@ -24,24 +23,22 @@ namespace RagEvaluator.Application.Services
 
         public RagService(
             RagConfiguration config,
-            IEmbeddingService embeddingService,
             IChatService chatService,
             IDocumentService documentService,
             IQueryService queryService,
             IMetricsService metricsService)
         {
             _config = config;
-            _embeddingService = embeddingService;
             _chatService = chatService;
             _documentService = documentService;
             _queryService = queryService;
             _metricsService = metricsService;
         }
 
-        public async Task<DocumentResponse> ProcessDocumentAsync(Stream pdfStream, string fileName, string language)
+        public async Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language)
         {
             // Create document with Pending status
-            var document = await _documentService.CreateDocumentAsync(pdfStream, fileName, pdfStream.Length, "application/pdf", language);
+            var document = await _documentService.CreateDocumentAsync(documentStream, fileName, documentStream.Length, contentType, language);
 
             try
             {
@@ -49,8 +46,8 @@ namespace RagEvaluator.Application.Services
                 await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Processing);
 
                 // Process document content (PDF → chunks → embeddings → store → Completed)
-                pdfStream.Position = 0;
-                await _documentService.ProcessDocumentContentAsync(document.Id, pdfStream);
+                documentStream.Position = 0;
+                await _documentService.ProcessDocumentContentAsync(document.Id, documentStream);
 
                 // Return updated document
                 return (await _documentService.GetByIdAsync(document.Id))!;
@@ -65,7 +62,7 @@ namespace RagEvaluator.Application.Services
 
         public async Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request)
         {
-            if (!await _chatService.IsAvailableAsync() || !await _embeddingService.IsAvailableAsync())
+            if (!await _chatService.IsAvailableAsync() || !await _queryService.IsReadyAsync())
             {
                 throw new InvalidOperationException("RAG services not available. Ensure Ollama is running with the required models.");
             }
@@ -73,7 +70,7 @@ namespace RagEvaluator.Application.Services
             var stopwatch = Stopwatch.StartNew();
 
             // Create query object with configuration snapshot
-            var query = _queryService.CreateQuery(
+            var query = await _queryService.CreateQueryAsync(
                 request.Question,
                 request.Language,
                 request.TopK,
@@ -82,11 +79,8 @@ namespace RagEvaluator.Application.Services
                 _config.EmbeddingModel,
                 _config.ChatModel);
 
-            // Generate embedding for the question
-            var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {request.Question}");
-
             // Search for relevant document chunks
-            var chunkMatches = await _documentService.SearchChunksAsync(questionEmbedding, request.TopK);
+            var chunkMatches = await _documentService.SearchChunksAsync(query.QueryEmbedding, query.TopK);
 
             string answer;
             if (chunkMatches.Count == 0)
@@ -107,18 +101,18 @@ namespace RagEvaluator.Application.Services
             stopwatch.Stop();
             var responseTimeMs = (int)stopwatch.ElapsedMilliseconds;
 
-            // Persist query results (answer, embedding, retrieved chunks)
-            await _queryService.CompleteQueryAsync(query, answer, questionEmbedding, responseTimeMs, chunkMatches);
+            // Persist query results (answer, retrieved chunks)
+            await _queryService.CompleteQueryAsync(query, answer, responseTimeMs, chunkMatches);
 
             // Map results using QueryMapper
-            var sources = chunkMatches.ToSearchResultDtoList(questionEmbedding, _metricsService.CosineSimilarity);
+            var sources = chunkMatches.ToSearchResultDtoList(query.QueryEmbedding, _metricsService.CosineSimilarity);
 
             return query.ToResponse(answer, sources);
         }
 
         public async Task<bool> IsInitializedAsync()
         {
-            return await _embeddingService.IsAvailableAsync() && await _chatService.IsAvailableAsync();
+            return await _queryService.IsReadyAsync() && await _chatService.IsAvailableAsync();
         }
 
         public async Task<int> GetDocumentCountAsync()
