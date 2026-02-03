@@ -1,4 +1,5 @@
-﻿using RagEvaluator.Contract.Dtos.Responses;
+﻿using RagEvaluator.Contract.Dtos.Requests;
+using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.ValueObjects;
 
@@ -14,6 +15,7 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task<IReadOnlyList<QuerySummaryResponse>> GetAllAsync();
         Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel);
         Task CompleteQueryAsync(Query query, string answer, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches);
+        Task AnnotateResultsAsync(Guid queryId, IEnumerable<ResultAnnotation> annotations);
         Task CalculateMetricsAsync(Guid queryId);
         Task DeleteAsync(Guid id);
     }

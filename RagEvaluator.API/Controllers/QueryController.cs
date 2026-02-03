@@ -81,5 +81,45 @@ namespace RagEvaluator.API.Controllers
             }
             return Ok(query);
         }
+
+        /// <summary>
+        /// Annotates query results with relevance labels and calculates metrics
+        /// </summary>
+        /// <param name="queryId">The unique identifier of the query</param>
+        /// <param name="request">The relevance annotations for query results</param>
+        [HttpPatch("{queryId}/results")]
+        public async Task<IActionResult> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateQueryResultsRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var query = await _queryService.GetByIdAsync(queryId);
+                if (query is null)
+                {
+                    return NotFound();
+                }
+
+                await _queryService.AnnotateResultsAsync(queryId, request.Annotations);
+                await _queryService.CalculateMetricsAsync(queryId);
+
+                _logger.LogInformation("Query results annotated and metrics calculated: {QueryId}", queryId);
+
+                var updatedQuery = await _queryService.GetByIdAsync(queryId);
+                return Ok(updatedQuery);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error annotating query results: {QueryId}", queryId);
+                return StatusCode(500, new { error = "Failed to annotate results", message = ex.Message });
+            }
+        }
     }
 }

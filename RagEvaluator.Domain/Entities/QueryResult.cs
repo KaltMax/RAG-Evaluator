@@ -1,4 +1,6 @@
-﻿namespace RagEvaluator.Domain.Entities
+﻿using RagEvaluator.Domain.Enums;
+
+namespace RagEvaluator.Domain.Entities
 {
     /// <summary>
     /// Represents a retrieved chunk result for a query,
@@ -23,7 +25,7 @@
 
         // Relevance labeling (for metrics calculation)
         public bool? IsRelevant { get; set; }
-        public int? RelevanceGrade { get; set; }  // 0-3 scale for NDCG
+        public RelevanceGrade? RelevanceGrade { get; set; }
 
         // Navigation property
         public Query Query { get; set; } = null!;

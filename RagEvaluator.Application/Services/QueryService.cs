@@ -2,8 +2,10 @@
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.Enums;
 using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services
@@ -75,6 +77,28 @@ namespace RagEvaluator.Application.Services
         {
             var queries = await _queryRepository.GetAllAsync();
             return queries.ToSummaryList();
+        }
+
+        public async Task AnnotateResultsAsync(Guid queryId, IEnumerable<ResultAnnotation> annotations)
+        {
+            var query = await _queryRepository.GetByIdWithResultsAsync(queryId);
+            if (query == null)
+            {
+                throw new ArgumentException($"Query with id {queryId} not found");
+            }
+
+            var resultsDictionary = query.Results.ToDictionary(r => r.Id);
+
+            foreach (var annotation in annotations)
+            {
+                if (resultsDictionary.TryGetValue(annotation.ResultId, out var result))
+                {
+                    result.RelevanceGrade = annotation.RelevanceGrade;
+                    result.IsRelevant = annotation.RelevanceGrade != RelevanceGrade.NotRelevant;
+                }
+            }
+
+            await _queryRepository.UpdateAsync(query);
         }
 
         public async Task CalculateMetricsAsync(Guid queryId)

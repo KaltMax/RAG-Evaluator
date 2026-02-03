@@ -156,7 +156,7 @@ namespace RagEvaluator.Application.Services
             // Calculate NDCG@K using RelevanceGrade if available, otherwise binary (1.0 for relevant, 0.0 for not)
             var relevanceScores = orderedResults
                 .Select(r => r.RelevanceGrade.HasValue
-                    ? (double)r.RelevanceGrade.Value
+                    ? (double)(int)r.RelevanceGrade.Value
                     : (r.IsRelevant == true ? 1.0 : 0.0))
                 .ToList();
             var ndcgAtK = NormalizedDiscountedCumulativeGainAtK(relevanceScores, topK);
