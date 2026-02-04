@@ -104,8 +104,8 @@ namespace RagEvaluator.Application.Services
             // Persist query results (answer, retrieved chunks)
             await _queryService.CompleteQueryAsync(query, answer, responseTimeMs, chunkMatches);
 
-            // Map results using QueryMapper
-            var sources = chunkMatches.ToSearchResultDtoList(query.QueryEmbedding, _metricsService.CosineSimilarity);
+            // Map results from persisted QueryResults (to get correct QueryResult IDs for annotation)
+            var sources = query.Results.ToSearchResultDtoList();
 
             return query.ToResponse(answer, sources);
         }

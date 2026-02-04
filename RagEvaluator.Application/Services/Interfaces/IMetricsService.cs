@@ -24,12 +24,12 @@ namespace RagEvaluator.Application.Services.Interfaces
         double MeanReciprocalRank(IReadOnlyList<int?> relevantRanks);
         
         /// <summary>
-        /// Calculates Precision@K: the proportion of relevant documents in the top K retrieved results.
+        /// Calculates Precision@K: the proportion of relevant document chunks in the top K retrieved results.
         /// </summary>
         double PrecisionAtK(IReadOnlyList<string> retrievedIds, IReadOnlyList<string> relevantIds, int k);
         
         /// <summary>
-        /// Calculates Recall@K: the proportion of all relevant documents that appear in the top K results.
+        /// Calculates Recall@K: the proportion of all relevant document chunks that appear in the top K results.
         /// </summary>
         double RecallAtK(IReadOnlyList<string> retrievedIds, IReadOnlyList<string> relevantIds, int k);
         

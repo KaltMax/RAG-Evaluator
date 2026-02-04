@@ -1,9 +1,16 @@
-import { DocumentTextIcon, ClockIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import { DocumentTextIcon, ClockIcon, ArrowDownTrayIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { PropTypes } from 'prop-types';
 import { toast } from 'react-toastify';
 import { downloadDocument } from '../api/DownloadDocumentService';
+import { annotateQueryResults } from '../api/AnnotateQueryResultsService';
+import { relevanceGrades, getRelevanceGrade } from '../utils/relevanceGrades';
 
 function SearchResults({ results }) {
+  const [annotations, setAnnotations] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [metrics, setMetrics] = useState(null);
+
   if (!results) {
     return null;
   }
@@ -26,6 +33,63 @@ function SearchResults({ results }) {
     }
   };
 
+  const handleAnnotationChange = (sourceId, gradeValue) => {
+    setAnnotations(prev => ({
+      ...prev,
+      [sourceId]: gradeValue
+    }));
+  };
+
+  const getAnnotatedCount = () => {
+    return Object.keys(annotations).length;
+  };
+
+  const allSourcesAnnotated = () => {
+    return getAnnotatedCount() === results.sources?.length;
+  };
+
+  const handleSubmitAnnotations = async () => {
+    if (!allSourcesAnnotated()) {
+      toast.warning('Please annotate all sources before submitting');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const annotationList = Object.entries(annotations).map(([resultId, relevanceGrade]) => ({
+        resultId,
+        relevanceGrade
+      }));
+
+      const updatedQuery = await annotateQueryResults(results.queryId, annotationList);
+
+      setMetrics({
+        mrr: updatedQuery.mrr,
+        precisionAtK: updatedQuery.precisionAtK,
+        recallAtK: updatedQuery.recallAtK,
+        ndcgAtK: updatedQuery.ndcgAtK,
+        responseTimeMs: updatedQuery.responseTimeMs
+      });
+
+      toast.success('Annotations submitted successfully!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit annotations');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formatMetric = (value) => {
+    if (value === null || value === undefined) return 'N/A';
+    return value.toFixed(3);
+  };
+
+  const formatResponseTime = (ms) => {
+    if (ms === null || ms === undefined) return 'N/A';
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
+  };
+
   return (
     <div className="w-full space-y-6">
       {/* Answer Section */}
@@ -43,6 +107,38 @@ function SearchResults({ results }) {
           <span className="ml-auto">Query ID: {results.queryId}</span>
         </div>
       </div>
+
+      {/* Metrics Summary Panel */}
+      {metrics && (
+        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-green-700">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircleIcon className="w-6 h-6 text-green-400" />
+            <h2 className="text-xl font-semibold text-white">Evaluation Metrics</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">MRR</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.mrr)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Precision@K</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.precisionAtK)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Recall@K</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.recallAtK)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">NDCG@K</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.ndcgAtK)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Response Time</p>
+              <p className="text-2xl font-bold text-purple-400">{formatResponseTime(metrics.responseTimeMs)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sources Section */}
       {results.sources && results.sources.length > 0 && (
@@ -82,6 +178,40 @@ function SearchResults({ results }) {
                   </div>
                 </div>
                 <p className="text-gray-300 text-sm leading-relaxed">{source.text}</p>
+
+                {/* Relevance Annotation Section */}
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <details className="text-xs" open={!metrics}>
+                    <summary className="cursor-pointer text-gray-500 hover:text-gray-400 mb-2">
+                      Relevance
+                    </summary>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {relevanceGrades.map((grade) => {
+                        const isSelected = annotations[source.id] === grade.value;
+                        return (
+                          <button
+                            key={grade.value}
+                            onClick={() => handleAnnotationChange(source.id, grade.value)}
+                            disabled={isSubmitting || metrics}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold text-white transition-all ${
+                              isSelected ? grade.selectedColor : grade.color
+                            } ${(isSubmitting || metrics) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title={grade.label}
+                          >
+                            {grade.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {annotations[source.id] !== undefined && (
+                      <p className="text-gray-400 text-xs mt-2">
+                        Selected: {getRelevanceGrade(annotations[source.id])?.label}
+                      </p>
+                    )}
+                  </details>
+                </div>
+
+                {/* Details Section */}
                 {(source.chunkingStrategy || source.embeddingModel) && (
                   <div className="mt-3 pt-3 border-t border-gray-700">
                     <details className="text-xs text-gray-500">
@@ -102,6 +232,31 @@ function SearchResults({ results }) {
               </div>
             ))}
           </div>
+
+          {/* Submit Annotations Button */}
+          {!metrics && (
+            <div className="mt-6 pt-6 border-t border-gray-700">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-400">
+                  {getAnnotatedCount()} of {results.sources.length} sources annotated
+                </p>
+                <button
+                  onClick={handleSubmitAnnotations}
+                  disabled={isSubmitting || !allSourcesAnnotated()}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Submit Annotations</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

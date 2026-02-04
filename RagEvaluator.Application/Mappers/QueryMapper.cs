@@ -20,7 +20,12 @@ namespace RagEvaluator.Application.Mappers
                 SystemPrompt = query.SystemPrompt,
                 EmbeddingModel = query.EmbeddingModel,
                 ChatModel = query.ChatModel,
-                CreatedAt = query.CreatedAt
+                CreatedAt = query.CreatedAt,
+                ResponseTimeMs = query.ResponseTimeMs,
+                Mrr = query.MRR,
+                PrecisionAtK = query.PrecisionAtK,
+                RecallAtK = query.RecallAtK,
+                NdcgAtK = query.NDCGAtK
             };
         }
 
@@ -29,38 +34,37 @@ namespace RagEvaluator.Application.Mappers
             return queries.Select(q => q.ToSummary()).ToList();
         }
 
-        public static QueryResponse ToResponse(this Query query, string answer, List<SearchResultDto> sources)
+        public static QueryResponse ToResponse(this Query query, string answer, IReadOnlyList<SearchResultDto> sources)
         {
             return new QueryResponse
             {
                 QueryId = query.Id,
                 Question = query.Question,
                 Answer = answer,
-                Sources = sources
+                Sources = sources.ToList(),
+                Timestamp = query.CreatedAt
             };
         }
 
-        public static SearchResultDto ToSearchResultDto(this ChunkSearchMatch match, double similarity)
+        public static SearchResultDto ToSearchResultDto(this QueryResult result)
         {
             return new SearchResultDto
             {
-                Id = match.Id,
-                Text = match.Text,
-                Similarity = similarity,
-                DocumentId = match.DocumentId,
-                FileName = match.FileName,
-                ChunkingStrategy = match.ChunkingStrategy,
-                EmbeddingModel = match.EmbeddingModel
+                Id = result.Id,
+                Text = result.ChunkText,
+                Similarity = result.SimilarityScore,
+                DocumentId = result.DocumentId,
+                FileName = result.FileName,
+                ChunkingStrategy = result.ChunkingStrategy,
+                EmbeddingModel = result.EmbeddingModel
             };
         }
 
-        public static List<SearchResultDto> ToSearchResultDtoList(
-            this IEnumerable<ChunkSearchMatch> matches,
-            float[] questionEmbedding,
-            Func<float[], float[], double> similarityFunc)
+        public static IReadOnlyList<SearchResultDto> ToSearchResultDtoList(this IEnumerable<QueryResult> results)
         {
-            return matches
-                .Select(m => m.ToSearchResultDto(similarityFunc(questionEmbedding, m.Embedding)))
+            return results
+                .OrderBy(r => r.Rank)
+                .Select(r => r.ToSearchResultDto())
                 .ToList();
         }
 

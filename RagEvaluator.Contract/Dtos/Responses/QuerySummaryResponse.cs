@@ -13,5 +13,10 @@
         public required string EmbeddingModel { get; set; }
         public required string ChatModel { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int ResponseTimeMs { get; set; }
+        public double? Mrr { get; set; }
+        public double? PrecisionAtK { get; set; }
+        public double? RecallAtK { get; set; }
+        public double? NdcgAtK { get; set; }
     }
 }
