@@ -1,6 +1,7 @@
 ﻿using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.Enums;
 using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services.Interfaces
@@ -36,9 +37,9 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task CompleteQueryAsync(Query query, string answer, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches);
         
         /// <summary>
-        /// Annotates query results with relevance grades for evaluation purposes.
+        /// Annotates query results with relevance grades and response quality evaluation.
         /// </summary>
-        Task AnnotateResultsAsync(Guid queryId, IEnumerable<ResultAnnotation> annotations);
+        Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching);
         
         /// <summary>
         /// Calculates retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K) for a query based on relevance annotations.

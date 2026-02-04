@@ -1,4 +1,6 @@
-﻿namespace RagEvaluator.Domain.Entities
+﻿using RagEvaluator.Domain.Enums;
+
+namespace RagEvaluator.Domain.Entities
 {
     /// <summary>
     /// Represents a user query for document retrieval and processing,
@@ -21,6 +23,10 @@
         public string Answer { get; set; } = string.Empty;
         public float[] QueryEmbedding { get; set; } = [];
         public int ResponseTimeMs { get; set; }
+
+        // Response Quality Evaluation metrics
+        public ResponseQuality? ResponseQuality { get; set; }
+        public bool? HasLanguageSwitching { get; set; }
 
         // RAG Metrics (nullable - calculated after relevance labeling)
         public double? MRR { get; set; }

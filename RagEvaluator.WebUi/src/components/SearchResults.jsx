@@ -3,11 +3,14 @@ import { DocumentTextIcon, ClockIcon, ArrowDownTrayIcon, CheckCircleIcon } from 
 import { PropTypes } from 'prop-types';
 import { toast } from 'react-toastify';
 import { downloadDocument } from '../api/DownloadDocumentService';
-import { annotateQueryResults } from '../api/AnnotateQueryResultsService';
+import { annotateResults } from '../api/AnnotateResultsService';
 import { relevanceGrades, getRelevanceGrade } from '../utils/relevanceGrades';
+import { responseQualityOptions, getResponseQualityOption } from '../utils/responseQualityOptions';
 
 function SearchResults({ results }) {
   const [annotations, setAnnotations] = useState({});
+  const [responseQuality, setResponseQuality] = useState(null);
+  const [hasLanguageSwitching, setHasLanguageSwitching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [metrics, setMetrics] = useState(null);
 
@@ -44,13 +47,31 @@ function SearchResults({ results }) {
     return Object.keys(annotations).length;
   };
 
+  const getTotalAnnotationsCount = () => {
+    const sourcesAnnotated = getAnnotatedCount();
+    const responseQualityAnnotated = responseQuality !== null ? 1 : 0;
+    return sourcesAnnotated + responseQualityAnnotated;
+  };
+
+  const getTotalAnnotationsNeeded = () => {
+    return (results.sources?.length || 0) + 1; // sources + response quality
+  };
+
   const allSourcesAnnotated = () => {
     return getAnnotatedCount() === results.sources?.length;
   };
 
+  const canSubmitAnnotations = () => {
+    return allSourcesAnnotated() && responseQuality !== null;
+  };
+
   const handleSubmitAnnotations = async () => {
-    if (!allSourcesAnnotated()) {
-      toast.warning('Please annotate all sources before submitting');
+    if (!canSubmitAnnotations()) {
+      if (!allSourcesAnnotated()) {
+        toast.warning('Please annotate all sources before submitting');
+      } else {
+        toast.warning('Please evaluate the response quality before submitting');
+      }
       return;
     }
 
@@ -61,14 +82,21 @@ function SearchResults({ results }) {
         relevanceGrade
       }));
 
-      const updatedQuery = await annotateQueryResults(results.queryId, annotationList);
+      const payload = {
+        annotations: annotationList,
+        responseQuality: responseQuality,
+        hasLanguageSwitching: hasLanguageSwitching
+      };
+
+      const updatedQuery = await annotateResults(results.queryId, payload);
 
       setMetrics({
         mrr: updatedQuery.mrr,
         precisionAtK: updatedQuery.precisionAtK,
-        recallAtK: updatedQuery.recallAtK,
         ndcgAtK: updatedQuery.ndcgAtK,
-        responseTimeMs: updatedQuery.responseTimeMs
+        responseTimeMs: updatedQuery.responseTimeMs,
+        responseQuality: responseQuality,
+        hasLanguageSwitching: hasLanguageSwitching
       });
 
       toast.success('Annotations submitted successfully!');
@@ -90,6 +118,17 @@ function SearchResults({ results }) {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
+  const getResponseQualityColor = (value) => {
+    const option = getResponseQualityOption(value);
+    if (!option) return 'text-gray-400';
+    // Extract color from bg- class (e.g., 'bg-green-600' -> 'text-green-400')
+    if (value === 0) return 'text-green-400'; // Correct
+    if (value === 1) return 'text-yellow-400'; // Vague
+    if (value === 2) return 'text-orange-400'; // Incorrect
+    if (value === 3) return 'text-red-400'; // Hallucinated
+    return 'text-gray-400';
+  };
+
   return (
     <div className="w-full space-y-6">
       {/* Answer Section */}
@@ -106,39 +145,56 @@ function SearchResults({ results }) {
           <span>{formatTimestamp(results.timestamp)}</span>
           <span className="ml-auto">Query ID: {results.queryId}</span>
         </div>
-      </div>
 
-      {/* Metrics Summary Panel */}
-      {metrics && (
-        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-green-700">
-          <div className="flex items-center gap-2 mb-4">
-            <CheckCircleIcon className="w-6 h-6 text-green-400" />
-            <h2 className="text-xl font-semibold text-white">Evaluation Metrics</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
-              <p className="text-gray-400 text-sm mb-1">MRR</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.mrr)}</p>
+        {/* Response Quality Evaluation */}
+        <div className="mt-4 pt-4 border-t border-gray-700">
+          <details className="text-sm" open={!metrics}>
+            <summary className="cursor-pointer text-gray-400 hover:text-gray-300 mb-3 font-medium">
+              Response Quality Evaluation
+            </summary>
+
+            {/* Response Quality Annotation Buttons */}
+            <div className="space-y-2 mb-4">
+              <p className="text-xs text-gray-500 mb-2">Overall Quality:</p>
+              <div className="flex flex-wrap gap-2">
+                {responseQualityOptions.map((option) => {
+                  const isSelected = responseQuality === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => setResponseQuality(option.value)}
+                      disabled={isSubmitting || metrics}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold text-white transition-all ${
+                        isSelected ? option.selectedColor : option.color
+                      } ${(isSubmitting || metrics) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={option.label}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {responseQuality !== null && (
+                <p className="text-gray-400 text-xs mt-2">
+                  Selected: {getResponseQualityOption(responseQuality)?.label}
+                </p>
+              )}
             </div>
-            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
-              <p className="text-gray-400 text-sm mb-1">Precision@K</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.precisionAtK)}</p>
-            </div>
-            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
-              <p className="text-gray-400 text-sm mb-1">Recall@K</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.recallAtK)}</p>
-            </div>
-            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
-              <p className="text-gray-400 text-sm mb-1">NDCG@K</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.ndcgAtK)}</p>
-            </div>
-            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
-              <p className="text-gray-400 text-sm mb-1">Response Time</p>
-              <p className="text-2xl font-bold text-purple-400">{formatResponseTime(metrics.responseTimeMs)}</p>
-            </div>
-          </div>
+
+            {/* Language Switching Checkbox */}
+            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer hover:text-white transition-colors">
+              <input
+                type="checkbox"
+                checked={hasLanguageSwitching}
+                onChange={(e) => setHasLanguageSwitching(e.target.checked)}
+                disabled={isSubmitting || metrics}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <span>Language switching detected</span>
+            </label>
+          </details>
         </div>
-      )}
+      </div>
 
       {/* Sources Section */}
       {results.sources && results.sources.length > 0 && (
@@ -238,11 +294,11 @@ function SearchResults({ results }) {
             <div className="mt-6 pt-6 border-t border-gray-700">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-400">
-                  {getAnnotatedCount()} of {results.sources.length} sources annotated
+                  {getTotalAnnotationsCount()} of {getTotalAnnotationsNeeded()} annotations completed
                 </p>
                 <button
                   onClick={handleSubmitAnnotations}
-                  disabled={isSubmitting || !allSourcesAnnotated()}
+                  disabled={isSubmitting || !canSubmitAnnotations()}
                   className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
                 >
                   {isSubmitting ? (
@@ -257,6 +313,46 @@ function SearchResults({ results }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Metrics Summary Panel */}
+      {metrics && (
+        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-green-700">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircleIcon className="w-6 h-6 text-green-400" />
+            <h2 className="text-xl font-semibold text-white">Evaluation Metrics</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">MRR</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.mrr)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Precision@K</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.precisionAtK)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">NDCG@K</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.ndcgAtK)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Response Time</p>
+              <p className="text-2xl font-bold text-purple-400">{formatResponseTime(metrics.responseTimeMs)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Response Quality</p>
+              <p className={`text-lg font-bold ${getResponseQualityColor(metrics.responseQuality)}`}>
+                {getResponseQualityOption(metrics.responseQuality)?.label || 'N/A'}
+              </p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Language Switching</p>
+              <p className={`text-2xl font-bold ${metrics.hasLanguageSwitching ? 'text-red-400' : 'text-green-400'}`}>
+                {metrics.hasLanguageSwitching ? 'Yes' : 'No'}
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

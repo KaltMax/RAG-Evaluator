@@ -126,7 +126,7 @@ RAG-Evaluator/
 │   │   ├── Requests/
 │   │   │   ├── AskQuestionRequest.cs
 │   │   │   ├── UploadDocumentRequest.cs
-│   │   │   └── AnnotateQueryResultsRequest.cs  # Relevance annotations
+│   │   │   └── AnnotateResultsRequest.cs       # Relevance + response quality annotations
 │   │   └── Responses/
 │   │       ├── QueryResponse.cs
 │   │       ├── QuerySummaryResponse.cs  # Query history list item
@@ -147,7 +147,8 @@ RAG-Evaluator/
 │   │   └── QueryResult.cs               # Retrieved chunk result with relevance
 │   ├── Enums/
 │   │   ├── DocumentStatus.cs            # Document processing status
-│   │   └── RelevanceGrade.cs            # Graded relevance scale (0-3) for NDCG
+│   │   ├── RelevanceGrade.cs            # Graded relevance scale (0-3) for NDCG
+│   │   └── ResponseQuality.cs           # LLM response quality evaluation (0-3)
 │   ├── ValueObjects/
 │   │   ├── SearchResult.cs              # Search result with similarity score
 │   │   ├── ChunkSearchMatch.cs          # Raw chunk match (before similarity calculation)
@@ -254,7 +255,7 @@ RAG-Evaluator/
   - `CompleteQueryAsync()` - Populates query with answer, embedding, response time, retrieved chunks, and persists to database
   - `GetQueryByIdAsync()` - Retrieves query by ID
   - `GetQueryHistoryAsync()` - Returns paginated query history
-  - `AnnotateResultsAsync()` - Updates query results with relevance grades
+  - `AnnotateResultsAsync()` - Updates query results with relevance grades and response quality evaluation
   - `CalculateMetricsAsync()` - Calculates MRR, Precision@K, Recall@K, NDCG@K based on relevance labels
 - `IMetricsService` - Similarity and retrieval evaluation metrics
   - `CosineSimilarity()` / `CosineDistance()` - Vector similarity calculations
@@ -326,7 +327,9 @@ RAG-Evaluator/
 - `Answer` - LLM-generated response
 - `QueryEmbedding` - Vector embedding as `float[]` for offline analysis
 - `ResponseTimeMs`, `CreatedAt` - Performance and timing
-- `MRR`, `PrecisionAtK`, `RecallAtK`, `NDCGAtK` - Evaluation metrics (nullable, calculated after relevance labeling)
+- `ResponseQuality` - LLM response quality evaluation (nullable, `ResponseQuality` enum: CorrectAndComplete=0, VagueOrIncomplete=1, Incorrect=2, Hallucinated=3)
+- `HasLanguageSwitching` - Flag indicating unexpected language switching in response (nullable)
+- `MRR`, `PrecisionAtK`, `RecallAtK`, `NDCGAtK` - Retrieval metrics (nullable, calculated after relevance labeling)
 - `Results` - Navigation to `QueryResult` collection
 
 **QueryResult Entity Fields**:
@@ -502,6 +505,8 @@ CREATE TABLE Queries (
     Answer TEXT NOT NULL,
     QueryEmbedding VECTOR NOT NULL,      -- pgvector type for offline analysis
     ResponseTimeMs INT NOT NULL,
+    ResponseQuality INT,                 -- Nullable (ResponseQuality enum: 0=CorrectAndComplete, 1=VagueOrIncomplete, 2=Incorrect, 3=Hallucinated)
+    HasLanguageSwitching BOOLEAN,        -- Nullable (language switching detection)
     MRR DOUBLE PRECISION,                -- Nullable metrics (calculated after relevance labeling)
     PrecisionAtK DOUBLE PRECISION,
     RecallAtK DOUBLE PRECISION,
@@ -558,7 +563,7 @@ GET    /api/documents/{id}/chunks   # Get document chunks (IMPLEMENTED)
 POST   /api/query                   # Ask question using RAG (IMPLEMENTED)
 GET    /api/query/history           # Get query history (IMPLEMENTED)
 GET    /api/query/{id}              # Get specific query (IMPLEMENTED)
-PATCH  /api/query/{id}/results      # Annotate results with relevance and calculate metrics (IMPLEMENTED)
+PATCH  /api/query/{id}/results      # Annotate results with relevance, response quality, and calculate metrics (IMPLEMENTED)
 ```
 
 #### Health API
@@ -567,7 +572,7 @@ PATCH  /api/query/{id}/results      # Annotate results with relevance and calcul
 GET    /api/health                   # Check if RAG services are ready (IMPLEMENTED)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation and metrics calculation are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, and metrics calculation are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
 
 ### Request/Response Examples
 
@@ -728,9 +733,10 @@ Containers communicate via Docker's internal network:
 - [x] **Frontend**: React UI with multi-file upload, language selection, search results with source details
 - [x] **Configuration**: System prompt, embedding model, and chunking strategy via `.env`
 - [x] **Relevance Annotation**: API endpoint for labeling query results with graded relevance (RelevanceGrade enum), automatic metrics calculation
-- [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, Recall@K, NDCG@K, Response Time)
+- [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, NDCG@K, Response Time)
 
 ### In Progress / Planned
+- [ ] Solution on how to evaluate Recall@K (requires tracking total relevant documents per query, which most likely will require the gold-standard test set)
 - [ ] Improve FixedSizeTextChunker
 - [ ] Semantic Chunking Strategy implementation
 - [ ] Configurable chunking strategies (for RAG evaluation)

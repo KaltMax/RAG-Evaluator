@@ -19,22 +19,27 @@ namespace RagEvaluator.Application.Services.Interfaces
         double CosineDistance(float[] a, float[] b);
         
         /// <summary>
-        /// Calculates the Mean Reciprocal Rank (MRR) from a list of ranks where relevant results were found.
+        /// Calculates Mean Reciprocal Rank (MRR): evaluates how high the first relevant result is ranked.
+        /// MRR = 1/rank of the first relevant result. Higher is better (max 1.0).
         /// </summary>
         double MeanReciprocalRank(IReadOnlyList<int?> relevantRanks);
         
         /// <summary>
         /// Calculates Precision@K: the proportion of relevant document chunks in the top K retrieved results.
+        /// Precision@K = (number of relevant chunks in top K) / K.
         /// </summary>
         double PrecisionAtK(IReadOnlyList<string> retrievedIds, IReadOnlyList<string> relevantIds, int k);
         
         /// <summary>
-        /// Calculates Recall@K: the proportion of all relevant document chunks that appear in the top K results.
+        /// Calculates Recall@K at document level: the proportion of relevant documents found in the top K results.
+        /// Recall@K = (number of relevant documents found in top K) / (total number of relevant documents).
         /// </summary>
         double RecallAtK(IReadOnlyList<string> retrievedIds, IReadOnlyList<string> relevantIds, int k);
         
         /// <summary>
-        /// Calculates Normalized Discounted Cumulative Gain (NDCG@K): measures ranking quality considering relevance scores and position.
+        /// Calculates Normalized Discounted Cumulative Gain (NDCG@K): measures ranking quality.
+        /// Considers both relevance grades and position — higher-ranked results contribute more to the score.
+        /// Uses graded relevance (0-3) rather than binary relevance.
         /// </summary>
         double NormalizedDiscountedCumulativeGainAtK(IReadOnlyList<double> relevanceScores, int k);
         

@@ -18,5 +18,7 @@
         public double? PrecisionAtK { get; set; }
         public double? RecallAtK { get; set; }
         public double? NdcgAtK { get; set; }
+        public int? ResponseQuality { get; set; }
+        public bool? HasLanguageSwitching { get; set; }
     }
 }

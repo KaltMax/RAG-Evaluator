@@ -25,7 +25,9 @@ namespace RagEvaluator.Application.Mappers
                 Mrr = query.MRR,
                 PrecisionAtK = query.PrecisionAtK,
                 RecallAtK = query.RecallAtK,
-                NdcgAtK = query.NDCGAtK
+                NdcgAtK = query.NDCGAtK,
+                ResponseQuality = query.ResponseQuality.HasValue ? (int)query.ResponseQuality.Value : null,
+                HasLanguageSwitching = query.HasLanguageSwitching
             };
         }
 

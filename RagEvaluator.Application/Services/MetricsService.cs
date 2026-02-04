@@ -141,17 +141,31 @@ namespace RagEvaluator.Application.Services
                 .FirstOrDefault();
             var mrr = MeanReciprocalRank([firstRelevantRank]);
 
-            // Calculate Precision@K and Recall@K
-            var retrievedIds = orderedResults
+            // Calculate Precision@K (chunk-level)
+            var retrievedChunkIds = orderedResults
                 .Select(r => r.DocumentChunkId.ToString())
                 .ToList();
-            var relevantIds = orderedResults
+            var relevantChunkIds = orderedResults
                 .Where(r => r.IsRelevant == true)
                 .Select(r => r.DocumentChunkId.ToString())
                 .ToList();
 
-            var precisionAtK = PrecisionAtK(retrievedIds, relevantIds, topK);
-            var recallAtK = RecallAtK(retrievedIds, relevantIds, topK);
+            var precisionAtK = PrecisionAtK(retrievedChunkIds, relevantChunkIds, topK);
+
+            // Calculate Recall@K (document-level)
+            // Uses unique document IDs to measure: "Of the relevant documents, how many did we retrieve?"
+            var retrievedDocumentIds = orderedResults
+                .Take(topK)
+                .Select(r => r.DocumentId.ToString())
+                .Distinct()
+                .ToList();
+            var relevantDocumentIds = orderedResults
+                .Where(r => r.IsRelevant == true)
+                .Select(r => r.DocumentId.ToString())
+                .Distinct()
+                .ToList();
+
+            var recallAtK = RecallAtK(retrievedDocumentIds, relevantDocumentIds, retrievedDocumentIds.Count);
 
             // Calculate NDCG@K using RelevanceGrade if available, otherwise binary (1.0 for relevant, 0.0 for not)
             var relevanceScores = orderedResults

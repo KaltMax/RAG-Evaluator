@@ -17,7 +17,12 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Annotate each retrieved chunk with relevance grades (Not Relevant, Marginally Relevant, Fairly Relevant, Highly Relevant)
   - Color-coded relevance badges for quick selection
   - Automatic metrics calculation after annotation submission
-  - Metrics display panel showing MRR, Precision@K, Recall@K, NDCG@K, and Response Time
+  - Metrics display panel showing MRR, Precision@K, NDCG@K, and Response Time
+
+- **Response Quality Evaluation** - Evaluate LLM response quality
+  - Rate response quality (Correct & Complete, Vague/Incomplete, Incorrect, Hallucinated)
+  - Track language switching issues in responses
+  - Color-coded quality buttons for quick selection
 
 - **Document Upload** - Upload PDF documents for processing
   - Drag-and-drop interface powered by react-dropzone
@@ -149,7 +154,7 @@ See `nginx.conf` for the complete configuration.
 src/
 ├── api/                                # API service layer
 │   ├── axiosConfig.js                  # Axios instance configuration
-│   ├── AnnotateQueryResultsService.js  # Relevance annotation API service
+│   ├── AnnotateResultsService.js       # Annotation API service (relevance + response quality)
 │   ├── DeleteDocumentService.js        # Document deletion API service
 │   ├── DownloadDocumentService.js      # Document download API service
 │   ├── GetAllDocumentsService.js       # Fetch all documents API service
@@ -157,7 +162,8 @@ src/
 │   ├── PostQueryService.js             # Query API service
 │   └── UploadDocumentsService.js       # Upload API service (multi-file, with language)
 ├── utils/                              # Utility functions
-│   └── relevanceGrades.js              # Relevance grade definitions and helpers
+│   ├── relevanceGrades.js              # Relevance grade definitions and helpers
+│   └── responseQualityOptions.js       # Response quality options and helpers
 ├── components/                         # React components
 │   ├── DocumentList.jsx                # Document list page
 │   ├── Header.jsx                      # Top navigation bar
@@ -204,7 +210,7 @@ Brief summary of implemented API services (see `src/api`):
 | Endpoint | Description |
 |----------|-------------|
 | `POST /api/query` | Send `{ Question, TopK, Language }` → AI answer + sources |
-| `PATCH /api/query/{id}/results` | Annotate results with relevance grades → calculated metrics |
+| `PATCH /api/query/{id}/results` | Annotate results with relevance grades + response quality → calculated metrics |
 | `POST /api/documents/upload` | Upload PDF with language (multipart/form-data: `file`, `language`) |
 | `GET /api/documents` | List all uploaded documents |
 | `GET /api/documents/{id}` | Get document details |

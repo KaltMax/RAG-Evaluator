@@ -79,7 +79,7 @@ namespace RagEvaluator.Application.Services
             return queries.ToSummaryList();
         }
 
-        public async Task AnnotateResultsAsync(Guid queryId, IEnumerable<ResultAnnotation> annotations)
+        public async Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching)
         {
             var query = await _queryRepository.GetByIdWithResultsAsync(queryId);
             if (query == null)
@@ -97,6 +97,9 @@ namespace RagEvaluator.Application.Services
                     result.IsRelevant = annotation.RelevanceGrade != RelevanceGrade.NotRelevant;
                 }
             }
+
+            query.ResponseQuality = responseQuality;
+            query.HasLanguageSwitching = hasLanguageSwitching;
 
             await _queryRepository.UpdateAsync(query);
         }

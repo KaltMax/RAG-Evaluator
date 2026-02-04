@@ -88,7 +88,7 @@ namespace RagEvaluator.API.Controllers
         /// <param name="queryId">The unique identifier of the query</param>
         /// <param name="request">The relevance annotations for query results</param>
         [HttpPatch("{queryId}/results")]
-        public async Task<IActionResult> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateQueryResultsRequest request)
+        public async Task<IActionResult> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateResultsRequest request)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace RagEvaluator.API.Controllers
                     return NotFound();
                 }
 
-                await _queryService.AnnotateResultsAsync(queryId, request.Annotations);
+                await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching);
                 await _queryService.CalculateMetricsAsync(queryId);
 
                 _logger.LogInformation("Query results annotated and metrics calculated: {QueryId}", queryId);

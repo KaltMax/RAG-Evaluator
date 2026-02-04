@@ -59,7 +59,11 @@ namespace RagEvaluator.Infrastructure.Data.Configurations
             builder.Property(q => q.ResponseTimeMs)
                 .IsRequired();
 
-            // Metrics (nullable)
+            // Response Quality Evaluation (nullable)
+            builder.Property(q => q.ResponseQuality);
+            builder.Property(q => q.HasLanguageSwitching);
+
+            // Retrieval Metrics (nullable)
             builder.Property(q => q.MRR);
             builder.Property(q => q.PrecisionAtK);
             builder.Property(q => q.RecallAtK);
