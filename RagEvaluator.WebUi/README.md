@@ -13,6 +13,12 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Adjustable top-K results (1, 3, 5, 10)
   - Language selection (English/German)
 
+- **Relevance Annotation** - Evaluate retrieval quality with graded relevance labels
+  - Annotate each retrieved chunk with relevance grades (Not Relevant, Marginally Relevant, Fairly Relevant, Highly Relevant)
+  - Color-coded relevance badges for quick selection
+  - Automatic metrics calculation after annotation submission
+  - Metrics display panel showing MRR, Precision@K, Recall@K, NDCG@K, and Response Time
+
 - **Document Upload** - Upload PDF documents for processing
   - Drag-and-drop interface powered by react-dropzone
   - Multi-file upload support (up to 20 files at once)
@@ -143,12 +149,15 @@ See `nginx.conf` for the complete configuration.
 src/
 ├── api/                                # API service layer
 │   ├── axiosConfig.js                  # Axios instance configuration
+│   ├── AnnotateQueryResultsService.js  # Relevance annotation API service
 │   ├── DeleteDocumentService.js        # Document deletion API service
 │   ├── DownloadDocumentService.js      # Document download API service
 │   ├── GetAllDocumentsService.js       # Fetch all documents API service
 │   ├── GetDocumentByIdService.js       # Fetch single document API service
 │   ├── PostQueryService.js             # Query API service
 │   └── UploadDocumentsService.js       # Upload API service (multi-file, with language)
+├── utils/                              # Utility functions
+│   └── relevanceGrades.js              # Relevance grade definitions and helpers
 ├── components/                         # React components
 │   ├── DocumentList.jsx                # Document list page
 │   ├── Header.jsx                      # Top navigation bar
@@ -195,6 +204,7 @@ Brief summary of implemented API services (see `src/api`):
 | Endpoint | Description |
 |----------|-------------|
 | `POST /api/query` | Send `{ Question, TopK, Language }` → AI answer + sources |
+| `PATCH /api/query/{id}/results` | Annotate results with relevance grades → calculated metrics |
 | `POST /api/documents/upload` | Upload PDF with language (multipart/form-data: `file`, `language`) |
 | `GET /api/documents` | List all uploaded documents |
 | `GET /api/documents/{id}` | Get document details |

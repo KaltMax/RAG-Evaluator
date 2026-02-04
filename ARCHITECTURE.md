@@ -181,6 +181,7 @@ RAG-Evaluator/
 │   │   ├── components/
 │   │   ├── assets/
 │   │   ├── api/
+|   |   ├── utils/
 │   │   ├── index.css
 │   │   ├── App.jsx
 │   │   └── main.jsx
@@ -727,10 +728,9 @@ Containers communicate via Docker's internal network:
 - [x] **Frontend**: React UI with multi-file upload, language selection, search results with source details
 - [x] **Configuration**: System prompt, embedding model, and chunking strategy via `.env`
 - [x] **Relevance Annotation**: API endpoint for labeling query results with graded relevance (RelevanceGrade enum), automatic metrics calculation
+- [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, Recall@K, NDCG@K, Response Time)
 
 ### In Progress / Planned
-
-- [ ] Relevance labeling UI for query results
 - [ ] Improve FixedSizeTextChunker
 - [ ] Semantic Chunking Strategy implementation
 - [ ] Configurable chunking strategies (for RAG evaluation)
