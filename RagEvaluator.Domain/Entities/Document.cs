@@ -7,7 +7,7 @@ namespace RagEvaluator.Domain.Entities
     /// </summary>
     public class Document
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; init; }
         public string FileName { get; set; } = string.Empty;
         public string? FilePath { get; set; }
         public long? FileSize { get; set; }
@@ -16,7 +16,7 @@ namespace RagEvaluator.Domain.Entities
         public string? Language { get; set; }
         public int PageCount { get; set; }
         public int ChunkCount { get; set; }
-        public DateTime UploadedAt { get; set; }
+        public DateTime UploadedAt { get; init; }
         public DateTime? ProcessedAt { get; set; }
         public DocumentStatus Status { get; set; } = DocumentStatus.Pending;
     }

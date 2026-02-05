@@ -7,15 +7,15 @@ namespace RagEvaluator.Domain.Entities
     /// </summary>
     public class DocumentSummary
     {
-        public Guid Id { get; set; }
-        public string FileName { get; set; } = string.Empty;
-        public long? FileSize { get; set; }
-        public string? MimeType { get; set; }
-        public string? Language { get; set; }
-        public int PageCount { get; set; }
-        public int ChunkCount { get; set; }
-        public DateTime UploadedAt { get; set; }
-        public DateTime? ProcessedAt { get; set; }
-        public DocumentStatus Status { get; set; }
+        public Guid Id { get; init; }
+        public string FileName { get; init; } = string.Empty;
+        public long? FileSize { get; init; }
+        public string? MimeType { get; init; }
+        public string? Language { get; init; }
+        public int PageCount { get; init; }
+        public int ChunkCount { get; init; }
+        public DateTime UploadedAt { get; init; }
+        public DateTime? ProcessedAt { get; init; }
+        public DocumentStatus Status { get; init; }
     }
 }

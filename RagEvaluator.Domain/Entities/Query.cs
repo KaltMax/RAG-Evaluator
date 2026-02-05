@@ -9,7 +9,7 @@ namespace RagEvaluator.Domain.Entities
     public class Query
     {
         // Query parameters
-        public Guid Id { get; set; }
+        public Guid Id { get; init; }
         public string Question { get; set; } = string.Empty;
         public string Language { get; set; } = string.Empty;
         public int TopK { get; set; } = 3;
@@ -17,7 +17,7 @@ namespace RagEvaluator.Domain.Entities
         public string ChunkingStrategy { get; set; } = string.Empty;
         public string EmbeddingModel { get; set; } = string.Empty;
         public string ChatModel { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
         // Response data
         public string Answer { get; set; } = string.Empty;

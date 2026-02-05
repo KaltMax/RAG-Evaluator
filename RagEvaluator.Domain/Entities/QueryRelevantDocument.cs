@@ -5,7 +5,7 @@ namespace RagEvaluator.Domain.Entities;
 /// </summary>
 public class QueryRelevantDocument
 {
-    public Guid QueryId { get; set; }
-    public Guid DocumentId { get; set; }
+    public Guid QueryId { get; init; }
+    public Guid DocumentId { get; init; }
     public Query Query { get; set; } = null!;
 }

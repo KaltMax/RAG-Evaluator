@@ -8,12 +8,12 @@ namespace RagEvaluator.Domain.Entities
     /// </summary>
     public class QueryResult
     {
-        public Guid Id { get; set; }
-        public Guid QueryId { get; set; }
+        public Guid Id { get; init; }
+        public Guid QueryId { get; init; }
 
         // Denormalized chunk data (preserved even if original chunk is deleted -> reproducible and comparable results)
-        public Guid DocumentChunkId { get; set; }
-        public Guid DocumentId { get; set; }
+        public Guid DocumentChunkId { get; init; }
+        public Guid DocumentId { get; init; }
         public string FileName { get; set; } = string.Empty;
         public string ChunkText { get; set; } = string.Empty;
         public string ChunkingStrategy { get; set; } = string.Empty;
