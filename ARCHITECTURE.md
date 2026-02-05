@@ -46,11 +46,11 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 │ RagEvaluator.Domain  │        │  RagEvaluator.Contract      │
 │  (Core Entities)     │←───────│  (ALL Abstractions)         │
 │                      │        │                             │
-│ • Entities           │        │ • Abstractions/Services/    │
-│ • Value Objects      │        │ • Abstractions/Data/        │
-│ • Exceptions         │        │ • Dtos/                     │
-└──────────────────────┘        │ • Configurations/           │
-                                │ • Logger/                   │
+│ • Entities/          │        │ • Abstractions/Services/    │
+│ • Value Objects/     │        │ • Abstractions/Data/        │
+│ • Exceptions/        │        │ • Dtos/                     │
+| • Enums/             |        │ • Configurations/           │
+└──────────────────────┘        │ • Logger/                   │
                                 └────────────┬────────────────┘
                                              │
                                              ↓
@@ -65,6 +65,7 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
                                 │ • FixedSizeTextChunker     │
                                 │ • DocumentRepository       │
                                 │ • DocumentChunkRepository  │
+                                │ • QueryRepository          │
                                 └────────────────────────────┘
 ```
 
@@ -751,9 +752,9 @@ Containers communicate via Docker's internal network:
 - [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, Recall@K, NDCG@K, Response Time)
 - [x] **Ground Truth Documents**: UI for selecting relevant documents per query, enabling proper Recall@K calculation
 - [x] **Recall@K with Ground Truth**: Document-level Recall@K using user-selected ground truth documents (formula: relevant docs found in top K / total ground truth docs)
+- [x] **Query History Page**: WebUI page with collapsible cards displaying query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics
 
 ### In Progress / Planned
-- [ ] Query History section in WebUI
 - [ ] Improve FixedSizeTextChunker
 - [ ] Semantic Chunking Strategy implementation
 - [ ] Configurable chunking strategies (for RAG evaluation)

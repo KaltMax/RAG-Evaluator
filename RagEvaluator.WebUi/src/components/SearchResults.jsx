@@ -6,7 +6,9 @@ import { downloadDocument } from '../api/DownloadDocumentService';
 import { annotateResults } from '../api/AnnotateResultsService';
 import { getAllDocuments } from '../api/GetAllDocumentsService';
 import { relevanceGrades, getRelevanceGrade } from '../utils/relevanceGrades';
-import { responseQualityOptions, getResponseQualityOption } from '../utils/responseQualityOptions';
+import { responseQualityOptions, getResponseQualityOption, getResponseQualityColor } from '../utils/responseQualityOptions';
+import { formatMetric } from '../utils/formatMetric';
+import { formatResponseTime } from '../utils/formatResponseTime';
 
 function SearchResults({ results }) {
   const [annotations, setAnnotations] = useState({});
@@ -64,7 +66,7 @@ function SearchResults({ results }) {
 
   const getTotalAnnotationsCount = () => {
     const sourcesAnnotated = getAnnotatedCount();
-    const responseQualityAnnotated = responseQuality !== null ? 1 : 0;
+    const responseQualityAnnotated = responseQuality === null ? 0 : 1;
     const relevantDocsAnnotated = relevantDocuments.length > 0 ? 1 : 0;
     return sourcesAnnotated + responseQualityAnnotated + relevantDocsAnnotated;
   };
@@ -139,28 +141,6 @@ function SearchResults({ results }) {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const formatMetric = (value) => {
-    if (value === null || value === undefined) return 'N/A';
-    return value.toFixed(3);
-  };
-
-  const formatResponseTime = (ms) => {
-    if (ms === null || ms === undefined) return 'N/A';
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
-
-  const getResponseQualityColor = (value) => {
-    const option = getResponseQualityOption(value);
-    if (!option) return 'text-gray-400';
-    // Extract color from bg- class (e.g., 'bg-green-600' -> 'text-green-400')
-    if (value === 0) return 'text-green-400'; // Correct
-    if (value === 1) return 'text-yellow-400'; // Vague
-    if (value === 2) return 'text-orange-400'; // Incorrect
-    if (value === 3) return 'text-red-400'; // Hallucinated
-    return 'text-gray-400';
   };
 
   return (
@@ -420,15 +400,15 @@ function SearchResults({ results }) {
               <p className="text-2xl font-bold text-purple-400">{formatResponseTime(metrics.responseTimeMs)}</p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
-              <p className="text-gray-400 text-sm mb-1">Response Quality</p>
-              <p className={`text-lg font-bold ${getResponseQualityColor(metrics.responseQuality)}`}>
-                {getResponseQualityOption(metrics.responseQuality)?.label || 'N/A'}
-              </p>
-            </div>
-            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center col-span-2 md:col-span-2">
               <p className="text-gray-400 text-sm mb-1">Language Switching</p>
               <p className={`text-2xl font-bold ${metrics.hasLanguageSwitching ? 'text-red-400' : 'text-green-400'}`}>
                 {metrics.hasLanguageSwitching ? 'Yes' : 'No'}
+              </p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center col-span-2 md:col-span-2">
+              <p className="text-gray-400 text-sm mb-1">Response Quality</p>
+              <p className={`text-2xl font-bold ${getResponseQualityColor(metrics.responseQuality)}`}>
+                {getResponseQualityOption(metrics.responseQuality)?.label || 'N/A'}
               </p>
             </div>
           </div>

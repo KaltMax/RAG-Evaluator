@@ -24,6 +24,13 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Track language switching issues in responses
   - Color-coded quality buttons for quick selection
 
+- **Query History** - Review and analyze past queries
+  - Collapsible cards with query question and ID
+  - Full answer display with system prompt
+  - Query parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy)
+  - Evaluation metrics display (MRR, Precision@K, Recall@K, NDCG@K, Response Time, Response Quality, Language Switching)
+  - Status badges (Evaluated/Pending)
+
 - **Document Upload** - Upload PDF documents for processing
   - Drag-and-drop interface powered by react-dropzone
   - Multi-file upload support (up to 20 files at once)
@@ -158,15 +165,21 @@ src/
 │   ├── DeleteDocumentService.js        # Document deletion API service
 │   ├── DownloadDocumentService.js      # Document download API service
 │   ├── GetAllDocumentsService.js       # Fetch all documents API service
+│   ├── GetAllQueriesService.js         # Fetch query history API service
 │   ├── GetDocumentByIdService.js       # Fetch single document API service
 │   ├── PostQueryService.js             # Query API service
 │   └── UploadDocumentsService.js       # Upload API service (multi-file, with language)
 ├── utils/                              # Utility functions
+│   ├── formatDate.js                   # Date formatting utility
+│   ├── formatLanguage.js               # Language code to name formatting
+│   ├── formatMetric.js                 # Metric formatting utility (3 decimals)
+│   ├── formatResponseTime.js           # Response time formatting (ms/s)
 │   ├── relevanceGrades.js              # Relevance grade definitions and helpers
-│   └── responseQualityOptions.js       # Response quality options and helpers
+│   └── responseQualityOptions.js       # Response quality options, helpers, and colors
 ├── components/                         # React components
 │   ├── DocumentList.jsx                # Document list page
 │   ├── Header.jsx                      # Top navigation bar
+│   ├── QueryHistory.jsx                # Query history with collapsible cards
 │   ├── Sidebar.jsx                     # Collapsible sidebar navigation
 │   ├── SearchView.jsx                  # Main search page
 │   ├── Searchbar.jsx                   # Search input component
@@ -210,6 +223,7 @@ Brief summary of implemented API services (see `src/api`):
 | Endpoint | Description |
 |----------|-------------|
 | `POST /api/query` | Send `{ Question, TopK, Language }` → AI answer + sources |
+| `GET /api/query/history` | Get all queries with details, parameters, and metrics |
 | `PATCH /api/query/{id}/results` | Annotate results with relevance grades + response quality → calculated metrics |
 | `POST /api/documents/upload` | Upload PDF with language (multipart/form-data: `file`, `language`) |
 | `GET /api/documents` | List all uploaded documents |

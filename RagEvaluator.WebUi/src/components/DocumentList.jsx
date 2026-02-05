@@ -4,6 +4,8 @@ import { ArrowPathIcon, ArrowDownTrayIcon, TrashIcon } from '@heroicons/react/24
 import { getAllDocuments } from '../api/GetAllDocumentsService';
 import { deleteDocument } from '../api/DeleteDocumentService';
 import { downloadDocument } from '../api/DownloadDocumentService';
+import { formatDate } from '../utils/formatDate';
+import { formatLanguage } from '../utils/formatLanguage';
 
 function DocumentList() {
   const [documents, setDocuments] = useState([]);
@@ -57,11 +59,6 @@ function DocumentList() {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString();
-  };
-
   const getStatusBadge = (status) => {
     const statusStyles = {
       Pending: 'bg-yellow-500/20 text-yellow-400',
@@ -75,14 +72,6 @@ function DocumentList() {
         {status}
       </span>
     );
-  };
-
-  const formatLanguage = (lang) => {
-    const languages = {
-      en: 'English',
-      de: 'German',
-    };
-    return languages[lang] || lang || '-';
   };
 
   return (
@@ -159,7 +148,7 @@ function DocumentList() {
                       <div className="text-sm text-white font-medium truncate max-w-xs" title={doc.fileName}>
                         {doc.fileName}
                       </div>
-                      <div className="text-xs text-gray-500 font-mono truncate max-w-xs" title={doc.id}>
+                      <div className="text-xs text-gray-400 font-mono truncate max-w-xs" title={doc.id}>
                         {doc.id}
                       </div>
                     </td>

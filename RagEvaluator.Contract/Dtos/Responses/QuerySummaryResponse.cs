@@ -10,8 +10,10 @@
         public required string Language { get; set; }
         public int TopK { get; set; }
         public required string SystemPrompt { get; set; }
+        public required string ChunkingStrategy { get; set; }
         public required string EmbeddingModel { get; set; }
         public required string ChatModel { get; set; }
+        public required string Answer { get; set; }
         public DateTime CreatedAt { get; set; }
         public int ResponseTimeMs { get; set; }
         public double? Mrr { get; set; }

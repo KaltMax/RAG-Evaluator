@@ -42,3 +42,16 @@ export const responseQualityOptions = [
 export const getResponseQualityOption = (value) => {
   return responseQualityOptions.find(option => option.value === value);
 };
+
+/**
+ * Get text color class for response quality value
+ * @param {number|null|undefined} value - The response quality value (0-3)
+ * @returns {string} Tailwind text color class
+ */
+export const getResponseQualityColor = (value) => {
+  if (value === 0) return 'text-green-400';
+  if (value === 1) return 'text-yellow-400';
+  if (value === 2) return 'text-orange-400';
+  if (value === 3) return 'text-red-400';
+  return 'text-gray-400';
+};

@@ -6,6 +6,7 @@ import SearchView from "./components/SearchView";
 import Sidebar from "./components/Sidebar";
 import UploadDocuments from "./components/UploadDocuments";
 import DocumentList from "./components/DocumentList";
+import QueryHistory from "./components/QueryHistory";
 import Settings from "./components/Settings";
 import Statistics from "./components/Statistics";
 
@@ -22,6 +23,7 @@ function App() {
               <Route path="/" element={<SearchView />} />
               <Route path="/upload" element={<UploadDocuments />} />
               <Route path="/documents" element={<DocumentList />} />
+              <Route path="/queryHistory" element={<QueryHistory />} />
               <Route path="/statistics" element={<Statistics />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
