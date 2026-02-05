@@ -34,6 +34,7 @@ namespace RagEvaluator.API.Controllers
             {
                 if (!ModelState.IsValid)
                 {
+                    _logger.LogWarning("Invalid query request received");
                     return BadRequest(ModelState);
                 }
 
@@ -77,8 +78,10 @@ namespace RagEvaluator.API.Controllers
             var query = await _queryService.GetByIdAsync(id);
             if (query is null)
             {
+                _logger.LogWarning("Query not found: {QueryId}", id);
                 return NotFound();
             }
+
             return Ok(query);
         }
 
@@ -100,11 +103,11 @@ namespace RagEvaluator.API.Controllers
                 var query = await _queryService.GetByIdAsync(queryId);
                 if (query is null)
                 {
+                    _logger.LogWarning("Query not found for annotation: {QueryId}", queryId);
                     return NotFound();
                 }
 
                 await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching, request.RelevantDocumentIds);
-                await _queryService.CalculateMetricsAsync(queryId);
 
                 _logger.LogInformation("Query results annotated and metrics calculated: {QueryId}", queryId);
 
@@ -113,6 +116,7 @@ namespace RagEvaluator.API.Controllers
             }
             catch (ArgumentException ex)
             {
+                _logger.LogError(ex, "Invalid argument while annotating query results: {QueryId}", queryId);
                 return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)

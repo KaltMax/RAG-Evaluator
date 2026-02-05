@@ -42,11 +42,6 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching, IEnumerable<Guid> relevantDocumentIds);
         
         /// <summary>
-        /// Calculates retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K) for a query based on relevance annotations.
-        /// </summary>
-        Task CalculateMetricsAsync(Guid queryId);
-        
-        /// <summary>
         /// Deletes a query by its unique identifier.
         /// </summary>
         Task DeleteAsync(Guid id);

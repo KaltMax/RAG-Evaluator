@@ -258,7 +258,6 @@ RAG-Evaluator/
   - `GetQueryByIdAsync()` - Retrieves query by ID
   - `GetQueryHistoryAsync()` - Returns paginated query history
   - `AnnotateResultsAsync()` - Updates query results with relevance grades, response quality evaluation, and ground truth relevant documents
-  - `CalculateMetricsAsync()` - Calculates MRR, Precision@K, Recall@K (using ground truth), NDCG@K based on relevance labels
 - `IMetricsService` - Similarity and retrieval evaluation metrics
   - `CosineSimilarity()` / `CosineDistance()` - Vector similarity calculations
   - `MeanReciprocalRank()` - MRR for retrieval evaluation
@@ -754,6 +753,7 @@ Containers communicate via Docker's internal network:
 - [x] **Recall@K with Ground Truth**: Document-level Recall@K using user-selected ground truth documents (formula: relevant docs found in top K / total ground truth docs)
 
 ### In Progress / Planned
+- [ ] Query History section in WebUI
 - [ ] Improve FixedSizeTextChunker
 - [ ] Semantic Chunking Strategy implementation
 - [ ] Configurable chunking strategies (for RAG evaluation)

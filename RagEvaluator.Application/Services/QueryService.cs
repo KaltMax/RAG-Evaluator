@@ -112,17 +112,17 @@ namespace RagEvaluator.Application.Services
                 });
             }
 
+            CalculateMetrics(query);
             await _queryRepository.UpdateAsync(query);
         }
 
-        public async Task CalculateMetricsAsync(Guid queryId)
+        public async Task DeleteAsync(Guid id)
         {
-            var query = await _queryRepository.GetByIdWithResultsAsync(queryId);
-            if (query == null)
-            {
-                throw new ArgumentException($"Query with id {queryId} not found");
-            }
+            await _queryRepository.DeleteAsync(id);
+        }
 
+        private void CalculateMetrics(Query query)
+        {
             // Check if any results have been labeled
             var hasLabels = query.Results.Any(r => r.IsRelevant.HasValue);
             if (!hasLabels)
@@ -137,13 +137,6 @@ namespace RagEvaluator.Application.Services
             query.PrecisionAtK = metrics.PrecisionAtK;
             query.RecallAtK = metrics.RecallAtK;
             query.NDCGAtK = metrics.NDCGAtK;
-
-            await _queryRepository.UpdateAsync(query);
-        }
-
-        public async Task DeleteAsync(Guid id)
-        {
-            await _queryRepository.DeleteAsync(id);
         }
     }
 }
