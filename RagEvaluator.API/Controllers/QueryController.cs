@@ -125,5 +125,25 @@ namespace RagEvaluator.API.Controllers
                 return StatusCode(500, new { error = "Failed to annotate results", message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Deletes a query by its ID
+        /// </summary>
+        /// <param name="id">The unique identifier of the query</param>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteQueryAsync(Guid id)
+        {
+            var query = await _queryService.GetByIdAsync(id);
+            if (query is null)
+            {
+                _logger.LogWarning("Query not found for deletion: {QueryId}", id);
+                return NotFound();
+            }
+
+            await _queryService.DeleteAsync(id);
+            _logger.LogInformation("Query deleted: {QueryId}", id);
+
+            return NoContent();
+        }
     }
 }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { ArrowPathIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { getAllQueries } from '../api/GetAllQueriesService';
+import { deleteQuery } from '../api/DeleteQueryService';
 import { formatDate } from '../utils/formatDate';
 import { formatMetric } from '../utils/formatMetric';
 import { getResponseQualityOption, getResponseQualityColor } from '../utils/responseQualityOptions';
@@ -49,6 +50,21 @@ function QueryHistory() {
       return { label: 'Evaluated', color: 'bg-green-500/20 text-green-400' };
     }
     return { label: 'Pending', color: 'bg-yellow-500/20 text-yellow-400' };
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this query?')) {
+      return;
+    }
+
+    try {
+      await deleteQuery(id);
+      toast.success('Query deleted successfully');
+      fetchQueries();
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete query');
+    }
   };
 
   return (
@@ -115,6 +131,13 @@ function QueryHistory() {
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${metricsStatus.color}`}>
                     {metricsStatus.label}
                   </span>
+                  <button
+                    onClick={(e) => handleDelete(e, query.id)}
+                    className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                    title="Delete query"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
                   {isExpanded ? (
                     <ChevronUpIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   ) : (

@@ -1,1 +1,0 @@
-// TODO: Implement GetDocumentByIdService api call functions

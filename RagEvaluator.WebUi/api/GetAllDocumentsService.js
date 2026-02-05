@@ -1,1 +1,0 @@
-// TODO: Implement GetAllDocumentsService api call functions
