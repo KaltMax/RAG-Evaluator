@@ -8,28 +8,28 @@ export const relevanceGrades = [
     label: 'Not Relevant',
     shortLabel: 'Not',
     color: 'bg-red-700 hover:bg-red-600',
-    selectedColor: 'bg-red-600 ring-2 ring-red-400'
+    selectedColor: 'bg-red-600 ring-3 ring-red-400'
   },
   {
     value: 1,
     label: 'Marginally Relevant',
     shortLabel: 'Marginal',
     color: 'bg-orange-600 hover:bg-orange-500',
-    selectedColor: 'bg-orange-500 ring-2 ring-orange-400'
+    selectedColor: 'bg-orange-500 ring-3 ring-orange-400'
   },
   {
     value: 2,
     label: 'Fairly Relevant',
     shortLabel: 'Fair',
     color: 'bg-yellow-600 hover:bg-yellow-500',
-    selectedColor: 'bg-yellow-500 ring-2 ring-yellow-400'
+    selectedColor: 'bg-yellow-500 ring-3 ring-yellow-400'
   },
   {
     value: 3,
     label: 'Highly Relevant',
     shortLabel: 'High',
     color: 'bg-green-600 hover:bg-green-500',
-    selectedColor: 'bg-green-500 ring-2 ring-green-400'
+    selectedColor: 'bg-green-500 ring-3 ring-green-400'
   },
 ];
 

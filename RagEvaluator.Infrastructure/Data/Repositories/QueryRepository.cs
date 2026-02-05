@@ -25,6 +25,7 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
         {
             return await _context.Queries
                 .Include(q => q.Results)
+                .Include(q => q.RelevantDocuments)
                 .FirstOrDefaultAsync(q => q.Id == id);
         }
 

@@ -129,7 +129,7 @@ namespace RagEvaluator.Application.Services
             return dcg / idcg;
         }
 
-        public QueryMetrics CalculateQueryMetrics(IReadOnlyList<QueryResult> results, int topK)
+        public QueryMetrics CalculateQueryMetrics(IReadOnlyList<QueryResult> results, int topK, IReadOnlyList<Guid> groundTruthDocumentIds)
         {
             // Order results by rank for metric calculations
             var orderedResults = results.OrderBy(r => r.Rank).ToList();
@@ -152,20 +152,18 @@ namespace RagEvaluator.Application.Services
 
             var precisionAtK = PrecisionAtK(retrievedChunkIds, relevantChunkIds, topK);
 
-            // Calculate Recall@K (document-level)
-            // Uses unique document IDs to measure: "Of the relevant documents, how many did we retrieve?"
-            var retrievedDocumentIds = orderedResults
+            // Calculate Recall@K (document-level) using ground truth
+            // Formula: (# relevant documents with chunks in top K) / (# total relevant documents from ground truth)
+            var relevantDocsFoundInTopK = orderedResults
                 .Take(topK)
-                .Select(r => r.DocumentId.ToString())
-                .Distinct()
-                .ToList();
-            var relevantDocumentIds = orderedResults
                 .Where(r => r.IsRelevant == true)
-                .Select(r => r.DocumentId.ToString())
+                .Select(r => r.DocumentId)
                 .Distinct()
                 .ToList();
 
-            var recallAtK = RecallAtK(retrievedDocumentIds, relevantDocumentIds, retrievedDocumentIds.Count);
+            var recallAtK = groundTruthDocumentIds.Count > 0
+                ? (double)relevantDocsFoundInTopK.Count(id => groundTruthDocumentIds.Contains(id)) / groundTruthDocumentIds.Count
+                : 0.0;
 
             // Calculate NDCG@K using RelevanceGrade if available, otherwise binary (1.0 for relevant, 0.0 for not)
             var relevanceScores = orderedResults

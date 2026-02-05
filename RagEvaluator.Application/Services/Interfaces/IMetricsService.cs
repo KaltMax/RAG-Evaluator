@@ -46,6 +46,9 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// <summary>
         /// Calculates all retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K) for a set of query results.
         /// </summary>
-        QueryMetrics CalculateQueryMetrics(IReadOnlyList<QueryResult> results, int topK);
+        /// <param name="results">The query results to evaluate.</param>
+        /// <param name="topK">The number of top results to consider.</param>
+        /// <param name="groundTruthDocumentIds">Ground truth relevant document IDs for Recall@K calculation.</param>
+        QueryMetrics CalculateQueryMetrics(IReadOnlyList<QueryResult> results, int topK, IReadOnlyList<Guid> groundTruthDocumentIds);
     }
 }

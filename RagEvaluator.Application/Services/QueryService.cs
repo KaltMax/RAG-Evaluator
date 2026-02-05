@@ -79,7 +79,7 @@ namespace RagEvaluator.Application.Services
             return queries.ToSummaryList();
         }
 
-        public async Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching)
+        public async Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching, IEnumerable<Guid> relevantDocumentIds)
         {
             var query = await _queryRepository.GetByIdWithResultsAsync(queryId);
             if (query == null)
@@ -101,6 +101,17 @@ namespace RagEvaluator.Application.Services
             query.ResponseQuality = responseQuality;
             query.HasLanguageSwitching = hasLanguageSwitching;
 
+            // Update ground truth relevant documents for Recall@K calculation
+            query.RelevantDocuments.Clear();
+            foreach (var documentId in relevantDocumentIds.Distinct())
+            {
+                query.RelevantDocuments.Add(new QueryRelevantDocument
+                {
+                    QueryId = queryId,
+                    DocumentId = documentId
+                });
+            }
+
             await _queryRepository.UpdateAsync(query);
         }
 
@@ -119,7 +130,8 @@ namespace RagEvaluator.Application.Services
                 return; // No relevance labels, nothing to calculate
             }
 
-            var metrics = _metricsService.CalculateQueryMetrics(query.Results.ToList(), query.TopK);
+            var groundTruthDocumentIds = query.RelevantDocuments.Select(rd => rd.DocumentId).ToList();
+            var metrics = _metricsService.CalculateQueryMetrics(query.Results.ToList(), query.TopK, groundTruthDocumentIds);
 
             query.MRR = metrics.MRR;
             query.PrecisionAtK = metrics.PrecisionAtK;

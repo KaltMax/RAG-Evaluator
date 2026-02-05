@@ -37,9 +37,9 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task CompleteQueryAsync(Query query, string answer, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches);
         
         /// <summary>
-        /// Annotates query results with relevance grades and response quality evaluation.
+        /// Annotates query results with relevance grades, response quality evaluation, and ground truth relevant documents.
         /// </summary>
-        Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching);
+        Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching, IEnumerable<Guid> relevantDocumentIds);
         
         /// <summary>
         /// Calculates retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K) for a query based on relevance annotations.

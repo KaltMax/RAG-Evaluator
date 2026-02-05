@@ -126,7 +126,7 @@ RAG-Evaluator/
 │   │   ├── Requests/
 │   │   │   ├── AskQuestionRequest.cs
 │   │   │   ├── UploadDocumentRequest.cs
-│   │   │   └── AnnotateResultsRequest.cs       # Relevance + response quality annotations
+│   │   │   └── AnnotateResultsRequest.cs       # Relevance + response quality + ground truth annotations
 │   │   └── Responses/
 │   │       ├── QueryResponse.cs
 │   │       ├── QuerySummaryResponse.cs  # Query history list item
@@ -144,7 +144,8 @@ RAG-Evaluator/
 │   │   ├── DocumentSummary.cs           # Lightweight document (for list views)
 │   │   ├── DocumentChunk.cs             # Text chunk with vector embedding
 │   │   ├── Query.cs                     # User query entity
-│   │   └── QueryResult.cs               # Retrieved chunk result with relevance
+│   │   ├── QueryResult.cs               # Retrieved chunk result with relevance
+│   │   └── QueryRelevantDocument.cs     # Ground truth relevant document for Recall@K
 │   ├── Enums/
 │   │   ├── DocumentStatus.cs            # Document processing status
 │   │   ├── RelevanceGrade.cs            # Graded relevance scale (0-3) for NDCG
@@ -168,7 +169,8 @@ RAG-Evaluator/
 │   │   │   ├── DocumentConfiguration.cs
 │   │   │   ├── DocumentChunkConfiguration.cs # pgvector mapping
 │   │   │   ├── QueryConfiguration.cs    # Query entity mapping
-│   │   │   └── QueryResultConfiguration.cs # QueryResult entity mapping
+│   │   │   ├── QueryResultConfiguration.cs # QueryResult entity mapping
+│   │   │   └── QueryRelevantDocumentConfiguration.cs # Ground truth mapping
 │   │   └── Migrations/
 │   └── Services/
 │       ├── LocalFileStorageService.cs   # Local file system storage
@@ -255,14 +257,14 @@ RAG-Evaluator/
   - `CompleteQueryAsync()` - Populates query with answer, embedding, response time, retrieved chunks, and persists to database
   - `GetQueryByIdAsync()` - Retrieves query by ID
   - `GetQueryHistoryAsync()` - Returns paginated query history
-  - `AnnotateResultsAsync()` - Updates query results with relevance grades and response quality evaluation
-  - `CalculateMetricsAsync()` - Calculates MRR, Precision@K, Recall@K, NDCG@K based on relevance labels
+  - `AnnotateResultsAsync()` - Updates query results with relevance grades, response quality evaluation, and ground truth relevant documents
+  - `CalculateMetricsAsync()` - Calculates MRR, Precision@K, Recall@K (using ground truth), NDCG@K based on relevance labels
 - `IMetricsService` - Similarity and retrieval evaluation metrics
   - `CosineSimilarity()` / `CosineDistance()` - Vector similarity calculations
   - `MeanReciprocalRank()` - MRR for retrieval evaluation
   - `PrecisionAtK()` / `RecallAtK()` - Precision and recall metrics
   - `NormalizedDiscountedCumulativeGainAtK()` - NDCG for ranking quality
-  - `CalculateQueryMetrics()` - Calculates all metrics for a query from its results
+  - `CalculateQueryMetrics()` - Calculates all metrics for a query from its results (accepts ground truth document IDs for proper Recall@K calculation)
 
 **Dependencies**: → Domain, Contract
 
@@ -303,7 +305,7 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`, `QueryResult`
+- Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`, `QueryResult`, `QueryRelevantDocument`
 - Value Objects: `SearchResult`, `ChunkSearchMatch`
 - Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
 
@@ -331,12 +333,18 @@ RAG-Evaluator/
 - `HasLanguageSwitching` - Flag indicating unexpected language switching in response (nullable)
 - `MRR`, `PrecisionAtK`, `RecallAtK`, `NDCGAtK` - Retrieval metrics (nullable, calculated after relevance labeling)
 - `Results` - Navigation to `QueryResult` collection
+- `RelevantDocuments` - Navigation to `QueryRelevantDocument` collection (ground truth for Recall@K)
 
 **QueryResult Entity Fields**:
 - `Id`, `QueryId` - Primary key and foreign key to Query
 - `DocumentChunkId`, `DocumentId`, `FileName`, `ChunkText`, `ChunkingStrategy`, `EmbeddingModel` - Denormalized chunk data (preserved for reproducible evaluation even if original chunks are modified or deleted)
 - `Rank`, `SimilarityScore` - Retrieval position and cosine similarity
 - `IsRelevant`, `RelevanceGrade` - Relevance labeling for metrics calculation (nullable). `RelevanceGrade` is a `RelevanceGrade` enum (NotRelevant=0, MarginallyRelevant=1, FairlyRelevant=2, HighlyRelevant=3)
+
+**QueryRelevantDocument Entity Fields**:
+- `QueryId`, `DocumentId` - Composite primary key
+- `Query` - Navigation property to parent Query
+- Used as ground truth for Recall@K calculation: tracks which documents should ideally contain relevant information for a query
 
 **Dependencies**: None (pure domain logic)
 
@@ -445,7 +453,7 @@ The Application layer consumes these abstractions:
 - `RagService` uses IChatService
 - `DocumentService` uses IPdfLoader, ITextChunker, IFileStorageService, IEmbeddingService
 - `QueryService` uses IQueryRepository, IEmbeddingService, IQueryRepository
-- `MetricsService` provides similarity and evaluation metric calculations (CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K)
+- `MetricsService` provides similarity and evaluation metric calculations (CosineSimilarity, MRR, Precision@K, Recall@K with ground truth, NDCG@K)
 - No direct dependency on Infrastructure implementations
 
 This allows:
@@ -530,6 +538,14 @@ CREATE TABLE QueryResults (
 );
 CREATE INDEX IX_QueryResults_QueryId ON QueryResults(QueryId);
 CREATE INDEX IX_QueryResults_DocumentId ON QueryResults(DocumentId);
+
+-- QueryRelevantDocuments table (ground truth for Recall@K calculation)
+CREATE TABLE QueryRelevantDocuments (
+    QueryId UUID NOT NULL REFERENCES Queries(Id) ON DELETE CASCADE,
+    DocumentId UUID NOT NULL,
+    PRIMARY KEY (QueryId, DocumentId)
+);
+CREATE INDEX IX_QueryRelevantDocuments_DocumentId ON QueryRelevantDocuments(DocumentId);
 ```
 
 ### Vector Store Implementation
@@ -563,7 +579,7 @@ GET    /api/documents/{id}/chunks   # Get document chunks (IMPLEMENTED)
 POST   /api/query                   # Ask question using RAG (IMPLEMENTED)
 GET    /api/query/history           # Get query history (IMPLEMENTED)
 GET    /api/query/{id}              # Get specific query (IMPLEMENTED)
-PATCH  /api/query/{id}/results      # Annotate results with relevance, response quality, and calculate metrics (IMPLEMENTED)
+PATCH  /api/query/{id}/results      # Annotate results with relevance, response quality, ground truth documents, and calculate metrics (IMPLEMENTED)
 ```
 
 #### Health API
@@ -572,7 +588,7 @@ PATCH  /api/query/{id}/results      # Annotate results with relevance, response 
 GET    /api/health                   # Check if RAG services are ready (IMPLEMENTED)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, and metrics calculation are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, ground truth document selection, and metrics calculation (including proper Recall@K with ground truth) are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
 
 ### Request/Response Examples
 
@@ -733,10 +749,11 @@ Containers communicate via Docker's internal network:
 - [x] **Frontend**: React UI with multi-file upload, language selection, search results with source details
 - [x] **Configuration**: System prompt, embedding model, and chunking strategy via `.env`
 - [x] **Relevance Annotation**: API endpoint for labeling query results with graded relevance (RelevanceGrade enum), automatic metrics calculation
-- [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, NDCG@K, Response Time)
+- [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, Recall@K, NDCG@K, Response Time)
+- [x] **Ground Truth Documents**: UI for selecting relevant documents per query, enabling proper Recall@K calculation
+- [x] **Recall@K with Ground Truth**: Document-level Recall@K using user-selected ground truth documents (formula: relevant docs found in top K / total ground truth docs)
 
 ### In Progress / Planned
-- [ ] Solution on how to evaluate Recall@K (requires tracking total relevant documents per query, which most likely will require the gold-standard test set)
 - [ ] Improve FixedSizeTextChunker
 - [ ] Semantic Chunking Strategy implementation
 - [ ] Configurable chunking strategies (for RAG evaluation)

@@ -36,5 +36,8 @@ namespace RagEvaluator.Domain.Entities
 
         // Navigation property for related QueryResults
         public ICollection<QueryResult> Results { get; set; } = [];
+
+        // Navigation property for ground truth relevant documents (used for Recall@K calculation)
+        public ICollection<QueryRelevantDocument> RelevantDocuments { get; set; } = [];
     }
 }

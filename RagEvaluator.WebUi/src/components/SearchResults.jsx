@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DocumentTextIcon, ClockIcon, ArrowDownTrayIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { PropTypes } from 'prop-types';
 import { toast } from 'react-toastify';
 import { downloadDocument } from '../api/DownloadDocumentService';
 import { annotateResults } from '../api/AnnotateResultsService';
+import { getAllDocuments } from '../api/GetAllDocumentsService';
 import { relevanceGrades, getRelevanceGrade } from '../utils/relevanceGrades';
 import { responseQualityOptions, getResponseQualityOption } from '../utils/responseQualityOptions';
 
@@ -13,6 +14,20 @@ function SearchResults({ results }) {
   const [hasLanguageSwitching, setHasLanguageSwitching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [metrics, setMetrics] = useState(null);
+  const [relevantDocuments, setRelevantDocuments] = useState([]);
+  const [availableDocuments, setAvailableDocuments] = useState([]);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const docs = await getAllDocuments();
+        setAvailableDocuments(docs);
+      } catch (error) {
+        console.error('Failed to fetch documents:', error);
+      }
+    };
+    fetchDocuments();
+  }, []);
 
   if (!results) {
     return null;
@@ -50,27 +65,44 @@ function SearchResults({ results }) {
   const getTotalAnnotationsCount = () => {
     const sourcesAnnotated = getAnnotatedCount();
     const responseQualityAnnotated = responseQuality !== null ? 1 : 0;
-    return sourcesAnnotated + responseQualityAnnotated;
+    const relevantDocsAnnotated = relevantDocuments.length > 0 ? 1 : 0;
+    return sourcesAnnotated + responseQualityAnnotated + relevantDocsAnnotated;
   };
 
   const getTotalAnnotationsNeeded = () => {
-    return (results.sources?.length || 0) + 1; // sources + response quality
+    return (results.sources?.length || 0) + 2; // sources + response quality + at least 1 relevant document
   };
 
   const allSourcesAnnotated = () => {
     return getAnnotatedCount() === results.sources?.length;
   };
 
+  const hasRelevantDocuments = () => {
+    return relevantDocuments.length > 0;
+  };
+
   const canSubmitAnnotations = () => {
-    return allSourcesAnnotated() && responseQuality !== null;
+    return allSourcesAnnotated() && responseQuality !== null && hasRelevantDocuments();
+  };
+
+  const handleRelevantDocumentToggle = (documentId) => {
+    setRelevantDocuments(prev => {
+      if (prev.includes(documentId)) {
+        return prev.filter(id => id !== documentId);
+      } else {
+        return [...prev, documentId];
+      }
+    });
   };
 
   const handleSubmitAnnotations = async () => {
     if (!canSubmitAnnotations()) {
       if (!allSourcesAnnotated()) {
         toast.warning('Please annotate all sources before submitting');
-      } else {
+      } else if (responseQuality === null) {
         toast.warning('Please evaluate the response quality before submitting');
+      } else if (!hasRelevantDocuments()) {
+        toast.warning('Please select at least one relevant document for Recall@K calculation');
       }
       return;
     }
@@ -85,7 +117,8 @@ function SearchResults({ results }) {
       const payload = {
         annotations: annotationList,
         responseQuality: responseQuality,
-        hasLanguageSwitching: hasLanguageSwitching
+        hasLanguageSwitching: hasLanguageSwitching,
+        relevantDocumentIds: relevantDocuments
       };
 
       const updatedQuery = await annotateResults(results.queryId, payload);
@@ -93,6 +126,7 @@ function SearchResults({ results }) {
       setMetrics({
         mrr: updatedQuery.mrr,
         precisionAtK: updatedQuery.precisionAtK,
+        recallAtK: updatedQuery.recallAtK,
         ndcgAtK: updatedQuery.ndcgAtK,
         responseTimeMs: updatedQuery.responseTimeMs,
         responseQuality: responseQuality,
@@ -288,31 +322,72 @@ function SearchResults({ results }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
 
-          {/* Submit Annotations Button */}
-          {!metrics && (
-            <div className="mt-6 pt-6 border-t border-gray-700">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-400">
-                  {getTotalAnnotationsCount()} of {getTotalAnnotationsNeeded()} annotations completed
-                </p>
+      {/* Ground Truth Documents Section */}
+      {!metrics && availableDocuments.length > 0 && (
+        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-2">
+            Ground Truth Documents
+          </h2>
+          <p className="text-sm text-gray-400 mb-4">
+            Select which documents should ideally contain relevant information for this query (used for Recall@K calculation).
+          </p>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {availableDocuments.map((doc) => (
+              <label
+                key={doc.id}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1F1F1F] cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={relevantDocuments.includes(doc.id)}
+                  onChange={() => handleRelevantDocumentToggle(doc.id)}
+                  disabled={isSubmitting}
+                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <span className="text-gray-300 text-sm">{doc.fileName}</span>
                 <button
-                  onClick={handleSubmitAnnotations}
-                  disabled={isSubmitting || !canSubmitAnnotations()}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                  onClick={(e) => { e.preventDefault(); handleDownload(doc.id, doc.fileName); }}
+                  className="text-gray-400 hover:text-blue-400 transition-colors"
+                  title="Download document"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    <span>Submit Annotations</span>
-                  )}
+                  <ArrowDownTrayIcon className="w-4 h-4" />
                 </button>
-              </div>
-            </div>
+              </label>
+            ))}
+          </div>
+          {relevantDocuments.length > 0 && (
+            <p className="text-gray-400 text-xs mt-3">
+              {relevantDocuments.length} document{relevantDocuments.length !== 1 ? 's' : ''} selected as relevant
+            </p>
           )}
+        </div>
+      )}
+
+      {/* Submit Annotations Section */}
+      {!metrics && (
+        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-400">
+              {getTotalAnnotationsCount()} of {getTotalAnnotationsNeeded()} annotations completed
+            </p>
+            <button
+              onClick={handleSubmitAnnotations}
+              disabled={isSubmitting || !canSubmitAnnotations()}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                <span>Submit Annotations</span>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -323,7 +398,7 @@ function SearchResults({ results }) {
             <CheckCircleIcon className="w-6 h-6 text-green-400" />
             <h2 className="text-xl font-semibold text-white">Evaluation Metrics</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">MRR</p>
               <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.mrr)}</p>
@@ -331,6 +406,10 @@ function SearchResults({ results }) {
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">Precision@K</p>
               <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.precisionAtK)}</p>
+            </div>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+              <p className="text-gray-400 text-sm mb-1">Recall@K</p>
+              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.recallAtK)}</p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">NDCG@K</p>
@@ -346,7 +425,7 @@ function SearchResults({ results }) {
                 {getResponseQualityOption(metrics.responseQuality)?.label || 'N/A'}
               </p>
             </div>
-            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
+            <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center col-span-2 md:col-span-2">
               <p className="text-gray-400 text-sm mb-1">Language Switching</p>
               <p className={`text-2xl font-bold ${metrics.hasLanguageSwitching ? 'text-red-400' : 'text-green-400'}`}>
                 {metrics.hasLanguageSwitching ? 'Yes' : 'No'}

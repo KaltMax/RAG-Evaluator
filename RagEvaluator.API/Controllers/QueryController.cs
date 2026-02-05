@@ -103,7 +103,7 @@ namespace RagEvaluator.API.Controllers
                     return NotFound();
                 }
 
-                await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching);
+                await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching, request.RelevantDocumentIds);
                 await _queryService.CalculateMetricsAsync(queryId);
 
                 _logger.LogInformation("Query results annotated and metrics calculated: {QueryId}", queryId);
