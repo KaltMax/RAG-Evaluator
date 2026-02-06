@@ -16,7 +16,7 @@ namespace RagEvaluator.Infrastructure.Services
             Directory.CreateDirectory(_baseDirectory);
         }
 
-        public async Task<string> SaveFileAsync(Stream filenStream, Guid documentId, string fileName)
+        public async Task<string> SaveFileAsync(Stream filenStream, Guid documentId, string fileName, CancellationToken cancellationToken = default)
         {
             var extension = Path.GetExtension(fileName);
             var storedFileName = $"{documentId}{extension}";
@@ -24,12 +24,12 @@ namespace RagEvaluator.Infrastructure.Services
 
             using var file = File.Create(filePath);
             filenStream.Position = 0;
-            await filenStream.CopyToAsync(file);
+            await filenStream.CopyToAsync(file, cancellationToken);
 
             return filePath;
         }
 
-        public Task DeleteFileAsync(string filePath)
+        public Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default)
         {
             if(File.Exists(filePath))
             {

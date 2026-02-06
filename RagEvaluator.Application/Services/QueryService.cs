@@ -26,14 +26,14 @@ namespace RagEvaluator.Application.Services
             _metricsService = metricsService;
         }
 
-        public async Task<bool> IsReadyAsync()
+        public async Task<bool> IsReadyAsync(CancellationToken cancellationToken = default)
         {
-            return await _embeddingService.IsAvailableAsync();
+            return await _embeddingService.IsAvailableAsync(cancellationToken);
         }
 
-        public async Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel)
+        public async Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel, CancellationToken cancellationToken = default)
         {
-            var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {question}");
+            var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {question}", cancellationToken);
 
             return new Query
             {
@@ -50,7 +50,7 @@ namespace RagEvaluator.Application.Services
             };
         }
 
-        public async Task CompleteQueryAsync(Query query, string answer, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches)
+        public async Task CompleteQueryAsync(Query query, string answer, int responseTimeMs, IEnumerable<ChunkSearchMatch> chunkMatches, CancellationToken cancellationToken = default)
         {
             query.Answer = answer;
             query.ResponseTimeMs = responseTimeMs;
@@ -64,24 +64,24 @@ namespace RagEvaluator.Application.Services
                 query.Results.Add(result);
             }
 
-            await _queryRepository.AddAsync(query);
+            await _queryRepository.AddAsync(query, cancellationToken);
         }
 
-        public async Task<QuerySummaryResponse?> GetByIdAsync(Guid id)
+        public async Task<QuerySummaryResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var query = await _queryRepository.GetByIdAsync(id);
+            var query = await _queryRepository.GetByIdAsync(id, cancellationToken);
             return query?.ToSummary();
         }
 
-        public async Task<IReadOnlyList<QuerySummaryResponse>> GetAllAsync()
+        public async Task<IReadOnlyList<QuerySummaryResponse>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var queries = await _queryRepository.GetAllAsync();
+            var queries = await _queryRepository.GetAllAsync(cancellationToken);
             return queries.ToSummaryList();
         }
 
-        public async Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching, IEnumerable<Guid> relevantDocumentIds)
+        public async Task AnnotateResultsAsync(Guid queryId, IEnumerable<QueryResultAnnotation> annotations, ResponseQuality responseQuality, bool hasLanguageSwitching, IEnumerable<Guid> relevantDocumentIds, CancellationToken cancellationToken = default)
         {
-            var query = await _queryRepository.GetByIdWithResultsAsync(queryId);
+            var query = await _queryRepository.GetByIdWithResultsAsync(queryId, cancellationToken);
             if (query == null)
             {
                 throw new ArgumentException($"Query with id {queryId} not found");
@@ -113,12 +113,12 @@ namespace RagEvaluator.Application.Services
             }
 
             CalculateMetrics(query);
-            await _queryRepository.UpdateAsync(query);
+            await _queryRepository.UpdateAsync(query, cancellationToken);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            await _queryRepository.DeleteAsync(id);
+            await _queryRepository.DeleteAsync(id, cancellationToken);
         }
 
         private void CalculateMetrics(Query query)

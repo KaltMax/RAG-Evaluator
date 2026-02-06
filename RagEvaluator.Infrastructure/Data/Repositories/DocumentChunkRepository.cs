@@ -18,49 +18,49 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             _context = context;
         }
 
-        public async Task<DocumentChunk?> GetByIdAsync(Guid id)
+        public async Task<DocumentChunk?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.DocumentChunks.FindAsync(id);
+            return await _context.DocumentChunks.FindAsync([id], cancellationToken);
         }
 
-        public async Task<IReadOnlyList<DocumentChunk>> GetByDocumentIdAsync(Guid documentId)
+        public async Task<IReadOnlyList<DocumentChunk>> GetByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default)
         {
             return await _context.DocumentChunks
                 .Where(c => c.DocumentId == documentId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<int> GetCountAsync()
+        public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.DocumentChunks.CountAsync();
+            return await _context.DocumentChunks.CountAsync(cancellationToken);
         }
 
-        public async Task AddAsync(DocumentChunk chunk)
+        public async Task AddAsync(DocumentChunk chunk, CancellationToken cancellationToken = default)
         {
-            await _context.DocumentChunks.AddAsync(chunk);
-            await _context.SaveChangesAsync();
+            await _context.DocumentChunks.AddAsync(chunk, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task AddRangeAsync(IEnumerable<DocumentChunk> chunks)
+        public async Task AddRangeAsync(IEnumerable<DocumentChunk> chunks, CancellationToken cancellationToken = default)
         {
-            await _context.DocumentChunks.AddRangeAsync(chunks);
-            await _context.SaveChangesAsync();
+            await _context.DocumentChunks.AddRangeAsync(chunks, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task DeleteByDocumentIdAsync(Guid documentId)
+        public async Task DeleteByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default)
         {
             var chunks = await _context.DocumentChunks
                 .Where(c => c.DocumentId == documentId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (chunks.Count > 0)
             {
                 _context.DocumentChunks.RemoveRange(chunks);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
         }
 
-        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchAsync(float[] queryEmbedding, int topK = 3)
+        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchAsync(float[] queryEmbedding, int topK = 3, CancellationToken cancellationToken = default)
         {
             // Convert float[] to pgvector format string: [0.1,0.2,0.3,...]
             var vectorString = "[" + string.Join(",", queryEmbedding.Select(v => v.ToString(CultureInfo.InvariantCulture))) + "]";
@@ -76,13 +76,13 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                     LIMIT {1}
                     """,
                     vectorString, topK)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             // Get document file names for the results
             var documentIds = chunks.Select(c => c.DocumentId).Distinct().ToList();
             var documents = await _context.Documents
                 .Where(d => documentIds.Contains(d.Id))
-                .ToDictionaryAsync(d => d.Id, d => d.FileName);
+                .ToDictionaryAsync(d => d.Id, d => d.FileName, cancellationToken);
 
             // Map to ChunkSearchMatch
             return chunks.Select(c => new ChunkSearchMatch

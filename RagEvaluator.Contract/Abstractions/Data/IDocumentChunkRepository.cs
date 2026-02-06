@@ -11,37 +11,37 @@ namespace RagEvaluator.Contract.Abstractions.Data
         /// <summary>
         /// Gets a document chunk by its unique identifier.
         /// </summary>
-        Task<DocumentChunk?> GetByIdAsync(Guid id);
-        
+        Task<DocumentChunk?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Gets all document chunks belonging to a specific document.
         /// </summary>
-        Task<IReadOnlyList<DocumentChunk>> GetByDocumentIdAsync(Guid documentId);
-        
+        Task<IReadOnlyList<DocumentChunk>> GetByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Gets the total count of all document chunks in the repository.
         /// </summary>
-        Task<int> GetCountAsync();
-        
+        Task<int> GetCountAsync(CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Adds a new document chunk to the repository.
         /// </summary>
-        Task AddAsync(DocumentChunk chunk);
-        
+        Task AddAsync(DocumentChunk chunk, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Adds multiple document chunks to the repository in a single operation.
         /// </summary>
-        Task AddRangeAsync(IEnumerable<DocumentChunk> chunks);
-        
+        Task AddRangeAsync(IEnumerable<DocumentChunk> chunks, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Deletes all document chunks associated with a specific document.
         /// </summary>
-        Task DeleteByDocumentIdAsync(Guid documentId);
+        Task DeleteByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Searches for similar chunks using vector similarity.
         /// Returns raw matches ordered by similarity (closest first) without calculated similarity scores.
         /// </summary>
-        Task<IReadOnlyList<ChunkSearchMatch>> SearchAsync(float[] queryEmbedding, int topK = 3);
+        Task<IReadOnlyList<ChunkSearchMatch>> SearchAsync(float[] queryEmbedding, int topK = 3, CancellationToken cancellationToken = default);
     }
 }

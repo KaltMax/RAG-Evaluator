@@ -8,11 +8,11 @@ namespace RagEvaluator.Contract.Abstractions.Services
         /// <summary>
         /// Generates a vector embedding from the provided text.
         /// </summary>
-        Task<float[]> GenerateEmbeddingAsync(string text);
-        
+        Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Checks whether the embedding service is available and ready to generate embeddings.
         /// </summary>
-        Task<bool> IsAvailableAsync();
+        Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default);
     }
 }

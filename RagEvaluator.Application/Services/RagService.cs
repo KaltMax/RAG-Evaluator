@@ -35,22 +35,22 @@ namespace RagEvaluator.Application.Services
             _metricsService = metricsService;
         }
 
-        public async Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language)
+        public async Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language, CancellationToken cancellationToken = default)
         {
             // Create document with Pending status
-            var document = await _documentService.CreateDocumentAsync(documentStream, fileName, documentStream.Length, contentType, language);
+            var document = await _documentService.CreateDocumentAsync(documentStream, fileName, documentStream.Length, contentType, language, cancellationToken);
 
             try
             {
                 // Update status to Processing
-                await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Processing);
+                await _documentService.UpdateStatusAsync(document.Id, DocumentStatus.Processing, cancellationToken: cancellationToken);
 
                 // Process document content (PDF → chunks → embeddings → store → Completed)
                 documentStream.Position = 0;
-                await _documentService.ProcessDocumentContentAsync(document.Id, documentStream);
+                await _documentService.ProcessDocumentContentAsync(document.Id, documentStream, cancellationToken);
 
                 // Return updated document
-                return (await _documentService.GetByIdAsync(document.Id))!;
+                return (await _documentService.GetByIdAsync(document.Id, cancellationToken))!;
             }
             catch
             {
@@ -60,9 +60,9 @@ namespace RagEvaluator.Application.Services
             }
         }
 
-        public async Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request)
+        public async Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request, CancellationToken cancellationToken = default)
         {
-            if (!await _chatService.IsAvailableAsync() || !await _queryService.IsReadyAsync())
+            if (!await _chatService.IsAvailableAsync(cancellationToken) || !await _queryService.IsReadyAsync(cancellationToken))
             {
                 throw new InvalidOperationException("RAG services not available. Ensure Ollama is running with the required models.");
             }
@@ -77,10 +77,11 @@ namespace RagEvaluator.Application.Services
                 _config.SystemPrompt,
                 _config.ChunkingStrategy,
                 _config.EmbeddingModel,
-                _config.ChatModel);
+                _config.ChatModel,
+                cancellationToken);
 
             // Search for relevant document chunks
-            var chunkMatches = await _documentService.SearchChunksAsync(query.QueryEmbedding, query.TopK);
+            var chunkMatches = await _documentService.SearchChunksAsync(query.QueryEmbedding, query.TopK, cancellationToken);
 
             string answer;
             if (chunkMatches.Count == 0)
@@ -94,7 +95,7 @@ namespace RagEvaluator.Application.Services
 
                 // Generate answer using LLM
                 var userMessage = $"Context:\n{context}\n\nQuestion: {request.Question}\n\nAnswer:";
-                answer = await _chatService.GenerateResponseAsync(_config.SystemPrompt, userMessage);
+                answer = await _chatService.GenerateResponseAsync(_config.SystemPrompt, userMessage, cancellationToken);
             }
 
             // Calculate response time
@@ -102,7 +103,7 @@ namespace RagEvaluator.Application.Services
             var responseTimeMs = (int)stopwatch.ElapsedMilliseconds;
 
             // Persist query results (answer, retrieved chunks)
-            await _queryService.CompleteQueryAsync(query, answer, responseTimeMs, chunkMatches);
+            await _queryService.CompleteQueryAsync(query, answer, responseTimeMs, chunkMatches, cancellationToken);
 
             // Map results from persisted QueryResults (to get correct QueryResult IDs for annotation)
             var sources = query.Results.ToSearchResultDtoList();
@@ -110,9 +111,9 @@ namespace RagEvaluator.Application.Services
             return query.ToResponse(answer, sources);
         }
 
-        public async Task<bool> IsInitializedAsync()
+        public async Task<bool> IsInitializedAsync(CancellationToken cancellationToken = default)
         {
-            return await _queryService.IsReadyAsync() && await _chatService.IsAvailableAsync();
+            return await _queryService.IsReadyAsync(cancellationToken) && await _chatService.IsAvailableAsync(cancellationToken);
         }
     }
 }

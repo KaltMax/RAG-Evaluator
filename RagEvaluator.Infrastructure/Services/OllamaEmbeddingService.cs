@@ -40,18 +40,18 @@ namespace RagEvaluator.Infrastructure.Services
             }
         }
 
-        public async Task<float[]> GenerateEmbeddingAsync(string text)
+        public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!_isInitialized || _embeddingGenerator == null)
             {
                 throw new InvalidOperationException("Embedding service not initialized. Ensure Ollama is running.");
             }
 
-            var embedding = await _embeddingGenerator.GenerateAsync(text);
+            var embedding = await _embeddingGenerator.GenerateAsync(text, cancellationToken: cancellationToken);
             return embedding.Vector.ToArray();
         }
 
-        public Task<bool> IsAvailableAsync()
+        public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_isInitialized && _embeddingGenerator != null);
         }

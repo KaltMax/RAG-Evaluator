@@ -16,45 +16,45 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             _context = context;
         }
 
-        public async Task<Query?> GetByIdAsync(Guid id)
+        public async Task<Query?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Queries.FindAsync(id);
+            return await _context.Queries.FindAsync([id], cancellationToken);
         }
 
-        public async Task<Query?> GetByIdWithResultsAsync(Guid id)
+        public async Task<Query?> GetByIdWithResultsAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Queries
                 .Include(q => q.Results)
                 .Include(q => q.RelevantDocuments)
-                .FirstOrDefaultAsync(q => q.Id == id);
+                .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
         }
 
-        public async Task<IReadOnlyList<Query>> GetAllAsync()
+        public async Task<IReadOnlyList<Query>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Queries
                 .OrderByDescending(q => q.CreatedAt)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task AddAsync(Query query)
+        public async Task AddAsync(Query query, CancellationToken cancellationToken = default)
         {
-            await _context.Queries.AddAsync(query);
-            await _context.SaveChangesAsync();
+            await _context.Queries.AddAsync(query, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(Query query)
+        public async Task UpdateAsync(Query query, CancellationToken cancellationToken = default)
         {
             _context.Queries.Update(query);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var query = await _context.Queries.FindAsync(id);
+            var query = await _context.Queries.FindAsync([id], cancellationToken);
             if (query is not null)
             {
                 _context.Queries.Remove(query);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
         }
     }

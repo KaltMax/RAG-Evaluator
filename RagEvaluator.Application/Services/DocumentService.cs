@@ -41,7 +41,7 @@ namespace RagEvaluator.Application.Services
             _config = config;
         }
 
-        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language)
+        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language, CancellationToken cancellationToken = default)
         {
             var document = new Document
             {
@@ -56,28 +56,28 @@ namespace RagEvaluator.Application.Services
             };
 
             // Save file to storage
-            var filePath = await _fileStorageService.SaveFileAsync(fileStream, document.Id, fileName);
+            var filePath = await _fileStorageService.SaveFileAsync(fileStream, document.Id, fileName, cancellationToken);
             document.FilePath = filePath;
 
-            await _documentRepository.AddAsync(document);
+            await _documentRepository.AddAsync(document, cancellationToken);
             return document;
         }
 
-        public async Task<DocumentResponse?> GetByIdAsync(Guid id)
+        public async Task<DocumentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var document = await _documentRepository.GetByIdAsync(id);
+            var document = await _documentRepository.GetByIdAsync(id, cancellationToken);
             return document?.ToResponse();
         }
 
-        public async Task<IReadOnlyList<DocumentResponse>> GetAllAsync()
+        public async Task<IReadOnlyList<DocumentResponse>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var summaries = await _documentRepository.GetAllSummariesAsync();
+            var summaries = await _documentRepository.GetAllSummariesAsync(cancellationToken);
             return summaries.ToResponseList();
         }
 
-        public async Task<DocumentFileInfo?> GetDocumentFileInfoAsync(Guid id)
+        public async Task<DocumentFileInfo?> GetDocumentFileInfoAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var document = await _documentRepository.GetByIdAsync(id);
+            var document = await _documentRepository.GetByIdAsync(id, cancellationToken);
             if (document?.FilePath is null)
             {
                 return null;
@@ -91,9 +91,9 @@ namespace RagEvaluator.Application.Services
             };
         }
 
-        public async Task UpdateStatusAsync(Guid id, DocumentStatus status, int? pageCount = null, int? chunkCount = null, string? content = null)
+        public async Task UpdateStatusAsync(Guid id, DocumentStatus status, int? pageCount = null, int? chunkCount = null, string? content = null, CancellationToken cancellationToken = default)
         {
-            var document = await _documentRepository.GetByIdAsync(id);
+            var document = await _documentRepository.GetByIdAsync(id, cancellationToken);
             if (document is null)
             {
                 throw new ArgumentException($"Document with id {id} not found");
@@ -121,12 +121,13 @@ namespace RagEvaluator.Application.Services
                 document.ProcessedAt = DateTime.UtcNow;
             }
 
-            await _documentRepository.UpdateAsync(document);
+            await _documentRepository.UpdateAsync(document, cancellationToken);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var document = await _documentRepository.GetByIdAsync(id);
+            var document = await _documentRepository.GetByIdAsync(id, cancellationToken);
+
             if (document?.FilePath != null)
             {
                 await _fileStorageService.DeleteFileAsync(document.FilePath);
@@ -135,9 +136,9 @@ namespace RagEvaluator.Application.Services
             await _documentRepository.DeleteAsync(id);
         }
 
-        public async Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream)
+        public async Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream, CancellationToken cancellationToken = default)
         {
-            if (!await _embeddingService.IsAvailableAsync())
+            if (!await _embeddingService.IsAvailableAsync(cancellationToken))
             {
                 throw new InvalidOperationException("Embedding service not available. Ensure Ollama is running with the required model.");
             }
@@ -153,7 +154,7 @@ namespace RagEvaluator.Application.Services
             var documentChunks = new List<DocumentChunk>();
             foreach (var chunkText in textChunks)
             {
-                var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}");
+                var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}", cancellationToken);
                 documentChunks.Add(new DocumentChunk
                 {
                     Id = Guid.NewGuid(),
@@ -165,22 +166,19 @@ namespace RagEvaluator.Application.Services
                 });
             }
 
-            // Store chunks
             await _documentChunkRepository.AddRangeAsync(documentChunks);
-
-            // Update document status to Completed
             await UpdateStatusAsync(documentId, DocumentStatus.Completed, pages.Count, textChunks.Count, content);
         }
 
-        public async Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId)
+        public async Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default)
         {
-            var chunks = await _documentChunkRepository.GetByDocumentIdAsync(documentId);
+            var chunks = await _documentChunkRepository.GetByDocumentIdAsync(documentId, cancellationToken);
             return chunks.ToResponseList();
         }
 
-        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchChunksAsync(float[] queryEmbedding, int topK)
+        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchChunksAsync(float[] queryEmbedding, int topK, CancellationToken cancellationToken = default)
         {
-            return await _documentChunkRepository.SearchAsync(queryEmbedding, topK);
+            return await _documentChunkRepository.SearchAsync(queryEmbedding, topK, cancellationToken);
         }
     }
 }

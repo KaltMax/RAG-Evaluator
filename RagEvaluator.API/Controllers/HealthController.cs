@@ -19,9 +19,9 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         /// <returns>Health status indicating if Ollama services are available</returns>
         [HttpGet]
-        public async Task<IActionResult> GetHealthAsync()
+        public async Task<IActionResult> GetHealthAsync(CancellationToken cancellationToken)
         {
-            var isReady = await _ragService.IsInitializedAsync();
+            var isReady = await _ragService.IsInitializedAsync(cancellationToken);
 
             var response = new
             {

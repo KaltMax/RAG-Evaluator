@@ -8,12 +8,12 @@
         /// <summary>
         /// Saves a file stream to storage and returns the file path.
         /// </summary>
-        Task<string> SaveFileAsync(Stream filestream, Guid documentId, string fileName);
-        
+        Task<string> SaveFileAsync(Stream filestream, Guid documentId, string fileName, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Deletes a file from storage by its file path.
         /// </summary>
-        Task DeleteFileAsync(string filePath);
+        Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Checks whether a file exists at the specified file path.

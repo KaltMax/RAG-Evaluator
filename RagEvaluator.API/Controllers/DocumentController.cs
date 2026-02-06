@@ -27,9 +27,10 @@ namespace RagEvaluator.API.Controllers
         /// Uploads a PDF document for RAG processing
         /// </summary>
         /// <param name="request">The upload request containing file and language</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost("upload")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadDocumentAsync([FromForm] UploadDocumentRequest request)
+        public async Task<IActionResult> UploadDocumentAsync([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -68,9 +69,9 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves all documents
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAllDocumentsAsync()
+        public async Task<IActionResult> GetAllDocumentsAsync(CancellationToken cancellationToken)
         {
-            var documents = await _documentService.GetAllAsync();
+            var documents = await _documentService.GetAllAsync(cancellationToken);
             return Ok(documents);
         }
 
@@ -78,10 +79,11 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves a specific document by its ID
         /// </summary>
         /// <param name="id">The unique identifier of the document</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetDocumentByIdAsync(Guid id)
+        public async Task<IActionResult> GetDocumentByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var document = await _documentService.GetByIdAsync(id);
+            var document = await _documentService.GetByIdAsync(id, cancellationToken);
             if (document is null)
             {
                 return NotFound();
@@ -93,16 +95,17 @@ namespace RagEvaluator.API.Controllers
         /// Deletes a document and its associated chunks
         /// </summary>
         /// <param name="id">The unique identifier of the document</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDocumentAsync(Guid id)
+        public async Task<IActionResult> DeleteDocumentAsync(Guid id, CancellationToken cancellationToken)
         {
-            var document = await _documentService.GetByIdAsync(id);
+            var document = await _documentService.GetByIdAsync(id, cancellationToken);
             if (document is null)
             {
                 return NotFound();
             }
 
-            await _documentService.DeleteAsync(id);
+            await _documentService.DeleteAsync(id, cancellationToken);
             _logger.LogInformation("Document deleted: {DocumentId}", id);
             return NoContent();
         }
@@ -111,16 +114,17 @@ namespace RagEvaluator.API.Controllers
         /// Downloads the original PDF file for a document
         /// </summary>
         /// <param name="id">The unique identifier of the document</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}/download")]
-        public async Task<IActionResult> DownloadDocumentAsync(Guid id)
+        public async Task<IActionResult> DownloadDocumentAsync(Guid id, CancellationToken cancellationToken)
         {
-            var fileInfo = await _documentService.GetDocumentFileInfoAsync(id);
+            var fileInfo = await _documentService.GetDocumentFileInfoAsync(id, cancellationToken);
             if (fileInfo is null)
             {
                 return NotFound();
             }
 
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(fileInfo.FilePath);
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(fileInfo.FilePath, cancellationToken);
             return File(fileBytes, fileInfo.MimeType, fileInfo.FileName);
         }
 
@@ -128,16 +132,17 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves all chunks for a specific document
         /// </summary>
         /// <param name="id">The unique identifier of the document</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}/chunks")]
-        public async Task<IActionResult> GetDocumentChunksAsync(Guid id)
+        public async Task<IActionResult> GetDocumentChunksAsync(Guid id, CancellationToken cancellationToken)
         {
-            var document = await _documentService.GetByIdAsync(id);
+            var document = await _documentService.GetByIdAsync(id, cancellationToken);
             if (document is null)
             {
                 return NotFound();
             }
 
-            var chunks = await _documentService.GetChunksByDocumentIdAsync(id);
+            var chunks = await _documentService.GetChunksByDocumentIdAsync(id, cancellationToken);
             return Ok(chunks);
         }
     }

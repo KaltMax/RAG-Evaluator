@@ -17,17 +17,17 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             _context = context;
         }
 
-        public async Task<Document?> GetByIdAsync(Guid id)
+        public async Task<Document?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Documents.FindAsync(id);
+            return await _context.Documents.FindAsync([id], cancellationToken);
         }
 
-        public async Task<IReadOnlyList<Document>> GetAllAsync()
+        public async Task<IReadOnlyList<Document>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.Documents.ToListAsync();
+            return await _context.Documents.ToListAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<DocumentSummary>> GetAllSummariesAsync()
+        public async Task<IReadOnlyList<DocumentSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Documents
                 .Select(d => new DocumentSummary
@@ -43,35 +43,35 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                     ProcessedAt = d.ProcessedAt,
                     Status = d.Status
                 })
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<Document>> GetByStatusAsync(DocumentStatus status)
+        public async Task<IReadOnlyList<Document>> GetByStatusAsync(DocumentStatus status, CancellationToken cancellationToken = default)
         {
             return await _context.Documents
                 .Where(d => d.Status == status)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task AddAsync(Document document)
+        public async Task AddAsync(Document document, CancellationToken cancellationToken = default)
         {
-            await _context.Documents.AddAsync(document);
-            await _context.SaveChangesAsync();
+            await _context.Documents.AddAsync(document, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(Document document)
+        public async Task UpdateAsync(Document document, CancellationToken cancellationToken = default)
         {
             _context.Documents.Update(document);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var document = await _context.Documents.FindAsync(id);
+            var document = await _context.Documents.FindAsync([id], cancellationToken);
             if (document is not null)
             {
                 _context.Documents.Remove(document);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
         }
     }

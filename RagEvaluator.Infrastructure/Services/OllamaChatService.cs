@@ -42,7 +42,7 @@ namespace RagEvaluator.Infrastructure.Services
             return Task.CompletedTask;
         }
 
-        public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage)
+        public async Task<string> GenerateResponseAsync(string systemPrompt, string userMessage, CancellationToken cancellationToken = default)
         {
             if (!_isInitialized || _chatService == null)
             {
@@ -53,11 +53,11 @@ namespace RagEvaluator.Infrastructure.Services
             chatHistory.AddSystemMessage(systemPrompt);
             chatHistory.AddUserMessage(userMessage);
 
-            var response = await _chatService.GetChatMessageContentAsync(chatHistory);
+            var response = await _chatService.GetChatMessageContentAsync(chatHistory, cancellationToken: cancellationToken);
             return response.Content ?? "No response generated.";
         }
 
-        public Task<bool> IsAvailableAsync()
+        public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_isInitialized && _chatService != null);
         }

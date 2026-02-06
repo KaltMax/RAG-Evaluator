@@ -27,8 +27,9 @@ namespace RagEvaluator.API.Controllers
         /// Asks a question using RAG (Retrieval-Augmented Generation)
         /// </summary>
         /// <param name="request">Question and search parameters</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost]
-        public async Task<IActionResult> QueryAsync([FromBody] AskQuestionRequest request)
+        public async Task<IActionResult> QueryAsync([FromBody] AskQuestionRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -40,7 +41,7 @@ namespace RagEvaluator.API.Controllers
 
                 _logger.LogInformation($"Processing query: {request.Question}");
 
-                var result = await _ragService.AskQuestionAsync(request);
+                var result = await _ragService.AskQuestionAsync(request, cancellationToken);
 
                 _logger.LogInformation($"Query processed successfully: {result.QueryId}");
 
@@ -62,9 +63,9 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves the history of all executed queries
         /// </summary>
         [HttpGet("history")]
-        public async Task<IActionResult> GetQueryHistoryAsync()
+        public async Task<IActionResult> GetQueryHistoryAsync(CancellationToken cancellationToken)
         {
-            var queries = await _queryService.GetAllAsync();
+            var queries = await _queryService.GetAllAsync(cancellationToken);
             return Ok(queries);
         }
 
@@ -72,10 +73,11 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves a specific query by its ID
         /// </summary>
         /// <param name="id">The unique identifier of the query</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetQueryByIdAsync(Guid id)
+        public async Task<IActionResult> GetQueryByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var query = await _queryService.GetByIdAsync(id);
+            var query = await _queryService.GetByIdAsync(id, cancellationToken);
             if (query is null)
             {
                 _logger.LogWarning("Query not found: {QueryId}", id);
@@ -90,8 +92,9 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         /// <param name="queryId">The unique identifier of the query</param>
         /// <param name="request">The relevance annotations for query results</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpPatch("{queryId}/results")]
-        public async Task<IActionResult> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateResultsRequest request)
+        public async Task<IActionResult> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateResultsRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -100,18 +103,18 @@ namespace RagEvaluator.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var query = await _queryService.GetByIdAsync(queryId);
+                var query = await _queryService.GetByIdAsync(queryId, cancellationToken);
                 if (query is null)
                 {
                     _logger.LogWarning("Query not found for annotation: {QueryId}", queryId);
                     return NotFound();
                 }
 
-                await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching, request.RelevantDocumentIds);
+                await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching, request.RelevantDocumentIds, cancellationToken);
 
                 _logger.LogInformation("Query results annotated and metrics calculated: {QueryId}", queryId);
 
-                var updatedQuery = await _queryService.GetByIdAsync(queryId);
+                var updatedQuery = await _queryService.GetByIdAsync(queryId, cancellationToken);
                 return Ok(updatedQuery);
             }
             catch (ArgumentException ex)
@@ -130,17 +133,18 @@ namespace RagEvaluator.API.Controllers
         /// Deletes a query by its ID
         /// </summary>
         /// <param name="id">The unique identifier of the query</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteQueryAsync(Guid id)
+        public async Task<IActionResult> DeleteQueryAsync(Guid id, CancellationToken cancellationToken)
         {
-            var query = await _queryService.GetByIdAsync(id);
+            var query = await _queryService.GetByIdAsync(id, cancellationToken);
             if (query is null)
             {
                 _logger.LogWarning("Query not found for deletion: {QueryId}", id);
                 return NotFound();
             }
 
-            await _queryService.DeleteAsync(id);
+            await _queryService.DeleteAsync(id, cancellationToken);
             _logger.LogInformation("Query deleted: {QueryId}", id);
 
             return NoContent();
