@@ -148,7 +148,7 @@ namespace RagEvaluator.Application.Services
             var content = string.Join("\n\n", pages);
 
             // Split into chunks
-            var textChunks = _textChunker.SplitDocuments(pages);
+            var textChunks = await _textChunker.SplitDocumentsAsync(pages, cancellationToken);
 
             // Generate embeddings and create chunk entities
             var documentChunks = new List<DocumentChunk>();
@@ -160,7 +160,7 @@ namespace RagEvaluator.Application.Services
                     Id = Guid.NewGuid(),
                     Text = chunkText,
                     Embedding = embedding,
-                    ChunkingStrategy = "fixed-size",
+                    ChunkingStrategy = _config.ChunkingStrategy,
                     EmbeddingModel = _config.EmbeddingModel,
                     DocumentId = documentId
                 });

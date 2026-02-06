@@ -8,11 +8,11 @@ namespace RagEvaluator.Contract.Abstractions.Services
         /// <summary>
         /// Splits a list of documents into smaller text chunks.
         /// </summary>
-        List<string> SplitDocuments(List<string> documents);
-        
+        Task<List<string>> SplitDocumentsAsync(List<string> documents, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Splits a single text into smaller chunks.
         /// </summary>
-        List<string> SplitText(string text);
+        Task<List<string>> SplitTextAsync(string text, CancellationToken cancellationToken = default);
     }
 }

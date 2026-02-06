@@ -46,7 +46,11 @@ namespace RagEvaluator.API
 
             // Register Infrastructure services (implementations)
             builder.Services.AddSingleton<IPdfLoader, PdfPigLoader>();
-            builder.Services.AddSingleton<ITextChunker, FixedSizeTextChunker>();
+            if (ragConfig.ChunkingStrategy == "semantic")
+                builder.Services.AddSingleton<ITextChunker>(sp =>
+                    new SemanticTextChunker(sp.GetRequiredService<IEmbeddingService>(), ragConfig));
+            else
+                builder.Services.AddSingleton<ITextChunker>(new FixedSizeTextChunker(ragConfig));
             builder.Services.AddSingleton<IEmbeddingService, OllamaEmbeddingService>();
             builder.Services.AddSingleton<IChatService, OllamaChatService>();
             builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();

@@ -63,6 +63,7 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
                                 │ • LocalFileStorageService  │
                                 │ • PdfPigLoader             │
                                 │ • FixedSizeTextChunker     │
+                                │ • SemanticTextChunker      │
                                 │ • DocumentRepository       │
                                 │ • DocumentChunkRepository  │
                                 │ • QueryRepository          │
@@ -176,7 +177,8 @@ RAG-Evaluator/
 │   └── Services/
 │       ├── LocalFileStorageService.cs   # Local file system storage
 │       ├── PdfPigLoader.cs              # PDF text extraction (PdfPig)
-│       ├── FixedSizeTextChunker.cs      # Text splitting
+│       ├── FixedSizeTextChunker.cs      # Fixed-size text splitting
+│       ├── SemanticTextChunker.cs      # Embedding-based semantic splitting
 │       ├── OllamaChatService.cs         # Ollama chat service
 │       └── OllamaEmbeddingService.cs    # Ollama embedding service
 │
@@ -313,7 +315,7 @@ RAG-Evaluator/
 - `Id` - Unique identifier (GUID)
 - `Text` - The text content of the chunk
 - `Embedding` - Vector embedding as `float[]` (converted to pgvector in Infrastructure)
-- `ChunkingStrategy` - Strategy used to create this chunk (e.g., "fixed-size")
+- `ChunkingStrategy` - Strategy used to create this chunk ("fixed-size" or "semantic")
 - `EmbeddingModel` - Model used to generate the embedding (e.g., "nomic-embed-text-v2-moe")
 - `DocumentId` - Foreign key to parent Document
 
@@ -370,8 +372,9 @@ RAG-Evaluator/
 **Implemented Services**:
 
 - `LocalFileStorageService` - Local file system storage with configurable directory
-- `PdfPigLoader` - PDF text extraction using PdfPig with ContentOrderTextExtractor for proper reading order
-- `FixedSizeTextChunker` - Text chunking with configurable size and overlap
+- `PdfPigLoader` - PDF text extraction using PdfPig with ContentOrderTextExtractor for proper reading order, white space normalization, and basic cleanup
+- `FixedSizeTextChunker` - Text chunking with configurable size and overlap (baseline strategy)
+- `SemanticTextChunker` - Embedding-based semantic chunking that splits text at topic boundaries detected via cosine similarity drops between consecutive line embeddings. Uses `IEmbeddingService` to embed each line and groups lines into chunks while their similarity stays above `SimilarityThreshold`
 - `DocumentChunkRepository` - PostgreSQL vector store with pgvector for similarity search
 - `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel
 - `OllamaChatService` - Ollama chat completion via Semantic Kernel
@@ -413,7 +416,9 @@ RAG-Evaluator/
 1. PDF Upload (Controller)
    → 2. RagService.ProcessDocumentAsync() (Application Layer)
       → 3. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
-      → 4. FixedSizeTextChunker.SplitDocuments() - Split into chunks (1000 chars, 200 overlap)
+      → 4. ITextChunker.SplitDocumentsAsync() - Split into chunks
+            • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
+            • semantic: Embedding-based splitting at topic boundaries (SimilarityThreshold)
       → 5. For each chunk:
          → 6. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
          → 7. Create DocumentChunk entity with embedding, strategy, model info
@@ -446,7 +451,7 @@ The Contract layer defines **what** needs to be done (interface abstractions):
 - Data interfaces: `IDocumentRepository`, `IDocumentChunkRepository`
 
 The Infrastructure layer defines **how** it's done (concrete implementations):
-- `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfPigLoader`, `FixedSizeTextChunker`
+- `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfPigLoader`, `FixedSizeTextChunker`, `SemanticTextChunker`
 - `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration)
 
 The Application layer consumes these abstractions:
@@ -724,6 +729,7 @@ environment:
   - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
   - RagConfiguration__SystemPrompt=${RAG_SYSTEM_PROMPT}
   - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
+  - RagConfiguration__SimilarityThreshold=${RAG_SIMILARITY_THRESHOLD}
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
@@ -753,11 +759,10 @@ Containers communicate via Docker's internal network:
 - [x] **Ground Truth Documents**: UI for selecting relevant documents per query, enabling proper Recall@K calculation
 - [x] **Recall@K with Ground Truth**: Document-level Recall@K using user-selected ground truth documents (formula: relevant docs found in top K / total ground truth docs)
 - [x] **Query History Page**: WebUI page with collapsible cards displaying query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics
+- [x] **Semantic Chunking**: Embedding-based semantic text chunker (`SemanticTextChunker`) that splits at topic boundaries via cosine similarity drops between consecutive line embeddings, configurable via `SimilarityThreshold`
+- [x] **Configurable Chunking Strategies**: DI-based strategy selection (`fixed-size` or `semantic`) via `RAG_CHUNKING_STRATEGY` in `.env`, with async `ITextChunker` interface
 
 ### In Progress / Planned
-- [ ] Improve FixedSizeTextChunker
-- [ ] Semantic Chunking Strategy implementation
-- [ ] Configurable chunking strategies (for RAG evaluation)
 - [ ] Multiple embedding model support (for RAG evaluation)
 - [ ] Configurable System Prompt templates (for different use cases)
 - [ ] Settings page in WebUI for runtime configuration

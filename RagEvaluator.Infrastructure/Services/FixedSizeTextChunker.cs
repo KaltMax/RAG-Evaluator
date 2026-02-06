@@ -21,7 +21,7 @@ namespace RagEvaluator.Infrastructure.Services
             {
                 throw new ArgumentException("Chunk size must be positive", nameof(config.ChunkSize));
             }
-                
+
             if (config.ChunkOverlap < 0)
             {
                 throw new ArgumentException("Chunk overlap cannot be negative", nameof(config.ChunkOverlap));
@@ -39,9 +39,7 @@ namespace RagEvaluator.Infrastructure.Services
         /// <summary>
         /// Splits a list of documents into chunks
         /// </summary>
-        /// <param name="documents">List of document texts to split</param>
-        /// <returns>List of text chunks</returns>
-        public List<string> SplitDocuments(List<string> documents)
+        public Task<List<string>> SplitDocumentsAsync(List<string> documents, CancellationToken cancellationToken = default)
         {
             var chunks = new List<string>();
 
@@ -50,15 +48,18 @@ namespace RagEvaluator.Infrastructure.Services
                 chunks.AddRange(SplitText(doc));
             }
 
-            return chunks;
+            return Task.FromResult(chunks);
         }
 
         /// <summary>
         /// Splits a single text into chunks
         /// </summary>
-        /// <param name="text">Text to split</param>
-        /// <returns>List of text chunks</returns>
-        public List<string> SplitText(string text)
+        public Task<List<string>> SplitTextAsync(string text, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(SplitText(text));
+        }
+
+        private List<string> SplitText(string text)
         {
             var chunks = new List<string>();
             var startIndex = 0;
