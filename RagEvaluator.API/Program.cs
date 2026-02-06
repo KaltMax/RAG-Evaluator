@@ -28,6 +28,13 @@ namespace RagEvaluator.API
             // RAG Configuration
             var ragConfig = new Contract.Configurations.RagConfiguration();
             builder.Configuration.GetSection("RagConfiguration").Bind(ragConfig);
+
+            // Default active embedding model to first in the available list
+            var availableModels = ragConfig.AvailableEmbeddingModels
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (availableModels.Length > 0)
+                ragConfig.EmbeddingModel = availableModels[0];
+
             builder.Services.AddSingleton(ragConfig);
 
             // Register logger wrapper
@@ -46,11 +53,12 @@ namespace RagEvaluator.API
 
             // Register Infrastructure services (implementations)
             builder.Services.AddSingleton<IPdfLoader, PdfPigLoader>();
-            if (ragConfig.ChunkingStrategy == "semantic")
-                builder.Services.AddSingleton<ITextChunker>(sp =>
-                    new SemanticTextChunker(sp.GetRequiredService<IEmbeddingService>(), ragConfig));
-            else
-                builder.Services.AddSingleton<ITextChunker>(new FixedSizeTextChunker(ragConfig));
+            builder.Services.AddSingleton<FixedSizeTextChunker>();
+            builder.Services.AddSingleton<SemanticTextChunker>();
+            builder.Services.AddTransient<ITextChunker>(sp =>
+                sp.GetRequiredService<Contract.Configurations.RagConfiguration>().ChunkingStrategy == Domain.Enums.ChunkingStrategy.Semantic
+                    ? sp.GetRequiredService<SemanticTextChunker>()
+                    : sp.GetRequiredService<FixedSizeTextChunker>());
             builder.Services.AddSingleton<IEmbeddingService, OllamaEmbeddingService>();
             builder.Services.AddSingleton<IChatService, OllamaChatService>();
             builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
@@ -59,6 +67,7 @@ namespace RagEvaluator.API
             builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IQueryService, QueryService>();
             builder.Services.AddScoped<IRagService, RagService>();
+            builder.Services.AddSingleton<ISettingsService, SettingsService>();
             builder.Services.AddSingleton<IMetricsService, MetricsService>();
 
             // Add CORS for development

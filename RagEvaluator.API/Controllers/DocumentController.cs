@@ -34,6 +34,12 @@ namespace RagEvaluator.API.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid upload request received");
+                    return BadRequest(ModelState);
+                }
+
                 if (request.File.Length == 0)
                 {
                     return BadRequest("No file uploaded.");

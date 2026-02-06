@@ -38,7 +38,7 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 │                  RagEvaluator.Application                   │
 │            (Business Logic & Orchestration)                 │
 │  Services: RagService, DocumentService, QueryService,       │
-│            MetricsService                                   │
+│            MetricsService, SettingsService                  │
 └──────────┬────────────────────────────────┬─────────────────┘
            │                                │
            ↓                                ↓
@@ -84,7 +84,8 @@ RAG-Evaluator/
 │   ├── Controllers/
 │   │   ├── DocumentController.cs        # Upload PDFs, manage docs
 │   │   ├── HealthController.cs          # Service health check
-│   │   └── QueryController.cs           # Ask questions, RAG queries
+│   │   ├── QueryController.cs           # Ask questions, RAG queries
+│   │   └── SettingsController.cs        # Runtime RAG configuration
 │   ├── Middleware/
 │   │   └── ExceptionHandlingMiddleware.cs
 │   ├── Filters/
@@ -97,16 +98,19 @@ RAG-Evaluator/
 │   ├── Mappers/
 │   │   ├── DocumentMapper.cs            # Document → DTO mapping
 │   │   └── QueryMapper.cs               # Query → DTO mapping
+│   │   └── PromptTemplateResolver.cs    # Prompt template resolution by language
 │   ├── Services/
 │   │   ├── Interfaces/
 │   │   │   ├── IRagService.cs
 │   │   │   ├── IDocumentService.cs
 │   │   │   ├── IQueryService.cs
-│   │   │   └── IMetricsService.cs       # Similarity & evaluation metrics
+│   │   │   ├── IMetricsService.cs       # Similarity & evaluation metrics
+│   │   │   └── ISettingsService.cs      # Runtime settings management
 │   │   ├── RagService.cs                # Core RAG orchestration
 │   │   ├── DocumentService.cs           # Document processing & management
 │   │   ├── QueryService.cs              # Query handling & persistence
-│   │   └── MetricsService.cs            # Cosine similarity, MRR, Precision@K, etc.
+│   │   ├── MetricsService.cs            # Cosine similarity, MRR, Precision@K, etc.
+│   │   └── SettingsService.cs           # Runtime RAG configuration management
 │   └── Validators/
 │
 ├── RagEvaluator.Contract/               # DTOs, Abstractions & Shared Contracts
@@ -128,14 +132,16 @@ RAG-Evaluator/
 │   │   ├── Requests/
 │   │   │   ├── AskQuestionRequest.cs
 │   │   │   ├── UploadDocumentRequest.cs
-│   │   │   └── AnnotateResultsRequest.cs       # Relevance + response quality + ground truth annotations
+│   │   │   ├── AnnotateResultsRequest.cs       # Relevance + response quality + ground truth annotations
+│   │   │   └── UpdateSettingsRequest.cs        # Runtime settings partial update
 │   │   └── Responses/
 │   │       ├── QueryResponse.cs
 │   │       ├── QuerySummaryResponse.cs  # Query history list item
 │   │       ├── SearchResultDto.cs
 │   │       ├── DocumentResponse.cs
 │   │       ├── DocumentChunkResponse.cs # Document chunk details
-│   │       └── DocumentFileInfo.cs      # File info for downloads
+│   │       ├── DocumentFileInfo.cs      # File info for downloads
+│   │       └── SettingsResponse.cs      # Current settings + available options
 │   └── Logger/
 │       ├── ILoggerWrapper.cs
 │       └── LoggerWrapper.cs
@@ -150,6 +156,8 @@ RAG-Evaluator/
 │   │   └── QueryRelevantDocument.cs     # Ground truth relevant document for Recall@K
 │   ├── Enums/
 │   │   ├── DocumentStatus.cs            # Document processing status
+│   │   ├── ChunkingStrategy.cs          # Chunking strategy selection (FixedSize, Semantic)
+│   │   ├── PromptTemplate.cs            # Prompt template types (BasicEn, InstructedEn, NativeLanguage)
 │   │   ├── RelevanceGrade.cs            # Graded relevance scale (0-3) for NDCG
 │   │   └── ResponseQuality.cs           # LLM response quality evaluation (0-3)
 │   ├── ValueObjects/
@@ -267,6 +275,9 @@ RAG-Evaluator/
   - `PrecisionAtK()` / `RecallAtK()` - Precision and recall metrics
   - `NormalizedDiscountedCumulativeGainAtK()` - NDCG for ranking quality
   - `CalculateQueryMetrics()` - Calculates all metrics for a query from its results (accepts ground truth document IDs for proper Recall@K calculation)
+- `ISettingsService` - Runtime RAG configuration management
+  - `GetSettings()` - Returns current configuration with available options for UI dropdowns
+  - `UpdateSettingsAsync()` - Validates and applies partial configuration updates (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold, top-K); triggers embedding service reinitialization when the model changes
 
 **Dependencies**: → Domain, Contract
 
@@ -285,11 +296,11 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- `Abstractions/Services/` - Service interfaces (IChatService, IEmbeddingService, IFileStorageService, IPdfLoader, ITextChunker)
+- `Abstractions/Services/` - Service interfaces (IChatService, IEmbeddingService with ReinitializeAsync, IFileStorageService, IPdfLoader, ITextChunker)
 - `Abstractions/Data/` - Data access interfaces (IVectorStore, IDocumentRepository)
-- `Configurations/` - Configuration models (RagConfiguration, FileStorageConfiguration)
-- `Dtos/Requests/` - API request DTOs
-- `Dtos/Responses/` - API response DTOs
+- `Configurations/` - Configuration models (RagConfiguration with runtime-mutable settings, FileStorageConfiguration)
+- `Dtos/Requests/` - API request DTOs (AskQuestionRequest, UploadDocumentRequest, AnnotateResultsRequest, UpdateSettingsRequest)
+- `Dtos/Responses/` - API response DTOs (QueryResponse, DocumentResponse, SettingsResponse, etc.)
 - `Logger/` - Logger abstraction and implementation
 
 **Dependencies**: → Domain (for value objects like SearchResult used in interfaces)
@@ -308,6 +319,7 @@ RAG-Evaluator/
 **Key Components**:
 
 - Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`, `QueryResult`, `QueryRelevantDocument`
+- Enums: `DocumentStatus`, `ChunkingStrategy`, `PromptTemplate`, `RelevanceGrade`, `ResponseQuality`
 - Value Objects: `SearchResult`, `ChunkSearchMatch`
 - Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
 
@@ -315,7 +327,7 @@ RAG-Evaluator/
 - `Id` - Unique identifier (GUID)
 - `Text` - The text content of the chunk
 - `Embedding` - Vector embedding as `float[]` (converted to pgvector in Infrastructure)
-- `ChunkingStrategy` - Strategy used to create this chunk ("fixed-size" or "semantic")
+- `ChunkingStrategy` - Strategy used to create this chunk ("FixedSize" or "Semantic")
 - `EmbeddingModel` - Model used to generate the embedding (e.g., "nomic-embed-text-v2-moe")
 - `DocumentId` - Foreign key to parent Document
 
@@ -376,7 +388,7 @@ RAG-Evaluator/
 - `FixedSizeTextChunker` - Text chunking with configurable size and overlap (baseline strategy)
 - `SemanticTextChunker` - Embedding-based semantic chunking that splits text at topic boundaries detected via cosine similarity drops between consecutive line embeddings. Uses `IEmbeddingService` to embed each line and groups lines into chunks while their similarity stays above `SimilarityThreshold`
 - `DocumentChunkRepository` - PostgreSQL vector store with pgvector for similarity search
-- `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel
+- `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel, supports runtime reinitialization for model switching
 - `OllamaChatService` - Ollama chat completion via Semantic Kernel
 
 **Vector Storage Architecture**:
@@ -433,15 +445,16 @@ RAG-Evaluator/
 1. Question Submission (Controller)
    → 2. RagService.AskQuestionAsync() (Application Layer)
       → 3. Start timing with Stopwatch
-      → 4. QueryService.CreateQuery() - Create query object with configuration snapshot (no DB)
-      → 5. OllamaEmbeddingService.GenerateEmbeddingAsync("search_query: " + question)
-      → 6. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
+      → 4. PromptTemplateResolver.Resolve() - Resolve system prompt from template + query language
+      → 5. QueryService.CreateQuery() - Create query object with configuration snapshot (no DB)
+      → 6. OllamaEmbeddingService.GenerateEmbeddingAsync("search_query: " + question)
+      → 7. DocumentChunkRepository.SearchAsync() - Find top K similar chunks
          (uses pgvector cosine distance for ordering, returns ChunkSearchMatch)
-      → 7. Build context from retrieved chunks
-      → 8. OllamaChatService.GenerateResponseAsync() - Generate answer with context
-      → 9. Stop timing, calculate response time
-      → 10. QueryService.CompleteQueryAsync() - Populate and persist query with answer, embedding, response time, and QueryResults
-   → 11. Return QueryResponse with answer + sources (includes similarity, fileName, chunkingStrategy, embeddingModel)
+      → 8. Build context from retrieved chunks
+      → 9. OllamaChatService.GenerateResponseAsync() - Generate answer with resolved system prompt and context
+      → 10. Stop timing, calculate response time
+      → 11. QueryService.CompleteQueryAsync() - Populate and persist query with answer, embedding, response time, and QueryResults
+   → 12. Return QueryResponse with answer + sources (includes similarity, fileName, chunkingStrategy, embeddingModel)
 ```
 
 ### Dependency Inversion in Action
@@ -455,10 +468,11 @@ The Infrastructure layer defines **how** it's done (concrete implementations):
 - `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration)
 
 The Application layer consumes these abstractions:
-- `RagService` uses IChatService
+- `RagService` uses IChatService, PromptTemplateResolver
 - `DocumentService` uses IPdfLoader, ITextChunker, IFileStorageService, IEmbeddingService
 - `QueryService` uses IQueryRepository, IEmbeddingService, IQueryRepository
 - `MetricsService` provides similarity and evaluation metric calculations (CosineSimilarity, MRR, Precision@K, Recall@K with ground truth, NDCG@K)
+- `SettingsService` uses IEmbeddingService (for reinitialization on model change)
 - No direct dependency on Infrastructure implementations
 
 This allows:
@@ -587,13 +601,20 @@ GET    /api/query/{id}              # Get specific query (IMPLEMENTED)
 PATCH  /api/query/{id}/results      # Annotate results with relevance, response quality, ground truth documents, and calculate metrics (IMPLEMENTED)
 ```
 
+#### Settings API
+
+```
+GET    /api/settings                 # Get current runtime RAG configuration and available options (IMPLEMENTED)
+PATCH  /api/settings                 # Update runtime RAG configuration (partial update, only non-null fields applied) (IMPLEMENTED)
+```
+
 #### Health API
 
 ```
 GET    /api/health                   # Check if RAG services are ready (IMPLEMENTED)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, ground truth document selection, and metrics calculation (including proper Recall@K with ground truth) are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, ground truth document selection, and metrics calculation (including proper Recall@K with ground truth) are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence. Runtime configuration is fully implemented via the Settings API with support for multiple embedding models, chunking strategies, prompt templates, and numeric parameters.
 
 ### Request/Response Examples
 
@@ -645,7 +666,7 @@ language: "en" or "de"
       "similarity": 0.892,
       "documentId": "123e4567-e89b-12d3-a456-426614174000",
       "fileName": "document.pdf",
-      "chunkingStrategy": "fixed-size",
+      "chunkingStrategy": "FixedSize",
       "embeddingModel": "nomic-embed-text-v2-moe"
     }
   ],
@@ -660,8 +681,8 @@ language: "en" or "de"
 - **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML Framework**: Microsoft Semantic Kernel 1.70.0
-- **LLM Provider**: Ollama (local models, configurable via `.env`)
-  - **Embedding Model**: nomic-embed-text-v2-moe (multilingual MoE, uses asymmetric prefixes)
+- **LLM Provider**: Ollama (local models, configurable via `.env` and runtime Settings API)
+  - **Embedding Models**: nomic-embed-text-v2-moe (default), nomic-embed-text (configurable, hot-swappable at runtime)
   - **Chat Model**: qwen2.5:14b
 - **PDF Processing**: PdfPig 0.1.13
 - **Vector Store**: PostgreSQL with pgvector extension
@@ -708,7 +729,7 @@ The Ollama container uses a custom initialization script (`ollama-init.sh`) that
 1. Starts the Ollama service in the background
 2. Waits for the service to be ready
 3. Checks for required models (configured via `.env`) and pulls them if missing:
-   - `nomic-embed-text-v2-moe` - Text embedding model (approximately 958 MB)
+   - All embedding models listed in `OLLAMA_EMBEDDING_MODELS` (comma-separated, e.g., `nomic-embed-text-v2-moe,nomic-embed-text`)
    - `qwen2.5:14b` - Chat completion model (approximately 9 GB)
 4. Models are persisted in the `ollama_data` Docker volume
 
@@ -725,15 +746,19 @@ environment:
   - ASPNETCORE_ENVIRONMENT=Development
   - ConnectionStrings__DefaultConnection=Host=postgres;Database=ragevaluator;...
   - RagConfiguration__OllamaEndpoint=http://ollama:11434/v1
-  - RagConfiguration__EmbeddingModel=${OLLAMA_EMBEDDING_MODEL}
   - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
-  - RagConfiguration__SystemPrompt=${RAG_SYSTEM_PROMPT}
+  - RagConfiguration__AvailableEmbeddingModels=${OLLAMA_EMBEDDING_MODELS}
   - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
   - RagConfiguration__SimilarityThreshold=${RAG_SIMILARITY_THRESHOLD}
+  - RagConfiguration__PromptTemplate=${RAG_PROMPT_TEMPLATE}
+  - RagConfiguration__PromptBasic=${RAG_PROMPT_BASIC}
+  - RagConfiguration__PromptInstructed=${RAG_PROMPT_INSTRUCTED}
+  - RagConfiguration__PromptNativeEn=${RAG_PROMPT_NATIVE_EN}
+  - RagConfiguration__PromptNativeDe=${RAG_PROMPT_NATIVE_DE}
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
-**System Prompt**: The RAG system prompt can be customized via the `RAG_SYSTEM_PROMPT` environment variable in `.env`.
+**Prompt Templates**: Three prompt strategies are available via `RAG_PROMPT_TEMPLATE` in `.env`: `BasicEn` (basic English prompt), `InstructedEn` (English prompt with explicit language instruction), and `NativeLanguage` (prompt in the query's native language, selected automatically based on the query language). Each template's text is independently configurable via `RAG_PROMPT_BASIC`, `RAG_PROMPT_INSTRUCTED`, `RAG_PROMPT_NATIVE_EN`, and `RAG_PROMPT_NATIVE_DE`. All RAG parameters can also be changed at runtime via the Settings API without restarting the container.
 
 ### Docker Networking
 
@@ -753,19 +778,21 @@ Containers communicate via Docker's internal network:
 - [x] **Metrics**: CosineSimilarity, MRR, Precision@K, Recall@K, NDCG@K
 - [x] **API**: Full CRUD for documents and queries, Swagger UI, Docker Compose orchestration
 - [x] **Frontend**: React UI with multi-file upload, language selection, search results with source details
-- [x] **Configuration**: System prompt, embedding model, and chunking strategy via `.env`
+- [x] **Configuration**: Embedding models, chunking strategy, and prompt templates via `.env`
 - [x] **Relevance Annotation**: API endpoint for labeling query results with graded relevance (RelevanceGrade enum), automatic metrics calculation
 - [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, Recall@K, NDCG@K, Response Time)
 - [x] **Ground Truth Documents**: UI for selecting relevant documents per query, enabling proper Recall@K calculation
 - [x] **Recall@K with Ground Truth**: Document-level Recall@K using user-selected ground truth documents (formula: relevant docs found in top K / total ground truth docs)
 - [x] **Query History Page**: WebUI page with collapsible cards displaying query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics
 - [x] **Semantic Chunking**: Embedding-based semantic text chunker (`SemanticTextChunker`) that splits at topic boundaries via cosine similarity drops between consecutive line embeddings, configurable via `SimilarityThreshold`
-- [x] **Configurable Chunking Strategies**: DI-based strategy selection (`fixed-size` or `semantic`) via `RAG_CHUNKING_STRATEGY` in `.env`, with async `ITextChunker` interface
+- [x] **Configurable Chunking Strategies**: DI-based strategy selection (`FixedSize` or `Semantic`) via `RAG_CHUNKING_STRATEGY` in `.env`, with async `ITextChunker` interface and runtime switching via Settings API
+- [x] **Multiple Embedding Models**: Support for multiple embedding models (configured via `OLLAMA_EMBEDDING_MODELS` in `.env`), hot-swappable at runtime via Settings API with automatic service reinitialization
+- [x] **Prompt Templates**: Three prompt strategies for cross-language evaluation (`BasicEn`, `InstructedEn`, `NativeLanguage`), resolved by `PromptTemplateResolver` based on template type and query language. Each template's text is independently configurable via `.env`
+- [x] **Runtime Settings API**: `GET/PATCH /api/settings` endpoints for reading and updating RAG configuration at runtime (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold, top-K) with validation and available options for UI dropdowns
 
 ### In Progress / Planned
-- [ ] Multiple embedding model support (for RAG evaluation)
-- [ ] Configurable System Prompt templates (for different use cases)
 - [ ] Settings page in WebUI for runtime configuration
+- [ ] Refine which embedding models will be used and refine the prompt templates
 - [ ] Analytics and metrics Dashboard
 - [ ] Unit and integration tests
 - [ ] Logging and Error Handling with custom exceptions

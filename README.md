@@ -42,7 +42,7 @@ This will start:
 - **PostgreSQL** on `localhost:5432`
 - **Ollama** on `localhost:11434`
 
-**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 10 GB total: `nomic-embed-text-v2-moe` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume. Models, system prompt, chunking strategy (`fixed-size` or `semantic`), and similarity threshold are configurable via `.env`.
+**Note on First Startup**: The first time you run this, Ollama will automatically download required models (approximately 10 GB total: `nomic-embed-text-v2-moe` for embeddings and `qwen2.5:14b` for chat). This may take 10-30 minutes depending on your internet connection. Subsequent startups will be instant as models are persisted in the `ollama_data` volume. Embedding models, chunking strategy, prompt template, and other RAG parameters are configurable via `.env` and can be changed at runtime via the Settings API.
 
 **GPU Verification**: After startup, verify GPU access with:
 ```bash
@@ -113,7 +113,7 @@ RagEvaluator.Domain
   → (No dependencies)
 
 RagEvaluator.Contract
-  → (No dependencies)
+  → Domain
 ```
 
 ### Running Tests
@@ -140,13 +140,17 @@ Once running, the API is available at `http://localhost:5000`:
 - `GET /api/query/{id}` - Get specific query details
 - `PATCH /api/query/{id}/results` - Annotate query results with relevance labels, response quality, ground truth documents, and calculate metrics
 
+### Settings
+- `GET /api/settings` - Get current runtime RAG configuration and available options
+- `PATCH /api/settings` - Update runtime RAG configuration (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold, top-K)
+
 ### Health
 - `GET /api/health` - Check if RAG services (Ollama) are ready
 
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering with language selection. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. Query history including LLM responses, retrieved chunks, and query embeddings is persisted via the `Query` and `QueryResult` entities for reproducible evaluation. The `QueryResult` entity uses denormalized chunk data to preserve historical accuracy even when documents are re-chunked or deleted. Relevance annotation is supported via `PATCH /api/query/{id}/results` endpoint with a graded scale (`RelevanceGrade` enum: NotRelevant, MarginallyRelevant, FairlyRelevant, HighlyRelevant). Response quality evaluation is also supported with a `ResponseQuality` enum (CorrectAndComplete, VagueOrIncomplete, Incorrect, Hallucinated) and a language switching detection flag. Ground truth document selection enables proper Recall@K calculation by allowing users to specify which documents should ideally contain relevant information for a query. The frontend includes an annotation UI with relevance badges for each retrieved chunk, response quality evaluation buttons, ground truth document selector, and displays retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K, Response Time) after annotation submission. The frontend supports multi-file upload (up to 20 files) with per-file language selection. A dedicated `MetricsService` in the Application layer handles similarity calculations (cosine similarity) and provides retrieval evaluation metrics. Two chunking strategies are available: `fixed-size` (character-based with configurable size and overlap) and `semantic` (embedding-based splitting at topic boundaries using cosine similarity between consecutive lines, configurable via `SimilarityThreshold`). The chunking strategy is selected via `RAG_CHUNKING_STRATEGY` in `.env`. System prompts are configurable via `.env` file. The Query History page displays all past queries with collapsible cards showing query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering with language selection. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. Query history including LLM responses, retrieved chunks, and query embeddings is persisted via the `Query` and `QueryResult` entities for reproducible evaluation. The `QueryResult` entity uses denormalized chunk data to preserve historical accuracy even when documents are re-chunked or deleted. Relevance annotation is supported via `PATCH /api/query/{id}/results` endpoint with a graded scale (`RelevanceGrade` enum: NotRelevant, MarginallyRelevant, FairlyRelevant, HighlyRelevant). Response quality evaluation is also supported with a `ResponseQuality` enum (CorrectAndComplete, VagueOrIncomplete, Incorrect, Hallucinated) and a language switching detection flag. Ground truth document selection enables proper Recall@K calculation by allowing users to specify which documents should ideally contain relevant information for a query. The frontend includes an annotation UI with relevance badges for each retrieved chunk, response quality evaluation buttons, ground truth document selector, and displays retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K, Response Time) after annotation submission. The frontend supports multi-file upload (up to 20 files) with per-file language selection. A dedicated `MetricsService` in the Application layer handles similarity calculations (cosine similarity) and provides retrieval evaluation metrics. Two chunking strategies are available: `FixedSize` (character-based with configurable size and overlap) and `Semantic` (embedding-based splitting at topic boundaries using cosine similarity between consecutive lines, configurable via `SimilarityThreshold`). The RAG system is fully configurable at runtime via the Settings API (`GET/PATCH /api/settings`), supporting multiple embedding models, chunking strategies (`FixedSize`, `Semantic`), prompt templates (`BasicEn`, `InstructedEn`, `NativeLanguage`), and numeric parameters (chunk size, chunk overlap, similarity threshold, top-K). Prompt templates implement three strategies for cross-language evaluation: a basic English prompt, an English prompt with explicit language instruction, and a native-language prompt. The active embedding model can be hot-swapped at runtime with automatic service reinitialization. The Query History page displays all past queries with collapsible cards showing query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics.
 
 ## Using the API
 
@@ -206,7 +210,7 @@ Response:
       "similarity": 0.89,
       "documentId": "guid",
       "fileName": "your-document.pdf",
-      "chunkingStrategy": "fixed-size | semantic",
+      "chunkingStrategy": "FixedSize | Semantic",
       "embeddingModel": "nomic-embed-text-v2-moe"
     }
   ],
@@ -220,8 +224,8 @@ Response:
 - **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML**: Microsoft Semantic Kernel 1.66.0
-- **LLM Provider**: Ollama (local models, configurable via `.env`)
-  - Embedding Model: `nomic-embed-text-v2-moe` (multilingual, MoE architecture)
+- **LLM Provider**: Ollama (local models, configurable via `.env` and runtime Settings API)
+  - Embedding Models: `nomic-embed-text-v2-moe` (default), `nomic-embed-text` (configurable, hot-swappable at runtime)
   - Chat Model: `qwen2.5:14b`
 - **PDF Processing**: PdfPig 0.1.9
 - **Database**: PostgreSQL 18 with Entity Framework Core 10.0

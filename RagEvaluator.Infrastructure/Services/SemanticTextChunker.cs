@@ -9,12 +9,12 @@ namespace RagEvaluator.Infrastructure.Services
     public class SemanticTextChunker : ITextChunker
     {
         private readonly IEmbeddingService _embeddingService;
-        private readonly double _similarityThreshold;
+        private readonly RagConfiguration _config;
 
         public SemanticTextChunker(IEmbeddingService embeddingService, RagConfiguration config)
         {
             _embeddingService = embeddingService;
-            _similarityThreshold = config.SimilarityThreshold;
+            _config = config;
         }
 
         public async Task<List<string>> SplitDocumentsAsync(List<string> documents, CancellationToken cancellationToken = default)
@@ -57,7 +57,7 @@ namespace RagEvaluator.Infrastructure.Services
 
             for (var i = 1; i < lines.Count; i++)
             {
-                if (similarities[i - 1] < _similarityThreshold)
+                if (similarities[i - 1] < _config.SimilarityThreshold)
                 {
                     chunks.Add(string.Join("\n", currentLines));
                     currentLines = [];

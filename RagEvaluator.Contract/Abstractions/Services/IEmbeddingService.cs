@@ -14,5 +14,10 @@ namespace RagEvaluator.Contract.Abstractions.Services
         /// Checks whether the embedding service is available and ready to generate embeddings.
         /// </summary>
         Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reinitializes the embedding service with the current configuration (e.g. after changing the model).
+        /// </summary>
+        Task ReinitializeAsync();
     }
 }

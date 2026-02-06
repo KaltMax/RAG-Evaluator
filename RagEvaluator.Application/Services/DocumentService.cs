@@ -160,7 +160,7 @@ namespace RagEvaluator.Application.Services
                     Id = Guid.NewGuid(),
                     Text = chunkText,
                     Embedding = embedding,
-                    ChunkingStrategy = _config.ChunkingStrategy,
+                    ChunkingStrategy = _config.ChunkingStrategy.ToString(),
                     EmbeddingModel = _config.EmbeddingModel,
                     DocumentId = documentId
                 });

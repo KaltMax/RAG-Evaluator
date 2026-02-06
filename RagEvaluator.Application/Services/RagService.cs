@@ -19,20 +19,17 @@ namespace RagEvaluator.Application.Services
         private readonly IChatService _chatService;
         private readonly IDocumentService _documentService;
         private readonly IQueryService _queryService;
-        private readonly IMetricsService _metricsService;
 
         public RagService(
             RagConfiguration config,
             IChatService chatService,
             IDocumentService documentService,
-            IQueryService queryService,
-            IMetricsService metricsService)
+            IQueryService queryService)
         {
             _config = config;
             _chatService = chatService;
             _documentService = documentService;
             _queryService = queryService;
-            _metricsService = metricsService;
         }
 
         public async Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language, CancellationToken cancellationToken = default)
@@ -69,13 +66,16 @@ namespace RagEvaluator.Application.Services
 
             var stopwatch = Stopwatch.StartNew();
 
+            // Resolve prompt from template + query language
+            var systemPrompt = PromptTemplateResolver.Resolve(_config.PromptTemplate, request.Language, _config);
+
             // Create query object with configuration snapshot
             var query = await _queryService.CreateQueryAsync(
                 request.Question,
                 request.Language,
                 request.TopK,
-                _config.SystemPrompt,
-                _config.ChunkingStrategy,
+                systemPrompt,
+                _config.ChunkingStrategy.ToString(),
                 _config.EmbeddingModel,
                 _config.ChatModel,
                 cancellationToken);
@@ -95,7 +95,7 @@ namespace RagEvaluator.Application.Services
 
                 // Generate answer using LLM
                 var userMessage = $"Context:\n{context}\n\nQuestion: {request.Question}\n\nAnswer:";
-                answer = await _chatService.GenerateResponseAsync(_config.SystemPrompt, userMessage, cancellationToken);
+                answer = await _chatService.GenerateResponseAsync(systemPrompt, userMessage, cancellationToken);
             }
 
             // Calculate response time

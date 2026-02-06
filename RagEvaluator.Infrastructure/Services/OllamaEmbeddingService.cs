@@ -55,5 +55,12 @@ namespace RagEvaluator.Infrastructure.Services
         {
             return Task.FromResult(_isInitialized && _embeddingGenerator != null);
         }
+
+        public async Task ReinitializeAsync()
+        {
+            _isInitialized = false;
+            _embeddingGenerator = null;
+            await InitializeAsync();
+        }
     }
 }
