@@ -22,7 +22,7 @@ namespace RagEvaluator.Infrastructure.Services
         /// <summary>
         /// Splits a single text into chunks
         /// </summary>
-        public async Task<List<string>> CreateDocumentChunksAsync(string documentContent, CancellationToken cancellationToken = default)
+        public Task<List<string>> CreateDocumentChunksAsync(string documentContent, CancellationToken cancellationToken = default)
         {
             var chunkSize = _config.ChunkSize;
             var chunkOverlap = _config.ChunkOverlap;
@@ -55,15 +55,9 @@ namespace RagEvaluator.Infrastructure.Services
                 }
 
                 startIndex += chunkSize - chunkOverlap;
-
-                // Prevent infinite loop if overlap >= chunk size
-                if (startIndex <= 0)
-                {
-                    startIndex = chunkSize;
-                }
             }
 
-            return await Task.FromResult(chunks);
+            return Task.FromResult(chunks);
         }
     }
 }

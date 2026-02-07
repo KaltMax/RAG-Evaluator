@@ -25,11 +25,11 @@ namespace RagEvaluator.Infrastructure.Services
 
             if (lines.Count == 0)
             {
-                return [];
+                return new List<string>();
             }
             if (lines.Count == 1)
             {
-                return [lines[0]];
+                return new List<string> { lines[0] };
             }
                 
             // Embed each line
@@ -50,7 +50,7 @@ namespace RagEvaluator.Infrastructure.Services
 
             // Build chunks by splitting at low-similarity boundaries
             var chunks = new List<string>();
-            var currentLines = new List<string> { lines[0] };
+            var currentLines = new List<string> {lines[0]};
 
             for (var i = 1; i < lines.Count; i++)
             {
@@ -69,7 +69,7 @@ namespace RagEvaluator.Infrastructure.Services
                 chunks.Add(string.Join("\n", currentLines));
             }
 
-            return await Task.FromResult(chunks);
+            return chunks;
         }
 
         private static double CosineSimilarity(float[] a, float[] b)
