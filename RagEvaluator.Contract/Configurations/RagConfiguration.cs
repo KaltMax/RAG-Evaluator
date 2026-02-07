@@ -13,7 +13,7 @@ namespace RagEvaluator.Contract.Configurations
         public string AvailableEmbeddingModels { get; set; } = "nomic-embed-text-v2-moe";
         public string ChatModel { get; set; } = "qwen2.5:14b";
         public ChunkingStrategy ChunkingStrategy { get; set; } = ChunkingStrategy.FixedSize;
-        public PromptTemplate PromptTemplate { get; set; } = PromptTemplate.BasicEn;
+        public PromptTemplate PromptTemplate { get; set; } = PromptTemplate.Basic;
         public string PromptBasic { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.'";
         public string PromptInstructed { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.' Always respond in the query language.";
         public string PromptNativeEn { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.' Always respond in English.";
@@ -21,6 +21,5 @@ namespace RagEvaluator.Contract.Configurations
         public int ChunkSize { get; set; } = 1000;
         public int ChunkOverlap { get; set; } = 200;
         public double SimilarityThreshold { get; set; } = 0.5;
-        public int TopK { get; set; } = 3;
     }
 }

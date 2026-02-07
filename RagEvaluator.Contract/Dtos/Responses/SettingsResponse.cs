@@ -14,11 +14,15 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public int ChunkSize { get; set; }
         public int ChunkOverlap { get; set; }
         public double SimilarityThreshold { get; set; }
-        public int TopK { get; set; }
 
         // Available options
         public required List<string> AvailableEmbeddingModels { get; set; }
         public required List<ChunkingStrategy> AvailableChunkingStrategies { get; set; }
-        public required List<PromptTemplate> AvailablePromptTemplates { get; set; }
+
+        // Prompt template texts
+        public required string PromptBasicText { get; set; }
+        public required string PromptInstructedText { get; set; }
+        public required string PromptNativeEnText { get; set; }
+        public required string PromptNativeDeText { get; set; }
     }
 }

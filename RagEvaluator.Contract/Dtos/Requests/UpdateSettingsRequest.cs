@@ -21,8 +21,5 @@ namespace RagEvaluator.Contract.Dtos.Requests
 
         [Range(0.0, 1.0)]
         public double? SimilarityThreshold { get; set; }
-
-        [Range(1, 100)]
-        public int? TopK { get; set; }
     }
 }

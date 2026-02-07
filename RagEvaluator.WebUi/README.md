@@ -50,10 +50,16 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Active route highlighting
   - Clean, modern dark theme
 
+- **Settings** - Configure RAG system parameters at runtime
+  - Embedding model selection from available models
+  - Chunking strategy selection (FixedSize with chunk size/overlap, Semantic with similarity threshold)
+  - Prompt template selection (Basic, Instructed, NativeLanguage) with prompt text preview
+  - Draft/save/discard workflow with dirty state detection
+  - Partial update API (only changed fields sent)
+
 ### Placeholder Pages
 
 - **Statistics** - To be implemented
-- **Settings** - To be implemented
 
 ## Tech Stack
 
@@ -168,6 +174,8 @@ src/
 │   ├── GetAllQueriesService.js         # Fetch query history API service
 │   ├── GetDocumentByIdService.js       # Fetch single document API service
 │   ├── PostQueryService.js             # Query API service
+│   ├── GetSettingsService.js           # Fetch settings API service
+│   ├── UpdateSettings.js              # Update settings API service
 │   └── UploadDocumentsService.js       # Upload API service (multi-file, with language)
 ├── utils/                              # Utility functions
 │   ├── formatDate.js                   # Date formatting utility
@@ -175,6 +183,7 @@ src/
 │   ├── formatMetric.js                 # Metric formatting utility (3 decimals)
 │   ├── formatResponseTime.js           # Response time formatting (ms/s)
 │   ├── relevanceGrades.js              # Relevance grade definitions and helpers
+│   ├── formatFileSize.js               # File size formatting utility (B/KB/MB)
 │   └── responseQualityOptions.js       # Response quality options, helpers, and colors
 ├── components/                         # React components
 │   ├── DocumentList.jsx                # Document list page
@@ -186,7 +195,7 @@ src/
 │   ├── SearchResults.jsx               # Search results display
 │   ├── UploadDocuments.jsx             # Document upload page
 │   ├── Statistics.jsx                  # Statistics page (placeholder)
-│   └── Settings.jsx                    # Settings page (placeholder)
+│   └── Settings.jsx                    # Settings page (embedding model, chunking, prompts)
 ├── assets/                             # Static assets
 │   └── rag-evaluator.svg               # Application logo
 ├── App.jsx                             # Main app component with routing
@@ -230,5 +239,7 @@ Brief summary of implemented API services (see `src/api`):
 | `GET /api/documents/{id}` | Get document details |
 | `GET /api/documents/{id}/download` | Download document file |
 | `DELETE /api/documents/{id}` | Delete a document |
+| `GET /api/settings` | Get current RAG configuration and available options |
+| `PATCH /api/settings` | Update RAG configuration (partial update, only changed fields) |
 
 Axios base URL is controlled by `VITE_API_BASE_URL` (default `/api`). Timeout is 300000 ms (5 min).

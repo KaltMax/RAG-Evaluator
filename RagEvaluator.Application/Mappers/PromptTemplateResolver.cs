@@ -9,15 +9,15 @@ namespace RagEvaluator.Application.Mappers
     public static class PromptTemplateResolver
     {
         public static readonly List<PromptTemplate> AvailableTemplates =
-            [PromptTemplate.BasicEn, PromptTemplate.InstructedEn, PromptTemplate.NativeLanguage];
+            [PromptTemplate.Basic, PromptTemplate.Instructed, PromptTemplate.NativeLanguage];
 
         public static string Resolve(PromptTemplate template, string language, RagConfiguration config)
         {
             return template switch
             {
-                PromptTemplate.BasicEn => config.PromptBasic,
+                PromptTemplate.Basic => config.PromptBasic,
 
-                PromptTemplate.InstructedEn => config.PromptInstructed,
+                PromptTemplate.Instructed => config.PromptInstructed,
 
                 PromptTemplate.NativeLanguage => language switch
                 {

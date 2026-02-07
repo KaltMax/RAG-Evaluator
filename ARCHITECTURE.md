@@ -157,7 +157,7 @@ RAG-Evaluator/
 │   ├── Enums/
 │   │   ├── DocumentStatus.cs            # Document processing status
 │   │   ├── ChunkingStrategy.cs          # Chunking strategy selection (FixedSize, Semantic)
-│   │   ├── PromptTemplate.cs            # Prompt template types (BasicEn, InstructedEn, NativeLanguage)
+│   │   ├── PromptTemplate.cs            # Prompt template types (Basic, Instructed, NativeLanguage)
 │   │   ├── RelevanceGrade.cs            # Graded relevance scale (0-3) for NDCG
 │   │   └── ResponseQuality.cs           # LLM response quality evaluation (0-3)
 │   ├── ValueObjects/
@@ -277,7 +277,7 @@ RAG-Evaluator/
   - `CalculateQueryMetrics()` - Calculates all metrics for a query from its results (accepts ground truth document IDs for proper Recall@K calculation)
 - `ISettingsService` - Runtime RAG configuration management
   - `GetSettings()` - Returns current configuration with available options for UI dropdowns
-  - `UpdateSettingsAsync()` - Validates and applies partial configuration updates (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold, top-K); triggers embedding service reinitialization when the model changes
+  - `UpdateSettingsAsync()` - Validates and applies partial configuration updates (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold); triggers embedding service reinitialization when the model changes
 
 **Dependencies**: → Domain, Contract
 
@@ -413,12 +413,13 @@ RAG-Evaluator/
 
 **Technology Stack**:
 
-- React 18+
+- React 19
 - JavaScript
-- Vite (build tool)
-- TanStack Query (data fetching)
-- React Router (routing)
-- Tailwind CSS / Material-UI (UI components)
+- Vite 7 (build tool)
+- React Router DOM 7 (routing)
+- Tailwind CSS 4 (styling)
+- Axios (HTTP client)
+- React Dropzone, React Toastify, Heroicons
 
 ## RAG Implementation Workflow
 
@@ -614,7 +615,7 @@ PATCH  /api/settings                 # Update runtime RAG configuration (partial
 GET    /api/health                   # Check if RAG services are ready (IMPLEMENTED)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, ground truth document selection, and metrics calculation (including proper Recall@K with ground truth) are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence. Runtime configuration is fully implemented via the Settings API with support for multiple embedding models, chunking strategies, prompt templates, and numeric parameters.
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, ground truth document selection, and metrics calculation (including proper Recall@K with ground truth) are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence. Runtime configuration is fully implemented via the Settings API with support for multiple embedding models, chunking strategies (`FixedSize`, `Semantic`), prompt templates (`Basic`, `Instructed`, `NativeLanguage`), and numeric parameters (chunk size, chunk overlap, similarity threshold).
 
 ### Request/Response Examples
 
@@ -749,6 +750,8 @@ environment:
   - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
   - RagConfiguration__AvailableEmbeddingModels=${OLLAMA_EMBEDDING_MODELS}
   - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
+  - RagConfiguration__ChunkSize=${RAG_CHUNK_SIZE}
+  - RagConfiguration__ChunkOverlap=${RAG_CHUNK_OVERLAP}
   - RagConfiguration__SimilarityThreshold=${RAG_SIMILARITY_THRESHOLD}
   - RagConfiguration__PromptTemplate=${RAG_PROMPT_TEMPLATE}
   - RagConfiguration__PromptBasic=${RAG_PROMPT_BASIC}
@@ -758,7 +761,7 @@ environment:
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
-**Prompt Templates**: Three prompt strategies are available via `RAG_PROMPT_TEMPLATE` in `.env`: `BasicEn` (basic English prompt), `InstructedEn` (English prompt with explicit language instruction), and `NativeLanguage` (prompt in the query's native language, selected automatically based on the query language). Each template's text is independently configurable via `RAG_PROMPT_BASIC`, `RAG_PROMPT_INSTRUCTED`, `RAG_PROMPT_NATIVE_EN`, and `RAG_PROMPT_NATIVE_DE`. All RAG parameters can also be changed at runtime via the Settings API without restarting the container.
+**Prompt Templates**: Three prompt strategies are available via `RAG_PROMPT_TEMPLATE` in `.env`: `Basic` (basic English prompt), `Instructed` (English prompt with explicit language instruction), and `NativeLanguage` (prompt in the query's native language, selected automatically based on the query language). Each template's text is independently configurable via `RAG_PROMPT_BASIC`, `RAG_PROMPT_INSTRUCTED`, `RAG_PROMPT_NATIVE_EN`, and `RAG_PROMPT_NATIVE_DE`. All RAG parameters can also be changed at runtime via the Settings API without restarting the container.
 
 ### Docker Networking
 
@@ -787,11 +790,11 @@ Containers communicate via Docker's internal network:
 - [x] **Semantic Chunking**: Embedding-based semantic text chunker (`SemanticTextChunker`) that splits at topic boundaries via cosine similarity drops between consecutive line embeddings, configurable via `SimilarityThreshold`
 - [x] **Configurable Chunking Strategies**: DI-based strategy selection (`FixedSize` or `Semantic`) via `RAG_CHUNKING_STRATEGY` in `.env`, with async `ITextChunker` interface and runtime switching via Settings API
 - [x] **Multiple Embedding Models**: Support for multiple embedding models (configured via `OLLAMA_EMBEDDING_MODELS` in `.env`), hot-swappable at runtime via Settings API with automatic service reinitialization
-- [x] **Prompt Templates**: Three prompt strategies for cross-language evaluation (`BasicEn`, `InstructedEn`, `NativeLanguage`), resolved by `PromptTemplateResolver` based on template type and query language. Each template's text is independently configurable via `.env`
-- [x] **Runtime Settings API**: `GET/PATCH /api/settings` endpoints for reading and updating RAG configuration at runtime (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold, top-K) with validation and available options for UI dropdowns
+- [x] **Prompt Templates**: Three prompt strategies for cross-language evaluation (`Basic`, `Instructed`, `NativeLanguage`), resolved by `PromptTemplateResolver` based on template type and query language. Each template's text is independently configurable via `.env`
+- [x] **Runtime Settings API**: `GET/PATCH /api/settings` endpoints for reading and updating RAG configuration at runtime (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold) with validation and available options for UI dropdowns
+- [x] **Settings Page**: WebUI page for runtime configuration of embedding model, chunking strategy (with chunk size/overlap for FixedSize, similarity threshold for Semantic), and prompt template selection with prompt text preview
 
 ### In Progress / Planned
-- [ ] Settings page in WebUI for runtime configuration
 - [ ] Refine which embedding models will be used and refine the prompt templates
 - [ ] Analytics and metrics Dashboard
 - [ ] Unit and integration tests

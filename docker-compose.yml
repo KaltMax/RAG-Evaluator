@@ -70,6 +70,8 @@ services:
       - RagConfiguration__OllamaEndpoint=http://ollama:${OLLAMA_PORT}/v1
       - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
       - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
+      - RagConfiguration__ChunkSize=${RAG_CHUNK_SIZE}
+      - RagConfiguration__ChunkOverlap=${RAG_CHUNK_OVERLAP}
       - RagConfiguration__SimilarityThreshold=${RAG_SIMILARITY_THRESHOLD}
       - RagConfiguration__AvailableEmbeddingModels=${OLLAMA_EMBEDDING_MODELS}
       - RagConfiguration__PromptTemplate=${RAG_PROMPT_TEMPLATE}

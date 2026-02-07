@@ -5,6 +5,7 @@ import { getAllDocuments } from '../api/GetAllDocumentsService';
 import { deleteDocument } from '../api/DeleteDocumentService';
 import { downloadDocument } from '../api/DownloadDocumentService';
 import { formatDate } from '../utils/formatDate';
+import { formatFileSize } from '../utils/formatFileSize';
 import { formatLanguage } from '../utils/formatLanguage';
 
 function DocumentList() {
@@ -50,13 +51,6 @@ function DocumentList() {
     } catch (err) {
       toast.error(err.message || 'Failed to delete document');
     }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (!bytes) return '-';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
   const getStatusBadge = (status) => {
@@ -196,7 +190,7 @@ function DocumentList() {
 
       {documents.length > 0 && (
         <div className="text-sm text-gray-500 text-center">
-          Showing {documents.length} document{documents.length !== 1 ? 's' : ''}
+          Showing {documents.length} document{documents.length === 1 ? '' : 's'}
         </div>
       )}
     </div>

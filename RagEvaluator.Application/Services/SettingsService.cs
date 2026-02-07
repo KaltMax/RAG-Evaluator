@@ -1,4 +1,3 @@
-using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
@@ -70,10 +69,6 @@ namespace RagEvaluator.Application.Services
             {
                 _config.SimilarityThreshold = request.SimilarityThreshold.Value; 
             }
-            if (request.TopK is not null)
-            { 
-                _config.TopK = request.TopK.Value; 
-            }
             if (embeddingModelChanged)
             { 
                 await _embeddingService.ReinitializeAsync(); 
@@ -92,10 +87,12 @@ namespace RagEvaluator.Application.Services
                 ChunkSize = _config.ChunkSize,
                 ChunkOverlap = _config.ChunkOverlap,
                 SimilarityThreshold = _config.SimilarityThreshold,
-                TopK = _config.TopK,
+                PromptBasicText = _config.PromptBasic,
+                PromptInstructedText = _config.PromptInstructed,
+                PromptNativeEnText = _config.PromptNativeEn,
+                PromptNativeDeText = _config.PromptNativeDe,
                 AvailableEmbeddingModels = ParseAvailableModels(),
                 AvailableChunkingStrategies = AvailableChunkingStrategies,
-                AvailablePromptTemplates = PromptTemplateResolver.AvailableTemplates
             };
         }
 

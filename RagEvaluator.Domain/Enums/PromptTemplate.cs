@@ -5,8 +5,8 @@ namespace RagEvaluator.Domain.Enums
     /// </summary>
     public enum PromptTemplate
     {
-        BasicEn,
-        InstructedEn,
+        Basic,
+        Instructed,
         NativeLanguage
     }
 }
