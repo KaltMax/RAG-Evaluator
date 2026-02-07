@@ -135,6 +135,32 @@ namespace RagEvaluator.API.Controllers
         }
 
         /// <summary>
+        /// Reprocesses all completed documents by deleting existing chunks and re-chunking + re-embedding with the current configuration.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token</param>
+        [HttpPost("reprocess")]
+        public async Task<IActionResult> ReprocessDocumentsAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger.LogInformation("Reprocessing all documents with current configuration");
+                var result = await _documentService.ReprocessAllDocumentsAsync(cancellationToken);
+                _logger.LogInformation("Reprocessing complete: {Documents} documents, {Chunks} chunks", result.DocumentsProcessed, result.TotalChunksCreated);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Embedding service not available for reprocessing");
+                return StatusCode(503, new { error = "Embedding service not available", message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reprocessing documents");
+                return StatusCode(500, new { error = "Failed to reprocess documents", message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Retrieves all chunks for a specific document
         /// </summary>
         /// <param name="id">The unique identifier of the document</param>

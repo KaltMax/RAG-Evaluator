@@ -59,6 +59,7 @@ namespace RagEvaluator.Application.Services
             var filePath = await _fileStorageService.SaveFileAsync(fileStream, document.Id, fileName, cancellationToken);
             document.FilePath = filePath;
 
+            // Save document metadata to repository
             await _documentRepository.AddAsync(document, cancellationToken);
             return document;
         }
@@ -168,6 +169,59 @@ namespace RagEvaluator.Application.Services
 
             await _documentChunkRepository.AddRangeAsync(documentChunks);
             await UpdateStatusAsync(documentId, DocumentStatus.Completed, pages.Count, textChunks.Count, content);
+        }
+
+        public async Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default)
+        {
+            if (!await _embeddingService.IsAvailableAsync(cancellationToken))
+            {
+                throw new InvalidOperationException("Embedding service not available. Ensure Ollama is running with the required model.");
+            }
+
+            // Delete all existing chunks before reprocessing
+            await _documentChunkRepository.DeleteAllAsync(cancellationToken);
+
+            var documents = await _documentRepository.GetByStatusAsync(DocumentStatus.Completed, cancellationToken);
+            var totalChunks = 0;
+
+            // Reprocess each document with current chunking and embedding configuration
+            foreach (var document in documents)
+            {
+                var textChunks = await _textChunker.CreateDocumentChunksAsync(document.Content!, cancellationToken);
+
+                var documentChunks = new List<DocumentChunk>();
+                foreach (var chunkText in textChunks)
+                {
+                    var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}", cancellationToken);
+                    documentChunks.Add(new DocumentChunk
+                    {
+                        Id = Guid.NewGuid(),
+                        Text = chunkText,
+                        Embedding = embedding,
+                        ChunkingStrategy = _config.ChunkingStrategy.ToString(),
+                        EmbeddingModel = _config.EmbeddingModel,
+                        DocumentId = document.Id
+                    });
+                }
+
+                // Save new chunks to repository
+                await _documentChunkRepository.AddRangeAsync(documentChunks, cancellationToken);
+
+                // Update document metadata with new chunk count and processed timestamp
+                document.ChunkCount = documentChunks.Count;
+                document.ProcessedAt = DateTime.UtcNow;
+                await _documentRepository.UpdateAsync(document, cancellationToken);
+
+                totalChunks += documentChunks.Count;
+            }
+
+            return new ReprocessResponse
+            {
+                DocumentsProcessed = documents.Count,
+                TotalChunksCreated = totalChunks,
+                ChunkingStrategy = _config.ChunkingStrategy.ToString(),
+                EmbeddingModel = _config.EmbeddingModel
+            };
         }
 
         public async Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default)

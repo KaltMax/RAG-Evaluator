@@ -133,6 +133,7 @@ Once running, the API is available at `http://localhost:5000`:
 - `GET /api/documents/{id}/chunks` - Get document chunks with embeddings
 - `GET /api/documents/{id}/download` - Download a previously uploaded document
 - `DELETE /api/documents/{id}` - Delete a document
+- `POST /api/documents/reprocess` - Reprocess all documents with current chunking and embedding configuration
 
 ### Query
 - `POST /api/query` - Ask questions using RAG (Retrieval-Augmented Generation)

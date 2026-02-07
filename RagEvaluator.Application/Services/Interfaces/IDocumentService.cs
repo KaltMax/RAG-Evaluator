@@ -46,6 +46,11 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Reprocesses all completed documents by deleting existing chunks and re-chunking + re-embedding with the current configuration.
+        /// </summary>
+        Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Gets all document chunks associated with a specific document.
         /// </summary>
         Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);

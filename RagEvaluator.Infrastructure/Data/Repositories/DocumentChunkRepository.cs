@@ -60,6 +60,17 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             }
         }
 
+        public async Task DeleteAllAsync(CancellationToken cancellationToken = default)
+        {
+            var chunks = await _context.DocumentChunks.ToListAsync(cancellationToken);
+
+            if (chunks.Count > 0)
+            {
+                _context.DocumentChunks.RemoveRange(chunks);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         public async Task<IReadOnlyList<ChunkSearchMatch>> SearchAsync(float[] queryEmbedding, int topK = 3, CancellationToken cancellationToken = default)
         {
             // Convert float[] to pgvector format string: [0.1,0.2,0.3,...]

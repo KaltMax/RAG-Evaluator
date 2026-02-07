@@ -39,6 +39,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task DeleteByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Deletes all document chunks from the repository.
+        /// </summary>
+        Task DeleteAllAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Searches for similar chunks using vector similarity.
         /// Returns raw matches ordered by similarity (closest first) without calculated similarity scores.
         /// </summary>

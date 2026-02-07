@@ -591,6 +591,7 @@ GET    /api/documents/{id}          # Get document details (IMPLEMENTED)
 GET    /api/documents/{id}/download # Download document file (IMPLEMENTED)
 DELETE /api/documents/{id}          # Delete document (IMPLEMENTED)
 GET    /api/documents/{id}/chunks   # Get document chunks (IMPLEMENTED)
+POST   /api/documents/reprocess    # Reprocess all documents with current config (IMPLEMENTED)
 ```
 
 #### Query API
