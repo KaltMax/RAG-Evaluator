@@ -141,6 +141,7 @@ RAG-Evaluator/
 │   │       ├── DocumentResponse.cs
 │   │       ├── DocumentChunkResponse.cs # Document chunk details
 │   │       ├── DocumentFileInfo.cs      # File info for downloads
+│   │       ├── ReprocessResponse.cs     # Reprocess result (docs processed, chunks created)
 │   │       └── SettingsResponse.cs      # Current settings + available options
 │   └── Logger/
 │       ├── ILoggerWrapper.cs
@@ -262,6 +263,7 @@ RAG-Evaluator/
   - `IsInitializedAsync()` - Checks if Ollama services are available (used by health endpoint)
 - `IDocumentService` - Document processing and management operations
   - `ProcessDocumentAsync()` - Orchestrates PDF processing workflow
+  - `ReprocessAllDocumentsAsync()` - Re-chunks and re-embeds all documents using stored content and current config
   - `GetDocumentChunksAsync()` - Retrieves document chunks
 - `IQueryService` - Query handling, persistence, and history management
   - `CreateQuery()` - Creates a query object with configuration snapshot (no persistence)
@@ -300,7 +302,7 @@ RAG-Evaluator/
 - `Abstractions/Data/` - Data access interfaces (IVectorStore, IDocumentRepository)
 - `Configurations/` - Configuration models (RagConfiguration with runtime-mutable settings, FileStorageConfiguration)
 - `Dtos/Requests/` - API request DTOs (AskQuestionRequest, UploadDocumentRequest, AnnotateResultsRequest, UpdateSettingsRequest)
-- `Dtos/Responses/` - API response DTOs (QueryResponse, DocumentResponse, SettingsResponse, etc.)
+- `Dtos/Responses/` - API response DTOs (QueryResponse, DocumentResponse, ReprocessResponse, SettingsResponse, etc.)
 - `Logger/` - Logger abstraction and implementation
 
 **Dependencies**: → Domain (for value objects like SearchResult used in interfaces)
@@ -429,15 +431,33 @@ RAG-Evaluator/
 1. PDF Upload (Controller)
    → 2. RagService.ProcessDocumentAsync() (Application Layer)
       → 3. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
-      → 4. ITextChunker.SplitDocumentsAsync() - Split into chunks
+      → 4. Join pages into single content string
+      → 5. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
             • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
             • semantic: Embedding-based splitting at topic boundaries (SimilarityThreshold)
-      → 5. For each chunk:
-         → 6. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
-         → 7. Create DocumentChunk entity with embedding, strategy, model info
-      → 8. DocumentChunkRepository.AddRangeAsync() - Persist all chunks to PostgreSQL
-      → 9. Update Document status to Completed
-   → 10. Return DocumentResponse (DTO)
+      → 6. For each chunk:
+         → 7. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
+         → 8. Create DocumentChunk entity with embedding, strategy, model info
+      → 9. DocumentChunkRepository.AddRangeAsync() - Persist all chunks to PostgreSQL
+      → 10. Update Document status to Completed with content stored for future reprocessing
+   → 11. Return DocumentResponse (DTO)
+```
+
+### Document Reprocessing Pipeline
+
+```
+1. Settings Change or Manual Trigger
+   → 2. DocumentService.ReprocessAllDocumentsAsync() (Application Layer)
+      → 3. DocumentChunkRepository.DeleteAllAsync() - Remove all existing chunks
+      → 4. Fetch all documents with Status == Completed
+      → 5. For each document:
+         → 6. ITextChunker.CreateDocumentChunksAsync(document.Content) - Re-chunk stored content
+         → 7. For each chunk:
+            → 8. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
+            → 9. Create DocumentChunk entity with current config (strategy, model)
+         → 10. DocumentChunkRepository.AddRangeAsync() - Persist new chunks
+         → 11. Update document ChunkCount and ProcessedAt
+   → 12. Return ReprocessResponse (documents processed, total chunks, config used)
 ```
 
 ### Query Processing Pipeline
@@ -793,7 +813,8 @@ Containers communicate via Docker's internal network:
 - [x] **Multiple Embedding Models**: Support for multiple embedding models (configured via `OLLAMA_EMBEDDING_MODELS` in `.env`), hot-swappable at runtime via Settings API with automatic service reinitialization
 - [x] **Prompt Templates**: Three prompt strategies for cross-language evaluation (`Basic`, `Instructed`, `LanguageAware`), resolved by `PromptTemplateResolver` based on template type and query language. Each template's text is independently configurable via `.env`
 - [x] **Runtime Settings API**: `GET/PATCH /api/settings` endpoints for reading and updating RAG configuration at runtime (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold) with validation and available options for UI dropdowns
-- [x] **Settings Page**: WebUI page for runtime configuration of embedding model, chunking strategy (with chunk size/overlap for FixedSize, similarity threshold for Semantic), and prompt template selection with prompt text preview
+- [x] **Settings Page**: WebUI page for runtime configuration of embedding model, chunking strategy (with chunk size/overlap for FixedSize, similarity threshold for Semantic), and prompt template selection with prompt text preview. Automatically triggers document reprocessing when embedding/chunking settings change
+- [x] **Document Reprocessing**: `POST /api/documents/reprocess` endpoint re-chunks and re-embeds all documents using stored content and current configuration. Triggered automatically from Settings page or callable via API
 
 ### In Progress / Planned
 - [ ] Refine which embedding models will be used and refine the prompt templates

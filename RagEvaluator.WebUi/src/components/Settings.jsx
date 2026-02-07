@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { getSettings } from '../api/GetSettingsService';
 import { updateSettings } from '../api/UpdateSettings';
+import { reprocessDocuments } from '../api/ReprocessDocumentsService';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 function Settings() {
@@ -9,6 +10,7 @@ function Settings() {
   const [draft, setDraft] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isReprocessing, setIsReprocessing] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchSettings = async () => {
@@ -53,13 +55,37 @@ function Settings() {
     return patch;
   };
 
+  const needsReprocessing = () => {
+    if (!settings || !draft) return false;
+    return (
+      draft.embeddingModel !== settings.embeddingModel ||
+      draft.chunkingStrategy !== settings.chunkingStrategy ||
+      draft.chunkSize !== settings.chunkSize ||
+      draft.chunkOverlap !== settings.chunkOverlap ||
+      draft.similarityThreshold !== settings.similarityThreshold
+    );
+  };
+
   const handleSave = async () => {
+    const shouldReprocess = needsReprocessing();
     setIsSaving(true);
     try {
       const data = await updateSettings(buildPatch());
       setSettings(data);
       setDraft(data);
       toast.success('Settings updated successfully');
+
+      if (shouldReprocess) {
+        setIsReprocessing(true);
+        try {
+          const result = await reprocessDocuments();
+          toast.success(`Reprocessed ${result.documentsProcessed} documents (${result.totalChunksCreated} chunks)`);
+        } catch (err) {
+          toast.error(`Reprocessing failed: ${err.message}`);
+        } finally {
+          setIsReprocessing(false);
+        }
+      }
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -244,8 +270,16 @@ function Settings() {
             </div>
           </div>
 
+          {/* Reprocessing Indicator */}
+          {isReprocessing && (
+            <div className="sticky bottom-4 flex items-center gap-3 bg-[#2D2D2D] rounded-lg shadow-lg p-4 border border-blue-500/40">
+              <ArrowPathIcon className="w-5 h-5 text-blue-400 animate-spin" />
+              <span className="text-blue-400 text-sm font-medium">Reprocessing documents with new configuration...</span>
+            </div>
+          )}
+
           {/* Save / Discard Bar */}
-          {hasChanges() && (
+          {hasChanges() && !isReprocessing && (
             <div className="sticky bottom-4 flex justify-end gap-3 bg-[#2D2D2D] rounded-lg shadow-lg p-4 border border-gray-700">
               <button
                 onClick={handleDiscard}

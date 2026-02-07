@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
 import { DocumentArrowUpIcon, DocumentTextIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { uploadDocument } from '../api/UploadDocumentsService';
+import { uploadDocument } from '../api/UploadDocumentService';
 
 function UploadDocuments() {
   const [selectedFiles, setSelectedFiles] = useState([]);

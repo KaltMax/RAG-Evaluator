@@ -56,6 +56,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Prompt template selection (Basic, Instructed, LanguageAware) with prompt text preview
   - Draft/save/discard workflow with dirty state detection
   - Partial update API (only changed fields sent)
+  - Automatic document reprocessing when embedding/chunking settings change
 
 ### Placeholder Pages
 
@@ -175,8 +176,9 @@ src/
 │   ├── GetDocumentByIdService.js       # Fetch single document API service
 │   ├── PostQueryService.js             # Query API service
 │   ├── GetSettingsService.js           # Fetch settings API service
-│   ├── UpdateSettings.js              # Update settings API service
-│   └── UploadDocumentsService.js       # Upload API service (multi-file, with language)
+│   ├── UpdateSettings.js               # Update settings API service
+│   ├── ReprocessDocumentsService.js    # Reprocess documents API service
+│   └── UploadDocumentService.js        # Upload API service (multi-file, with language)
 ├── utils/                              # Utility functions
 │   ├── formatDate.js                   # Date formatting utility
 │   ├── formatLanguage.js               # Language code to name formatting
@@ -239,6 +241,7 @@ Brief summary of implemented API services (see `src/api`):
 | `GET /api/documents/{id}` | Get document details |
 | `GET /api/documents/{id}/download` | Download document file |
 | `DELETE /api/documents/{id}` | Delete a document |
+| `POST /api/documents/reprocess` | Reprocess all documents with current chunking/embedding config |
 | `GET /api/settings` | Get current RAG configuration and available options |
 | `PATCH /api/settings` | Update RAG configuration (partial update, only changed fields) |
 
