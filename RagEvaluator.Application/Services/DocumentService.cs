@@ -148,7 +148,7 @@ namespace RagEvaluator.Application.Services
             var content = string.Join("\n\n", pages);
 
             // Split into chunks
-            var textChunks = await _textChunker.SplitDocumentsAsync(pages, cancellationToken);
+            var textChunks = await _textChunker.CreateDocumentChunksAsync(content, cancellationToken);
 
             // Generate embeddings and create chunk entities
             var documentChunks = new List<DocumentChunk>();

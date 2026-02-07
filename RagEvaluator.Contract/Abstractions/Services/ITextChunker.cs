@@ -6,13 +6,8 @@ namespace RagEvaluator.Contract.Abstractions.Services
     public interface ITextChunker
     {
         /// <summary>
-        /// Splits a list of documents into smaller text chunks.
+        /// Splits a single document into smaller chunks.
         /// </summary>
-        Task<List<string>> SplitDocumentsAsync(List<string> documents, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Splits a single text into smaller chunks.
-        /// </summary>
-        Task<List<string>> SplitTextAsync(string text, CancellationToken cancellationToken = default);
+        Task<List<string>> CreateDocumentChunksAsync(string documentContent, CancellationToken cancellationToken = default);
     }
 }

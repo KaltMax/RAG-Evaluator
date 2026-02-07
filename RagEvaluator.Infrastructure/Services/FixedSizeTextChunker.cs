@@ -20,47 +20,33 @@ namespace RagEvaluator.Infrastructure.Services
         }
 
         /// <summary>
-        /// Splits a list of documents into chunks
-        /// </summary>
-        public Task<List<string>> SplitDocumentsAsync(List<string> documents, CancellationToken cancellationToken = default)
-        {
-            var chunks = new List<string>();
-
-            foreach (var doc in documents)
-            {
-                chunks.AddRange(SplitText(doc));
-            }
-
-            return Task.FromResult(chunks);
-        }
-
-        /// <summary>
         /// Splits a single text into chunks
         /// </summary>
-        public Task<List<string>> SplitTextAsync(string text, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(SplitText(text));
-        }
-
-        private List<string> SplitText(string text)
+        public async Task<List<string>> CreateDocumentChunksAsync(string documentContent, CancellationToken cancellationToken = default)
         {
             var chunkSize = _config.ChunkSize;
             var chunkOverlap = _config.ChunkOverlap;
 
             if (chunkSize <= 0)
+            {
                 throw new InvalidOperationException("Chunk size must be positive.");
+            }   
             if (chunkOverlap < 0)
+            {
                 throw new InvalidOperationException("Chunk overlap cannot be negative.");
+            }
             if (chunkOverlap >= chunkSize)
+            {
                 throw new InvalidOperationException("Chunk overlap must be less than chunk size.");
+            }
 
             var chunks = new List<string>();
             var startIndex = 0;
 
-            while (startIndex < text.Length)
+            while (startIndex < documentContent.Length)
             {
-                var length = Math.Min(chunkSize, text.Length - startIndex);
-                var chunk = text.Substring(startIndex, length);
+                var length = Math.Min(chunkSize, documentContent.Length - startIndex);
+                var chunk = documentContent.Substring(startIndex, length);
 
                 // Only add non-empty chunks
                 if (!string.IsNullOrWhiteSpace(chunk))
@@ -72,10 +58,12 @@ namespace RagEvaluator.Infrastructure.Services
 
                 // Prevent infinite loop if overlap >= chunk size
                 if (startIndex <= 0)
+                {
                     startIndex = chunkSize;
+                }
             }
 
-            return chunks;
+            return await Task.FromResult(chunks);
         }
     }
 }

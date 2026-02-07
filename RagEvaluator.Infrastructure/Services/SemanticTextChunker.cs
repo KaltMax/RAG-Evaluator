@@ -17,24 +17,21 @@ namespace RagEvaluator.Infrastructure.Services
             _config = config;
         }
 
-        public async Task<List<string>> SplitDocumentsAsync(List<string> documents, CancellationToken cancellationToken = default)
+        public async Task<List<string>> CreateDocumentChunksAsync(string documentContent, CancellationToken cancellationToken = default)
         {
-            var combinedText = string.Join("\n\n", documents);
-            return await SplitTextAsync(combinedText, cancellationToken);
-        }
-
-        public async Task<List<string>> SplitTextAsync(string text, CancellationToken cancellationToken = default)
-        {
-            var lines = text.Split('\n')
+            var lines = documentContent.Split('\n')
                 .Where(l => !string.IsNullOrWhiteSpace(l))
                 .ToList();
 
             if (lines.Count == 0)
+            {
                 return [];
-
+            }
             if (lines.Count == 1)
+            {
                 return [lines[0]];
-
+            }
+                
             // Embed each line
             var embeddings = new float[lines.Count][];
             for (var i = 0; i < lines.Count; i++)
@@ -60,7 +57,7 @@ namespace RagEvaluator.Infrastructure.Services
                 if (similarities[i - 1] < _config.SimilarityThreshold)
                 {
                     chunks.Add(string.Join("\n", currentLines));
-                    currentLines = [];
+                    currentLines = new List<string>();
                 }
 
                 currentLines.Add(lines[i]);
@@ -72,7 +69,7 @@ namespace RagEvaluator.Infrastructure.Services
                 chunks.Add(string.Join("\n", currentLines));
             }
 
-            return chunks;
+            return await Task.FromResult(chunks);
         }
 
         private static double CosineSimilarity(float[] a, float[] b)
