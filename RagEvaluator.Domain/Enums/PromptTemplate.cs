@@ -7,6 +7,6 @@ namespace RagEvaluator.Domain.Enums
     {
         Basic,
         Instructed,
-        NativeLanguage
+        LanguageAware
     }
 }

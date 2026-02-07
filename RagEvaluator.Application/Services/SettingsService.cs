@@ -89,8 +89,8 @@ namespace RagEvaluator.Application.Services
                 SimilarityThreshold = _config.SimilarityThreshold,
                 PromptBasicText = _config.PromptBasic,
                 PromptInstructedText = _config.PromptInstructed,
-                PromptNativeEnText = _config.PromptNativeEn,
-                PromptNativeDeText = _config.PromptNativeDe,
+                PromptLanguageAwareEnText = _config.PromptLanguageAwareEn,
+                PromptLanguageAwareDeText = _config.PromptLanguageAwareDe,
                 AvailableEmbeddingModels = ParseAvailableModels(),
                 AvailableChunkingStrategies = AvailableChunkingStrategies,
             };

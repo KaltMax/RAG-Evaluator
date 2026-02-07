@@ -16,8 +16,8 @@ namespace RagEvaluator.Contract.Configurations
         public PromptTemplate PromptTemplate { get; set; } = PromptTemplate.Basic;
         public string PromptBasic { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.'";
         public string PromptInstructed { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.' Always respond in the query language.";
-        public string PromptNativeEn { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.' Always respond in English.";
-        public string PromptNativeDe { get; set; } = "Du bist ein hilfreicher Assistent. Beantworte die Frage basierend auf dem bereitgestellten Kontext. Sei präzise und genau. Wenn der Kontext die Antwort nicht enthält, antworte mit 'Ich weiß es nicht.' Antworte immer auf Deutsch.";
+        public string PromptLanguageAwareEn { get; set; } = "You are a helpful assistant. Answer the question based on the provided context. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.' Always respond in English.";
+        public string PromptLanguageAwareDe { get; set; } = "Du bist ein hilfreicher Assistent. Beantworte die Frage basierend auf dem bereitgestellten Kontext. Sei präzise und genau. Wenn der Kontext die Antwort nicht enthält, antworte mit 'Ich weiß es nicht.' Antworte immer auf Deutsch.";
         public int ChunkSize { get; set; } = 1000;
         public int ChunkOverlap { get; set; } = 200;
         public double SimilarityThreshold { get; set; } = 0.5;

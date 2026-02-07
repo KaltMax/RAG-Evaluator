@@ -77,8 +77,8 @@ services:
       - RagConfiguration__PromptTemplate=${RAG_PROMPT_TEMPLATE}
       - RagConfiguration__PromptBasic=${RAG_PROMPT_BASIC}
       - RagConfiguration__PromptInstructed=${RAG_PROMPT_INSTRUCTED}
-      - RagConfiguration__PromptNativeEn=${RAG_PROMPT_NATIVE_EN}
-      - RagConfiguration__PromptNativeDe=${RAG_PROMPT_NATIVE_DE}
+      - RagConfiguration__PromptLanguageAwareEn=${RAG_PROMPT_LANGUAGE_AWARE_EN}
+      - RagConfiguration__PromptLanguageAwareDe=${RAG_PROMPT_LANGUAGE_AWARE_DE}
       - FileStorageConfiguration__BaseDirectory=${FILE_STORAGE_BASE_DIRECTORY}
     ports:
       - "${API_PORT}:8080"

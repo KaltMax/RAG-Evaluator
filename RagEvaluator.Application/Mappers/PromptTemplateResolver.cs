@@ -9,7 +9,7 @@ namespace RagEvaluator.Application.Mappers
     public static class PromptTemplateResolver
     {
         public static readonly List<PromptTemplate> AvailableTemplates =
-            [PromptTemplate.Basic, PromptTemplate.Instructed, PromptTemplate.NativeLanguage];
+            [PromptTemplate.Basic, PromptTemplate.Instructed, PromptTemplate.LanguageAware];
 
         public static string Resolve(PromptTemplate template, string language, RagConfiguration config)
         {
@@ -19,10 +19,10 @@ namespace RagEvaluator.Application.Mappers
 
                 PromptTemplate.Instructed => config.PromptInstructed,
 
-                PromptTemplate.NativeLanguage => language switch
+                PromptTemplate.LanguageAware => language switch
                 {
-                    "de" => config.PromptNativeDe,
-                    _ => config.PromptNativeEn,
+                    "de" => config.PromptLanguageAwareDe,
+                    _ => config.PromptLanguageAwareEn,
                 },
 
                 _ => throw new ArgumentException($"Unknown prompt template: {template}", nameof(template))

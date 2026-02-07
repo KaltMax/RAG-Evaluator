@@ -22,7 +22,7 @@ namespace RagEvaluator.Contract.Dtos.Responses
         // Prompt template texts
         public required string PromptBasicText { get; set; }
         public required string PromptInstructedText { get; set; }
-        public required string PromptNativeEnText { get; set; }
-        public required string PromptNativeDeText { get; set; }
+        public required string PromptLanguageAwareEnText { get; set; }
+        public required string PromptLanguageAwareDeText { get; set; }
     }
 }

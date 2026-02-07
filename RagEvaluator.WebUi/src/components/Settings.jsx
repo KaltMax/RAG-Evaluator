@@ -222,22 +222,22 @@ function Settings() {
                 <p className="text-gray-300 text-sm leading-relaxed mt-3">{settings.promptInstructedText}</p>
               </button>
 
-              {/* NativeLanguage */}
+              {/* LanguageAware */}
               <button
-                onClick={() => setDraft({ ...draft, promptTemplate: 'NativeLanguage' })}
-                className={`w-full text-left rounded-lg p-4 border transition-colors ${draft.promptTemplate === 'NativeLanguage' ? 'bg-blue-500/5 border-blue-500/40' : 'bg-[#1F1F1F] border-gray-700 hover:border-gray-500'}`}
+                onClick={() => setDraft({ ...draft, promptTemplate: 'LanguageAware' })}
+                className={`w-full text-left rounded-lg p-4 border transition-colors ${draft.promptTemplate === 'LanguageAware' ? 'bg-blue-500/5 border-blue-500/40' : 'bg-[#1F1F1F] border-gray-700 hover:border-gray-500'}`}
               >
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${draft.promptTemplate === 'NativeLanguage' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-300'}`}>
-                  NativeLanguage
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${draft.promptTemplate === 'LanguageAware' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-300'}`}>
+                  Language Aware
                 </span>
                 <div className="mt-3 space-y-2">
                   <div className="bg-[#1F1F1F] rounded-lg p-3">
                     <p className="text-gray-400 text-xs mb-1">EN</p>
-                    <p className="text-gray-300 text-sm leading-relaxed">{settings.promptNativeEnText}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">{settings.promptLanguageAwareEnText}</p>
                   </div>
                   <div className="bg-[#1F1F1F] rounded-lg p-3">
                     <p className="text-gray-400 text-xs mb-1">DE</p>
-                    <p className="text-gray-300 text-sm leading-relaxed">{settings.promptNativeDeText}</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">{settings.promptLanguageAwareDeText}</p>
                   </div>
                 </div>
               </button>
