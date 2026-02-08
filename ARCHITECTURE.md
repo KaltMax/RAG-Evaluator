@@ -302,7 +302,7 @@ RAG-Evaluator/
 - `Abstractions/Data/` - Data access interfaces (IVectorStore, IDocumentRepository)
 - `Configurations/` - Configuration models (RagConfiguration with runtime-mutable settings, FileStorageConfiguration)
 - `Dtos/Requests/` - API request DTOs (AskQuestionRequest, UploadDocumentRequest, AnnotateResultsRequest, UpdateSettingsRequest)
-- `Dtos/Responses/` - API response DTOs (QueryResponse, DocumentResponse, ReprocessResponse, SettingsResponse, etc.)
+- `Dtos/Responses/` - API response DTOs (QueryResponse with full query details/sources/metrics, QuerySummaryResponse for history listing, DocumentResponse, ReprocessResponse, SettingsResponse, etc.)
 - `Logger/` - Logger abstraction and implementation
 
 **Dependencies**: → Domain (for value objects like SearchResult used in interfaces)
@@ -807,7 +807,7 @@ Containers communicate via Docker's internal network:
 - [x] **Relevance Annotation UI**: Frontend UI for annotating query results with relevance badges, metrics display panel (MRR, Precision@K, Recall@K, NDCG@K, Response Time)
 - [x] **Ground Truth Documents**: UI for selecting relevant documents per query, enabling proper Recall@K calculation
 - [x] **Recall@K with Ground Truth**: Document-level Recall@K using user-selected ground truth documents (formula: relevant docs found in top K / total ground truth docs)
-- [x] **Query History Page**: WebUI page with collapsible cards displaying query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics
+- [x] **Query History Page**: WebUI page with collapsible cards displaying query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics. Pending queries can be annotated inline via the SearchResults evaluation UI
 - [x] **Semantic Chunking**: Embedding-based semantic text chunker (`SemanticTextChunker`) that splits at topic boundaries via cosine similarity drops between consecutive line embeddings, configurable via `SimilarityThreshold`
 - [x] **Configurable Chunking Strategies**: DI-based strategy selection (`FixedSize` or `Semantic`) via `RAG_CHUNKING_STRATEGY` in `.env`, with async `ITextChunker` interface and runtime switching via Settings API
 - [x] **Multiple Embedding Models**: Support for multiple embedding models (configured via `OLLAMA_EMBEDDING_MODELS` in `.env`), hot-swappable at runtime via Settings API with automatic service reinitialization

@@ -3,17 +3,22 @@ import { toast } from 'react-toastify';
 import { ArrowPathIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { getAllQueries } from '../api/GetAllQueriesService';
 import { deleteQuery } from '../api/DeleteQueryService';
+import { getQueryById } from '../api/GetQueryByIdService';
 import { formatDate } from '../utils/formatDate';
 import { formatMetric } from '../utils/formatMetric';
 import { getResponseQualityOption, getResponseQualityColor } from '../utils/responseQualityOptions';
 import { formatResponseTime } from '../utils/formatResponseTime';
 import { formatLanguage } from '../utils/formatLanguage';
+import SearchResults from './SearchResults';
 
 function QueryHistory() {
   const [queries, setQueries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [queryDetails, setQueryDetails] = useState({});
+  const [loadingDetails, setLoadingDetails] = useState(new Set());
+  const [annotatingIds, setAnnotatingIds] = useState(new Set());
 
   const fetchQueries = async () => {
     setIsLoading(true);
@@ -33,6 +38,8 @@ function QueryHistory() {
     fetchQueries();
   }, []);
 
+  const isPending = (query) => query.responseQuality == null;
+
   const toggleExpanded = (id) => {
     setExpandedIds(prev => {
       const newSet = new Set(prev);
@@ -45,8 +52,45 @@ function QueryHistory() {
     });
   };
 
+  const handleStartAnnotation = async (id) => {
+    if (queryDetails[id]) {
+      setAnnotatingIds(prev => new Set([...prev, id]));
+      return;
+    }
+
+    setLoadingDetails(prev => new Set([...prev, id]));
+    try {
+      const data = await getQueryById(id);
+      setQueryDetails(prev => ({ ...prev, [id]: data }));
+      setAnnotatingIds(prev => new Set([...prev, id]));
+    } catch (err) {
+      console.error('Error fetching query details:', err);
+      toast.error('Failed to load query details');
+    } finally {
+      setLoadingDetails(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleAnnotated = (id) => {
+    setAnnotatingIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
+    setQueryDetails(prev => {
+      const newDetails = { ...prev };
+      delete newDetails[id];
+      return newDetails;
+    });
+    fetchQueries();
+  };
+
   const getMetricsStatus = (query) => {
-    if (query.mrr !== null && query.mrr !== undefined) {
+    if (!isPending(query)) {
       return { label: 'Evaluated', color: 'bg-green-500/20 text-green-400' };
     }
     return { label: 'Pending', color: 'bg-yellow-500/20 text-yellow-400' };
@@ -201,8 +245,42 @@ function QueryHistory() {
                       </div>
                     </div>
 
-                    {/* Metrics Section */}
-                    {query.mrr !== null && query.mrr !== undefined && (
+                    {/* Pending: Annotate Button or SearchResults */}
+                    {isPending(query) && (
+                      <div className="mt-4">
+                        <h3 className="text-sm font-bold text-gray-200 mb-2">Evaluation Metrics</h3>
+                        {annotatingIds.has(query.id) ? (
+                          queryDetails[query.id] ? (
+                            <SearchResults
+                              results={queryDetails[query.id]}
+                              onAnnotated={() => handleAnnotated(query.id)}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center p-12">
+                              <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin" />
+                            </div>
+                          )
+                        ) : (
+                          <button
+                            onClick={() => handleStartAnnotation(query.id)}
+                            disabled={loadingDetails.has(query.id)}
+                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            {loadingDetails.has(query.id) ? (
+                              <>
+                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                <span>Loading...</span>
+                              </>
+                            ) : (
+                              <span>Annotate</span>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Evaluated: Metrics Section */}
+                    {!isPending(query) && (
                       <div className="mt-4">
                         <h3 className="text-sm font-bold text-gray-200 mb-2">Evaluation Metrics</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

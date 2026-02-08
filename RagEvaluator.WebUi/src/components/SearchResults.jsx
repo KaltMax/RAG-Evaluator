@@ -10,7 +10,7 @@ import { responseQualityOptions, getResponseQualityOption, getResponseQualityCol
 import { formatMetric } from '../utils/formatMetric';
 import { formatResponseTime } from '../utils/formatResponseTime';
 
-function SearchResults({ results }) {
+function SearchResults({ results, onAnnotated }) {
   const [annotations, setAnnotations] = useState({});
   const [responseQuality, setResponseQuality] = useState(null);
   const [hasLanguageSwitching, setHasLanguageSwitching] = useState(false);
@@ -136,6 +136,7 @@ function SearchResults({ results }) {
       });
 
       toast.success('Annotations submitted successfully!');
+      onAnnotated?.();
     } catch (error) {
       toast.error(error.message || 'Failed to submit annotations');
     } finally {
@@ -436,6 +437,7 @@ SearchResults.propTypes = {
         ),
         timestamp: PropTypes.string.isRequired,
     }),
+    onAnnotated: PropTypes.func,
 };
 
 export default SearchResults;
