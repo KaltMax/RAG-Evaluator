@@ -67,10 +67,10 @@ namespace RagEvaluator.Application.Services
             await _queryRepository.AddAsync(query, cancellationToken);
         }
 
-        public async Task<QuerySummaryResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<QueryResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var query = await _queryRepository.GetByIdAsync(id, cancellationToken);
-            return query?.ToSummary();
+            var query = await _queryRepository.GetByIdWithResultsAsync(id, cancellationToken);
+            return query?.ToResponse();
         }
 
         public async Task<IReadOnlyList<QuerySummaryResponse>> GetAllAsync(CancellationToken cancellationToken = default)

@@ -340,7 +340,7 @@ function SearchResults({ results }) {
           </div>
           {relevantDocuments.length > 0 && (
             <p className="text-gray-400 text-xs mt-3">
-              {relevantDocuments.length} document{relevantDocuments.length !== 1 ? 's' : ''} selected as relevant
+              {relevantDocuments.length} document{relevantDocuments.length === 1 ? '' : 's'} selected as relevant
             </p>
           )}
         </div>

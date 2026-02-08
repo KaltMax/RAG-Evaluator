@@ -17,9 +17,9 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task<bool> IsReadyAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets a query summary by its unique identifier.
+        /// Gets a query by its unique identifier, including its results.
         /// </summary>
-        Task<QuerySummaryResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<QueryResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all query summaries ordered by creation date.
