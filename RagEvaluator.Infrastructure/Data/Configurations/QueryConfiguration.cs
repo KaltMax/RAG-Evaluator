@@ -69,6 +69,9 @@ namespace RagEvaluator.Infrastructure.Data.Configurations
             builder.Property(q => q.RecallAtK);
             builder.Property(q => q.NDCGAtK);
 
+            // Experiment association
+            builder.HasIndex(q => q.ExperimentId);
+
             // Navigation to QueryResults
             builder.HasMany(q => q.Results)
                 .WithOne(r => r.Query)

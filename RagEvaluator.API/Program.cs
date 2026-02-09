@@ -50,6 +50,7 @@ namespace RagEvaluator.API
             builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
             builder.Services.AddScoped<IDocumentChunkRepository, DocumentChunkRepository>();
             builder.Services.AddScoped<IQueryRepository, QueryRepository>();
+            builder.Services.AddScoped<IExperimentRepository, ExperimentRepository>();
 
             // Register Infrastructure services (implementations)
             builder.Services.AddSingleton<IPdfLoader, PdfPigLoader>();
@@ -69,6 +70,11 @@ namespace RagEvaluator.API
             builder.Services.AddScoped<IRagService, RagService>();
             builder.Services.AddSingleton<ISettingsService, SettingsService>();
             builder.Services.AddSingleton<IMetricsService, MetricsService>();
+            builder.Services.AddScoped<IExperimentService, ExperimentService>();
+
+            // Experiment background processing
+            builder.Services.AddSingleton<ExperimentQueue>();
+            builder.Services.AddHostedService<ExperimentBackgroundService>();
 
             // Add CORS for development
             builder.Services.AddCors(options =>

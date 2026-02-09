@@ -34,6 +34,10 @@ namespace RagEvaluator.Domain.Entities
         public double? RecallAtK { get; set; }
         public double? NDCGAtK { get; set; }
 
+        // Experiment association (nullable - queries can exist independently)
+        public Guid? ExperimentId { get; set; }
+        public Experiment? Experiment { get; set; }
+
         // Navigation property for related QueryResults
         public ICollection<QueryResult> Results { get; set; } = [];
 

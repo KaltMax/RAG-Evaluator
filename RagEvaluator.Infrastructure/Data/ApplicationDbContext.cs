@@ -15,6 +15,7 @@ namespace RagEvaluator.Infrastructure.Data
         public DbSet<Query> Queries => Set<Query>();
         public DbSet<QueryResult> QueryResults => Set<QueryResult>();
         public DbSet<QueryRelevantDocument> QueryRelevantDocuments => Set<QueryRelevantDocument>();
+        public DbSet<Experiment> Experiments => Set<Experiment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
