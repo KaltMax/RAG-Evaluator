@@ -3,18 +3,21 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Services.Interfaces;
 
-namespace RagEvaluator.Application.Services
+namespace RagEvaluator.Application.Workers
 {
-    public class ExperimentBackgroundService : BackgroundService
+    /// <summary>
+    /// Background service that continuously processes experiments from the ExperimentQueue. 
+    /// </summary>
+    public class ExperimentWorker : BackgroundService
     {
         private readonly ExperimentQueue _queue;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly ILogger<ExperimentBackgroundService> _logger;
+        private readonly ILogger<ExperimentWorker> _logger;
 
-        public ExperimentBackgroundService(
+        public ExperimentWorker(
             ExperimentQueue queue,
             IServiceScopeFactory scopeFactory,
-            ILogger<ExperimentBackgroundService> logger)
+            ILogger<ExperimentWorker> logger)
         {
             _queue = queue;
             _scopeFactory = scopeFactory;

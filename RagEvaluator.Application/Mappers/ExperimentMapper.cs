@@ -3,6 +3,9 @@ using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Application.Mappers
 {
+    /// <summary>
+    /// Extension methods for mapping Experiment entities to DTOs.
+    /// </summary>
     public static class ExperimentMapper
     {
         public static ExperimentSummaryResponse ToSummary(this Experiment experiment)

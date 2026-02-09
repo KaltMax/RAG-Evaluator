@@ -5,6 +5,9 @@ using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Infrastructure.Data.Configurations
 {
+    /// <summary>
+    /// EF Core configuration for the Experiment entity,
+    /// </summary>
     public class ExperimentConfiguration : IEntityTypeConfiguration<Experiment>
     {
         public void Configure(EntityTypeBuilder<Experiment> builder)

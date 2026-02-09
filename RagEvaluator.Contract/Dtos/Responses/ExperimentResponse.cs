@@ -1,5 +1,9 @@
 namespace RagEvaluator.Contract.Dtos.Responses
 {
+    /// <summary>
+    /// Represents the detailed information about an experiment, 
+    /// including its configuration, progress, query groups, and aggregated metrics.
+    /// </summary>
     public class ExperimentResponse
     {
         public Guid Id { get; set; }
@@ -28,6 +32,9 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public ExperimentAggregatedMetrics? OverallMetrics { get; set; }
     }
 
+    /// <summary>
+    /// Represents the progress of an experiment, including total queries, completed queries, and annotated queries.
+    /// </summary>
     public class ExperimentProgress
     {
         public int Total { get; set; }
@@ -35,6 +42,9 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public int Annotated { get; set; }
     }
 
+    /// <summary>
+    /// Represents a group of queries in an experiment that share the same question, language, and top-k parameters.
+    /// </summary>
     public class ExperimentQueryGroupResponse
     {
         public required string Question { get; set; }
@@ -45,6 +55,9 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public ExperimentAggregatedMetrics? Metrics { get; set; }
     }
 
+    /// <summary>
+    /// Represents the aggregated metrics of an experiment or a query group.
+    /// </summary>
     public class ExperimentAggregatedMetrics
     {
         public MetricAggregate? ResponseTimeMs { get; set; }
@@ -56,6 +69,9 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public double? LanguageSwitchingRate { get; set; }
     }
 
+    /// <summary>
+    /// Represents the mean and standard deviation of a metric, used for aggregating experiment results.
+    /// </summary>
     public class MetricAggregate
     {
         public double Mean { get; set; }

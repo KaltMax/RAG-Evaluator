@@ -20,6 +20,11 @@ namespace RagEvaluator.API.Controllers
             _experimentService = experimentService;
         }
 
+        /// <summary>
+        /// Creates a new experiment and starts background processing of all queries
+        /// </summary>
+        /// <param name="request">Experiment name, queries, and repeat count</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost]
         public async Task<IActionResult> CreateExperimentAsync([FromBody] CreateExperimentRequest request, CancellationToken cancellationToken)
         {
@@ -46,6 +51,9 @@ namespace RagEvaluator.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves all experiments with progress and configuration summary
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
         {
@@ -53,6 +61,11 @@ namespace RagEvaluator.API.Controllers
             return Ok(experiments);
         }
 
+        /// <summary>
+        /// Retrieves an experiment by ID with query groups and aggregated metrics
+        /// </summary>
+        /// <param name="id">The unique identifier of the experiment</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
@@ -66,6 +79,11 @@ namespace RagEvaluator.API.Controllers
             return Ok(experiment);
         }
 
+        /// <summary>
+        /// Deletes an experiment by ID (linked queries are preserved via SET NULL)
+        /// </summary>
+        /// <param name="id">The unique identifier of the experiment</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
         {

@@ -1,5 +1,8 @@
 namespace RagEvaluator.Contract.Dtos.Responses
 {
+    /// <summary>
+    /// Represents a summary of an experiment, including its ID, name, status, progress, and configuration snapshot.
+    /// </summary>
     public class ExperimentSummaryResponse
     {
         public Guid Id { get; set; }

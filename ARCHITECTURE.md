@@ -37,8 +37,8 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 ┌─────────────────────────────────────────────────────────────┐
 │                  RagEvaluator.Application                   │
 │            (Business Logic & Orchestration)                 │
-│  Services: RagService, DocumentService, QueryService,       │
-│            MetricsService, SettingsService                  │
+│ Services: RagService, DocumentService, QueryService,        │
+│       MetricsService, SettingsService, ExperimentService    │
 └──────────┬────────────────────────────────┬─────────────────┘
            │                                │
            ↓                                ↓
@@ -67,6 +67,7 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
                                 │ • DocumentRepository       │
                                 │ • DocumentChunkRepository  │
                                 │ • QueryRepository          │
+                                │ • ExperimentRepository     │
                                 └────────────────────────────┘
 ```
 
@@ -80,12 +81,13 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 
 ```
 RAG-Evaluator/
-├── RagEvaluator.API/                    # ASP.NET Core Web API
+├── RagEvaluator.API/                           # ASP.NET Core Web API
 │   ├── Controllers/
-│   │   ├── DocumentController.cs        # Upload PDFs, manage docs
-│   │   ├── HealthController.cs          # Service health check
-│   │   ├── QueryController.cs           # Ask questions, RAG queries
-│   │   └── SettingsController.cs        # Runtime RAG configuration
+│   │   ├── DocumentController.cs               # Upload PDFs, manage docs
+│   │   ├── ExperimentController.cs             # Experiment batch processing
+│   │   ├── HealthController.cs                 # Service health check
+│   │   ├── QueryController.cs                  # Ask questions, RAG queries
+│   │   └── SettingsController.cs               # Runtime RAG configuration
 │   ├── Middleware/
 │   │   └── ExceptionHandlingMiddleware.cs
 │   ├── Filters/
@@ -94,109 +96,123 @@ RAG-Evaluator/
 │   ├── appsettings.json
 │   └── Dockerfile
 │
-├── RagEvaluator.Application/            # Business Logic & Orchestration
+├── RagEvaluator.Application/                   # Business Logic & Orchestration
 │   ├── Mappers/
-│   │   ├── DocumentMapper.cs            # Document → DTO mapping
-│   │   └── QueryMapper.cs               # Query → DTO mapping
-│   │   └── PromptTemplateResolver.cs    # Prompt template resolution by language
+│   │   ├── DocumentMapper.cs                   # Document → DTO mapping
+│   │   ├── ExperimentMapper.cs                 # Experiment → DTO mapping with metrics aggregation
+│   │   ├── QueryMapper.cs                      # Query → DTO mapping
+│   │   └── PromptTemplateResolver.cs           # Prompt template resolution by language
 │   ├── Services/
 │   │   ├── Interfaces/
 │   │   │   ├── IRagService.cs
 │   │   │   ├── IDocumentService.cs
+│   │   │   ├── IExperimentService.cs           # Experiment batch processing
 │   │   │   ├── IQueryService.cs
-│   │   │   ├── IMetricsService.cs       # Similarity & evaluation metrics
-│   │   │   └── ISettingsService.cs      # Runtime settings management
-│   │   ├── RagService.cs                # Core RAG orchestration
-│   │   ├── DocumentService.cs           # Document processing & management
-│   │   ├── QueryService.cs              # Query handling & persistence
-│   │   ├── MetricsService.cs            # Cosine similarity, MRR, Precision@K, etc.
-│   │   └── SettingsService.cs           # Runtime RAG configuration management
+│   │   │   ├── IMetricsService.cs              # Similarity & evaluation metrics
+│   │   │   └── ISettingsService.cs             # Runtime settings management
+│   │   ├── RagService.cs                       # Core RAG orchestration
+│   │   ├── DocumentService.cs                  # Document processing & management
+│   │   ├── ExperimentService.cs                # Experiment creation, processing & aggregation
+│   │   ├── QueryService.cs                     # Query handling & persistence
+│   │   ├── MetricsService.cs                   # Cosine similarity, MRR, Precision@K, etc.
+│   │   └── SettingsService.cs                  # Runtime RAG configuration management
+│   ├── Workers/
+│   │   ├── ExperimentWorker.cs                 # BackgroundService for async experiment processing
+│   │   └── ExperimentQueue.cs                  # Channel<T>-based in-memory queue
 │   └── Validators/
 │
-├── RagEvaluator.Contract/               # DTOs, Abstractions & Shared Contracts
+├── RagEvaluator.Contract/                      # DTOs, Abstractions & Shared Contracts
 │   ├── Abstractions/
 │   │   ├── Services/
-│   │   │   ├── IChatService.cs          # Chat/LLM service interface
-│   │   │   ├── IEmbeddingService.cs     # Embedding generation interface
-│   │   │   ├── IFileStorageService.cs   # File storage interface
-│   │   │   ├── IPdfLoader.cs            # PDF loading interface
-│   │   │   └── ITextChunker.cs          # Text chunking interface
+│   │   │   ├── IChatService.cs                 # Chat/LLM service interface
+│   │   │   ├── IEmbeddingService.cs            # Embedding generation interface
+│   │   │   ├── IFileStorageService.cs          # File storage interface
+│   │   │   ├── IPdfLoader.cs                   # PDF loading interface
+│   │   │   └── ITextChunker.cs                 # Text chunking interface
 │   │   └── Data/
-│   │       ├── IDocumentRepository.cs   # Document repository interface
-│   │       ├── IDocumentChunkRepository.cs # Vector chunk repository interface
-│   │       └── IQueryRepository.cs      # Query repository interface
+│   │       ├── IDocumentRepository.cs          # Document repository interface
+│   │       ├── IDocumentChunkRepository.cs     # Vector chunk repository interface
+│   │       ├── IExperimentRepository.cs        # Experiment repository interface
+│   │       └── IQueryRepository.cs             # Query repository interface
 │   ├── Configurations/
-│   │   ├── FileStorageConfiguration.cs  # File storage settings
+│   │   ├── FileStorageConfiguration.cs         # File storage settings
 │   │   └── RagConfiguration.cs
 │   ├── Dtos/
 │   │   ├── Requests/
 │   │   │   ├── AskQuestionRequest.cs
 │   │   │   ├── UploadDocumentRequest.cs
 │   │   │   ├── AnnotateResultsRequest.cs       # Relevance + response quality + ground truth annotations
+│   │   │   ├── CreateExperimentRequest.cs      # Experiment batch creation (queries + repeat count)
 │   │   │   └── UpdateSettingsRequest.cs        # Runtime settings partial update
 │   │   └── Responses/
 │   │       ├── QueryResponse.cs
-│   │       ├── QuerySummaryResponse.cs  # Query history list item
+│   │       ├── QuerySummaryResponse.cs         # Query history list item
 │   │       ├── SearchResultDto.cs
 │   │       ├── DocumentResponse.cs
-│   │       ├── DocumentChunkResponse.cs # Document chunk details
-│   │       ├── DocumentFileInfo.cs      # File info for downloads
-│   │       ├── ReprocessResponse.cs     # Reprocess result (docs processed, chunks created)
-│   │       └── SettingsResponse.cs      # Current settings + available options
+│   │       ├── DocumentChunkResponse.cs        # Document chunk details
+│   │       ├── DocumentFileInfo.cs             # File info for downloads
+│   │       ├── ExperimentResponse.cs           # Full experiment with query groups & aggregated metrics
+│   │       ├── ExperimentSummaryResponse.cs    # Experiment list item with progress & config
+│   │       ├── ReprocessResponse.cs            # Reprocess result (docs processed, chunks created)
+│   │       └── SettingsResponse.cs             # Current settings + available options
 │   └── Logger/
 │       ├── ILoggerWrapper.cs
 │       └── LoggerWrapper.cs
 │
-├── RagEvaluator.Domain/                 # Domain Models & Business Rules
+├── RagEvaluator.Domain/                        # Domain Models & Business Rules
 │   ├── Entities/
-│   │   ├── Document.cs                  # Document aggregate root
-│   │   ├── DocumentSummary.cs           # Lightweight document (for list views)
-│   │   ├── DocumentChunk.cs             # Text chunk with vector embedding
-│   │   ├── Query.cs                     # User query entity
-│   │   ├── QueryResult.cs               # Retrieved chunk result with relevance
-│   │   └── QueryRelevantDocument.cs     # Ground truth relevant document for Recall@K
+│   │   ├── Document.cs                         # Document aggregate root
+│   │   ├── DocumentSummary.cs                  # Lightweight document (for list views)
+│   │   ├── DocumentChunk.cs                    # Text chunk with vector embedding
+│   │   ├── Experiment.cs                       # Experiment with config snapshot & progress
+│   │   ├── Query.cs                            # User query entity
+│   │   ├── QueryResult.cs                      # Retrieved chunk result with relevance
+│   │   └── QueryRelevantDocument.cs             # Ground truth relevant document for Recall@K
 │   ├── Enums/
-│   │   ├── DocumentStatus.cs            # Document processing status
-│   │   ├── ChunkingStrategy.cs          # Chunking strategy selection (FixedSize, Semantic)
-│   │   ├── PromptTemplate.cs            # Prompt template types (Basic, Instructed, LanguageAware)
-│   │   ├── RelevanceGrade.cs            # Graded relevance scale (0-3) for NDCG
-│   │   └── ResponseQuality.cs           # LLM response quality evaluation (0-3)
+│   │   ├── DocumentStatus.cs                   # Document processing status
+│   │   ├── ExperimentStatus.cs                 # Experiment status (Running, Completed)
+│   │   ├── ChunkingStrategy.cs                 # Chunking strategy selection (FixedSize, Semantic)
+│   │   ├── PromptTemplate.cs                   # Prompt template types (Basic, Instructed, LanguageAware)
+│   │   ├── RelevanceGrade.cs                   # Graded relevance scale (0-3) for NDCG
+│   │   └── ResponseQuality.cs                  # LLM response quality evaluation (0-3)
 │   ├── ValueObjects/
-│   │   ├── SearchResult.cs              # Search result with similarity score
-│   │   ├── ChunkSearchMatch.cs          # Raw chunk match (before similarity calculation)
-│   │   └── QueryMetrics.cs              # RAG metrics container (MRR, P@K, R@K, NDCG@K)
+│   │   ├── SearchResult.cs                     # Search result with similarity score
+│   │   ├── ChunkSearchMatch.cs                 # Raw chunk match (before similarity calculation)
+│   │   └── QueryMetrics.cs                     # RAG metrics container (MRR, P@K, R@K, NDCG@K)
 │   └── Exceptions/
 │       ├── DocumentNotFoundException.cs
 │       └── VectorStoreException.cs
 │
-├── RagEvaluator.Infrastructure/         # Data Access & External Services
+├── RagEvaluator.Infrastructure/                # Data Access & External Services
 │   ├── Data/
-│   │   ├── ApplicationDbContext.cs      # EF Core DbContext with pgvector
-│   │   ├── DocumentRepository.cs        # Document repository implementation
+│   │   ├── ApplicationDbContext.cs             # EF Core DbContext with pgvector
+│   │   ├── DocumentRepository.cs               # Document repository implementation
 │   │   ├── Repositories/
-│   │   │   ├── DocumentChunkRepository.cs # Vector chunk repository with pgvector
-│   │   │   └── QueryRepository.cs       # Query persistence repository
+│   │   │   ├── DocumentChunkRepository.cs      # Vector chunk repository with pgvector
+│   │   │   ├── ExperimentRepository.cs         # Experiment persistence repository
+│   │   │   └── QueryRepository.cs              # Query persistence repository
 │   │   ├── Configurations/
 │   │   │   ├── DocumentConfiguration.cs
-│   │   │   ├── DocumentChunkConfiguration.cs # pgvector mapping
-│   │   │   ├── QueryConfiguration.cs    # Query entity mapping
-│   │   │   ├── QueryResultConfiguration.cs # QueryResult entity mapping
+│   │   │   ├── DocumentChunkConfiguration.cs   # pgvector mapping
+│   │   │   ├── ExperimentConfiguration.cs      # Experiment entity mapping
+│   │   │   ├── QueryConfiguration.cs           # Query entity mapping
+│   │   │   ├── QueryResultConfiguration.cs     # QueryResult entity mapping
 │   │   │   └── QueryRelevantDocumentConfiguration.cs # Ground truth mapping
 │   │   └── Migrations/
 │   └── Services/
-│       ├── LocalFileStorageService.cs   # Local file system storage
-│       ├── PdfPigLoader.cs              # PDF text extraction (PdfPig)
-│       ├── FixedSizeTextChunker.cs      # Fixed-size text splitting
-│       ├── SemanticTextChunker.cs      # Embedding-based semantic splitting
-│       ├── OllamaChatService.cs         # Ollama chat service
-│       └── OllamaEmbeddingService.cs    # Ollama embedding service
+│       ├── LocalFileStorageService.cs          # Local file system storage
+│       ├── PdfPigLoader.cs                     # PDF text extraction (PdfPig)
+│       ├── FixedSizeTextChunker.cs             # Fixed-size text splitting
+│       ├── SemanticTextChunker.cs              # Embedding-based semantic splitting
+│       ├── OllamaChatService.cs                # Ollama chat service
+│       └── OllamaEmbeddingService.cs           # Ollama embedding service
 │
-├── RagEvaluator.WebUi/                  # React Frontend (Vite)
+├── RagEvaluator.WebUi/                         # React Frontend (Vite)
 │   ├── src/
 │   │   ├── components/
 │   │   ├── assets/
 │   │   ├── api/
-|   |   ├── utils/
+│   │   ├── utils/
 │   │   ├── index.css
 │   │   ├── App.jsx
 │   │   └── main.jsx
@@ -204,7 +220,7 @@ RAG-Evaluator/
 │   ├── vite.config.js
 │   └── Dockerfile
 │
-├── RagEvaluator.Tests/                  # Test Project
+├── RagEvaluator.Tests/                         # Test Project
 │
 ├── docker-compose.yml
 ├── .env.example
@@ -280,6 +296,13 @@ RAG-Evaluator/
 - `ISettingsService` - Runtime RAG configuration management
   - `GetSettings()` - Returns current configuration with available options for UI dropdowns
   - `UpdateSettingsAsync()` - Validates and applies partial configuration updates (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold); triggers embedding service reinitialization when the model changes
+- `IExperimentService` - Experiment batch processing and aggregation
+  - `CreateExperimentAsync()` - Creates an experiment entity with config snapshot, enqueues for background processing
+  - `ProcessExperimentAsync()` - Sequentially runs all queries × repeatCount via `IRagService.AskQuestionAsync()`, links resulting queries to the experiment, updates progress
+  - `GetByIdAsync()` - Returns experiment with query groups and on-the-fly aggregated metrics (mean/stddev response time, mean retrieval metrics, response quality distribution, language switching rate)
+  - `GetAllAsync()` / `DeleteAsync()` - List and delete operations
+- `ExperimentWorker` - `BackgroundService` that reads from `ExperimentQueue` and delegates to `IExperimentService.ProcessExperimentAsync()`. Processes one experiment at a time (sequential). Located in `Workers/` to separate background processing from business logic services
+- `ExperimentQueue` - In-memory `Channel<T>`-based queue for passing experiment work items (experiment ID + query definitions) from the API request to the background worker. Located in `Workers/`
 
 **Dependencies**: → Domain, Contract
 
@@ -299,10 +322,10 @@ RAG-Evaluator/
 **Key Components**:
 
 - `Abstractions/Services/` - Service interfaces (IChatService, IEmbeddingService with ReinitializeAsync, IFileStorageService, IPdfLoader, ITextChunker)
-- `Abstractions/Data/` - Data access interfaces (IVectorStore, IDocumentRepository)
+- `Abstractions/Data/` - Data access interfaces (IVectorStore, IDocumentRepository, IExperimentRepository)
 - `Configurations/` - Configuration models (RagConfiguration with runtime-mutable settings, FileStorageConfiguration)
-- `Dtos/Requests/` - API request DTOs (AskQuestionRequest, UploadDocumentRequest, AnnotateResultsRequest, UpdateSettingsRequest)
-- `Dtos/Responses/` - API response DTOs (QueryResponse with full query details/sources/metrics, QuerySummaryResponse for history listing, DocumentResponse, ReprocessResponse, SettingsResponse, etc.)
+- `Dtos/Requests/` - API request DTOs (AskQuestionRequest, UploadDocumentRequest, AnnotateResultsRequest, CreateExperimentRequest, UpdateSettingsRequest)
+- `Dtos/Responses/` - API response DTOs (QueryResponse, QuerySummaryResponse, DocumentResponse, ExperimentResponse with aggregated metrics, ExperimentSummaryResponse, ReprocessResponse, SettingsResponse, etc.)
 - `Logger/` - Logger abstraction and implementation
 
 **Dependencies**: → Domain (for value objects like SearchResult used in interfaces)
@@ -320,8 +343,8 @@ RAG-Evaluator/
 
 **Key Components**:
 
-- Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Query`, `QueryResult`, `QueryRelevantDocument`
-- Enums: `DocumentStatus`, `ChunkingStrategy`, `PromptTemplate`, `RelevanceGrade`, `ResponseQuality`
+- Entities: `Document`, `DocumentSummary`, `DocumentChunk`, `Experiment`, `Query`, `QueryResult`, `QueryRelevantDocument`
+- Enums: `DocumentStatus`, `ExperimentStatus`, `ChunkingStrategy`, `PromptTemplate`, `RelevanceGrade`, `ResponseQuality`
 - Value Objects: `SearchResult`, `ChunkSearchMatch`
 - Domain exceptions: `DocumentNotFoundException`, `VectorStoreException`
 
@@ -348,6 +371,7 @@ RAG-Evaluator/
 - `ResponseQuality` - LLM response quality evaluation (nullable, `ResponseQuality` enum: CorrectAndComplete=0, VagueOrIncomplete=1, Incorrect=2, Hallucinated=3)
 - `HasLanguageSwitching` - Flag indicating unexpected language switching in response (nullable)
 - `MRR`, `PrecisionAtK`, `RecallAtK`, `NDCGAtK` - Retrieval metrics (nullable, calculated after relevance labeling)
+- `ExperimentId` - Nullable FK to `Experiment` (queries can exist independently)
 - `Results` - Navigation to `QueryResult` collection
 - `RelevantDocuments` - Navigation to `QueryRelevantDocument` collection (ground truth for Recall@K)
 
@@ -361,6 +385,18 @@ RAG-Evaluator/
 - `QueryId`, `DocumentId` - Composite primary key
 - `Query` - Navigation property to parent Query
 - Used as ground truth for Recall@K calculation: tracks which documents should ideally contain relevant information for a query
+
+**Experiment Entity Fields**:
+- `Id`, `Name`, `RepeatCount` - Experiment parameters
+- `Status` - `ExperimentStatus` enum (Running, Completed)
+- `CreatedAt`, `CompletedAt` - Timing
+- `EmbeddingModel`, `ChunkingStrategy`, `ChatModel`, `ChunkSize`, `ChunkOverlap`, `SimilarityThreshold`, `PromptTemplate` - Config snapshot (captured at creation, intentional denormalization for point-in-time accuracy)
+- `TotalQueryCount`, `CompletedQueryCount` - Progress tracking
+- `Queries` - Navigation to linked `Query` collection
+
+**Query ↔ Experiment Relationship**:
+- `Query.ExperimentId` (nullable FK) - Queries can exist independently or belong to an experiment
+- `ON DELETE SET NULL` - Deleting an experiment preserves the queries in history
 
 **Dependencies**: None (pure domain logic)
 
@@ -389,7 +425,10 @@ RAG-Evaluator/
 - `PdfPigLoader` - PDF text extraction using PdfPig with ContentOrderTextExtractor for proper reading order, white space normalization, and basic cleanup
 - `FixedSizeTextChunker` - Text chunking with configurable size and overlap (baseline strategy)
 - `SemanticTextChunker` - Embedding-based semantic chunking that splits text at topic boundaries detected via cosine similarity drops between consecutive line embeddings. Uses `IEmbeddingService` to embed each line and groups lines into chunks while their similarity stays above `SimilarityThreshold`
+- `DocumentRepository` - Standard EF Core repository for Document entities
 - `DocumentChunkRepository` - PostgreSQL vector store with pgvector for similarity search
+- `QueryRepository` - Repository for Query entities with related QueryResults and QueryRelevantDocuments
+- `ExperimentRepository` - Experiment persistence with eager loading of queries and their results
 - `OllamaEmbeddingService` - Ollama embedding generation via Semantic Kernel, supports runtime reinitialization for model switching
 - `OllamaChatService` - Ollama chat completion via Semantic Kernel
 
@@ -399,7 +438,7 @@ RAG-Evaluator/
 - Similarity search uses raw SQL with pgvector's cosine distance operator (`<=>`) for ordering
 - Repository returns `ChunkSearchMatch` with raw embeddings; similarity scores calculated by `MetricsService` in Application layer
 
-**Dependencies**: → Domain, Application
+**Dependencies**: → Domain, Contract
 
 ### 6. WebUI Layer (`RagEvaluator.WebUi`)
 
@@ -478,15 +517,43 @@ RAG-Evaluator/
    → 12. Return QueryResponse with answer + sources (includes similarity, fileName, chunkingStrategy, embeddingModel)
 ```
 
+### Experiment Processing Pipeline
+
+```
+1. Experiment Submission (Controller)
+   → 2. ExperimentService.CreateExperimentAsync() (Application Layer)
+      → 3. Create Experiment entity with config snapshot from current RagConfiguration
+      → 4. Persist to database (status: Running)
+      → 5. Enqueue (experimentId, queries) to ExperimentQueue (Channel<T>)
+   → 6. Return 202 Accepted with ExperimentSummaryResponse
+
+7. ExperimentWorker picks up work item from queue
+   → 8. ExperimentService.ProcessExperimentAsync()
+      → 9. For each repeat (1..repeatCount):
+         → For each query in queries:
+            → 10. RagService.AskQuestionAsync() - Runs full RAG pipeline
+            → 11. Load resulting Query, set ExperimentId, save
+            → 12. Increment CompletedQueryCount, update experiment
+      → 13. Set status to Completed, set CompletedAt
+
+14. GET /api/experiments/{id} → ExperimentMapper.ToResponse()
+    → Groups queries by (Question, Language, TopK)
+    → Computes aggregated metrics per group and overall:
+       • Mean/StdDev response time
+       • Mean MRR, Precision@K, Recall@K, NDCG@K
+       • Response quality distribution (categorical count)
+       • Language switching rate
+```
+
 ### Dependency Inversion in Action
 
 The Contract layer defines **what** needs to be done (interface abstractions):
 - Service interfaces: `IChatService`, `IEmbeddingService`, `IFileStorageService`, `IPdfLoader`, `ITextChunker`
-- Data interfaces: `IDocumentRepository`, `IDocumentChunkRepository`
+- Data interfaces: `IDocumentRepository`, `IDocumentChunkRepository`, `IExperimentRepository`
 
 The Infrastructure layer defines **how** it's done (concrete implementations):
 - `OllamaChatService`, `OllamaEmbeddingService`, `LocalFileStorageService`, `PdfPigLoader`, `FixedSizeTextChunker`, `SemanticTextChunker`
-- `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration)
+- `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration), `ExperimentRepository`
 
 The Application layer consumes these abstractions:
 - `RagService` uses IChatService, PromptTemplateResolver
@@ -494,6 +561,7 @@ The Application layer consumes these abstractions:
 - `QueryService` uses IQueryRepository, IEmbeddingService, IQueryRepository
 - `MetricsService` provides similarity and evaluation metric calculations (CosineSimilarity, MRR, Precision@K, Recall@K with ground truth, NDCG@K)
 - `SettingsService` uses IEmbeddingService (for reinitialization on model change)
+- `ExperimentService` uses IRagService, IExperimentRepository, IQueryRepository
 - No direct dependency on Infrastructure implementations
 
 This allows:
@@ -539,6 +607,25 @@ CREATE TABLE DocumentChunks (
 );
 CREATE INDEX IX_DocumentChunks_DocumentId ON DocumentChunks(DocumentId);
 
+-- Experiments table (batch experiment with config snapshot)
+CREATE TABLE Experiments (
+    Id UUID PRIMARY KEY,
+    Name VARCHAR(200) NOT NULL,
+    RepeatCount INT NOT NULL,
+    Status TEXT NOT NULL,                -- ExperimentStatus enum: 'Running', 'Completed'
+    CreatedAt TIMESTAMP NOT NULL,
+    CompletedAt TIMESTAMP,
+    EmbeddingModel VARCHAR(100) NOT NULL,
+    ChunkingStrategy VARCHAR(100) NOT NULL,
+    ChatModel VARCHAR(100) NOT NULL,
+    ChunkSize INT NOT NULL,
+    ChunkOverlap INT NOT NULL,
+    SimilarityThreshold DOUBLE PRECISION NOT NULL,
+    PromptTemplate VARCHAR(100) NOT NULL,
+    TotalQueryCount INT NOT NULL,
+    CompletedQueryCount INT NOT NULL
+);
+
 -- Queries table (query history with response and metrics)
 CREATE TABLE Queries (
     Id UUID PRIMARY KEY,
@@ -553,6 +640,7 @@ CREATE TABLE Queries (
     Answer TEXT NOT NULL,
     QueryEmbedding VECTOR NOT NULL,      -- pgvector type for offline analysis
     ResponseTimeMs INT NOT NULL,
+    ExperimentId UUID REFERENCES Experiments(Id) ON DELETE SET NULL,  -- Nullable FK to experiment
     ResponseQuality INT,                 -- Nullable (ResponseQuality enum: 0=CorrectAndComplete, 1=VagueOrIncomplete, 2=Incorrect, 3=Hallucinated)
     HasLanguageSwitching BOOLEAN,        -- Nullable (language switching detection)
     MRR DOUBLE PRECISION,                -- Nullable metrics (calculated after relevance labeling)
@@ -560,6 +648,7 @@ CREATE TABLE Queries (
     RecallAtK DOUBLE PRECISION,
     NDCGAtK DOUBLE PRECISION
 );
+CREATE INDEX IX_Queries_ExperimentId ON Queries(ExperimentId);
 
 -- QueryResults table (retrieved chunks with relevance labeling)
 CREATE TABLE QueryResults (
@@ -623,6 +712,15 @@ GET    /api/query/{id}              # Get specific query (IMPLEMENTED)
 PATCH  /api/query/{id}/results      # Annotate results with relevance, response quality, ground truth documents, and calculate metrics (IMPLEMENTED)
 ```
 
+#### Experiments API
+
+```
+POST   /api/experiments              # Create experiment (batch queries × repeatCount, background processing) (IMPLEMENTED)
+GET    /api/experiments              # List all experiments with progress and config (IMPLEMENTED)
+GET    /api/experiments/{id}         # Get experiment with query groups and aggregated metrics (IMPLEMENTED)
+DELETE /api/experiments/{id}         # Delete experiment (queries preserved via SET NULL) (IMPLEMENTED)
+```
+
 #### Settings API
 
 ```
@@ -636,7 +734,7 @@ PATCH  /api/settings                 # Update runtime RAG configuration (partial
 GET    /api/health                   # Check if RAG services are ready (IMPLEMENTED)
 ```
 
-**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, ground truth document selection, and metrics calculation (including proper Recall@K with ground truth) are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence. Runtime configuration is fully implemented via the Settings API with support for multiple embedding models, chunking strategies (`FixedSize`, `Semantic`), prompt templates (`Basic`, `Instructed`, `LanguageAware`), and numeric parameters (chunk size, chunk overlap, similarity threshold).
+**Implementation Status**: Core RAG functionality (upload and query) is fully implemented. Relevance annotation, response quality evaluation, ground truth document selection, and metrics calculation (including proper Recall@K with ground truth) are fully implemented. Document CRUD endpoints (list, get, delete, download, chunks) are fully implemented. Query history endpoints are fully implemented with persistence. Runtime configuration is fully implemented via the Settings API with support for multiple embedding models, chunking strategies (`FixedSize`, `Semantic`), prompt templates (`Basic`, `Instructed`, `LanguageAware`), and numeric parameters (chunk size, chunk overlap, similarity threshold). Experiment batch processing is fully implemented with background execution, progress tracking, and on-the-fly aggregated metrics.
 
 ### Request/Response Examples
 
@@ -815,6 +913,7 @@ Containers communicate via Docker's internal network:
 - [x] **Runtime Settings API**: `GET/PATCH /api/settings` endpoints for reading and updating RAG configuration at runtime (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold) with validation and available options for UI dropdowns
 - [x] **Settings Page**: WebUI page for runtime configuration of embedding model, chunking strategy (with chunk size/overlap for FixedSize, similarity threshold for Semantic), and prompt template selection with prompt text preview. Automatically triggers document reprocessing when embedding/chunking settings change
 - [x] **Document Reprocessing**: `POST /api/documents/reprocess` endpoint re-chunks and re-embeds all documents using stored content and current configuration. Triggered automatically from Settings page or callable via API
+- [x] **Experiment Batch Processing**: `POST /api/experiments` endpoint accepts a list of queries and a repeat count, executes them sequentially in the background via `BackgroundService` + `Channel<T>` queue, links resulting queries to the experiment, and provides per-group and overall aggregated metrics (mean/stddev response time, mean retrieval metrics, response quality distribution, language switching rate) once annotations are complete. Config snapshot captured at experiment creation for reproducibility
 
 ### In Progress / Planned
 - [ ] Refine which embedding models will be used and refine the prompt templates

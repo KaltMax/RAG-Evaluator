@@ -4,6 +4,9 @@ using RagEvaluator.Domain.Entities;
 
 namespace RagEvaluator.Infrastructure.Data.Repositories
 {
+    /// <summary>
+    /// EF Core implementation of experiment repository using PostgreSQL.
+    /// </summary>
     public class ExperimentRepository : IExperimentRepository
     {
         private readonly ApplicationDbContext _context;

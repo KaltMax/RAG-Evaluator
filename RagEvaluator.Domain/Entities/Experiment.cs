@@ -2,6 +2,10 @@ using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Domain.Entities
 {
+    /// <summary>
+    /// Represents an experiment that runs a set of test queries multiple times against a specific RAG configuration
+    /// to gather statistically reliable evaluation data.
+    /// </summary>
     public class Experiment
     {
         public Guid Id { get; init; }

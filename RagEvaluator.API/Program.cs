@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Application.Workers;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Logger;
@@ -74,7 +75,7 @@ namespace RagEvaluator.API
 
             // Experiment background processing
             builder.Services.AddSingleton<ExperimentQueue>();
-            builder.Services.AddHostedService<ExperimentBackgroundService>();
+            builder.Services.AddHostedService<ExperimentWorker>();
 
             // Add CORS for development
             builder.Services.AddCors(options =>

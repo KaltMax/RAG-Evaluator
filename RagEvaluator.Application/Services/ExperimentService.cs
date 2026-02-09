@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Application.Workers;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
@@ -10,6 +11,9 @@ using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Application.Services
 {
+    /// <summary>
+    /// Service for managing experiments, including creation, processing, retrieval, and deletion.
+    /// </summary>
     public class ExperimentService : IExperimentService
     {
         private readonly IExperimentRepository _experimentRepository;

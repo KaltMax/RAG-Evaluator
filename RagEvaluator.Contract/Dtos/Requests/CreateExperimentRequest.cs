@@ -2,6 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace RagEvaluator.Contract.Dtos.Requests
 {
+    /// <summary>
+    /// Represents a request to create a new experiment.
+    /// Contains the experiment name, repeat count, and a list of queries to be processed in the experiment.
+    /// </summary>
     public class CreateExperimentRequest
     {
         [Required]
@@ -17,6 +21,9 @@ namespace RagEvaluator.Contract.Dtos.Requests
         public required List<ExperimentQueryItem> Queries { get; set; }
     }
 
+    /// <summary>
+    /// Represents a single query item in an experiment, including the question, language, and top-k retrieval parameter.
+    /// </summary>
     public class ExperimentQueryItem
     {
         [Required]

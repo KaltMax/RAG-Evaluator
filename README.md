@@ -65,7 +65,7 @@ git add ollama-init.sh
 ```
 RAG-Evaluator/
 ├── RagEvaluator.API/               # ASP.NET Core Web API
-├── RagEvaluator.Application/       # Business logic & metrics (MetricsService)
+├── RagEvaluator.Application/       # Business logic, metrics & background processing
 ├── RagEvaluator.Contract/          # DTOs and contracts
 ├── RagEvaluator.Domain/            # Domain entities
 ├── RagEvaluator.Infrastructure/    # Data access & external services
@@ -107,7 +107,7 @@ RagEvaluator.Application
 
 RagEvaluator.Infrastructure
   → Domain
-  → Application
+  → Contract
 
 RagEvaluator.Domain
   → (No dependencies)
@@ -141,6 +141,12 @@ Once running, the API is available at `http://localhost:5000`:
 - `GET /api/query/{id}` - Get specific query details
 - `PATCH /api/query/{id}/results` - Annotate query results with relevance labels, response quality, ground truth documents, and calculate metrics
 
+### Experiments
+- `POST /api/experiments` - Create and start a new experiment (batch of queries × repeat count, runs in background)
+- `GET /api/experiments` - List all experiments with progress and config summary
+- `GET /api/experiments/{id}` - Get experiment details with query groups and aggregated metrics
+- `DELETE /api/experiments/{id}` - Delete an experiment
+
 ### Settings
 - `GET /api/settings` - Get current runtime RAG configuration and available options
 - `PATCH /api/settings` - Update runtime RAG configuration (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold)
@@ -151,7 +157,7 @@ Once running, the API is available at `http://localhost:5000`:
 ### Swagger UI
 - `http://localhost:5000/swagger` - Interactive API documentation and testing
 
-**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering with language selection. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. Query history including LLM responses, retrieved chunks, and query embeddings is persisted via the `Query` and `QueryResult` entities for reproducible evaluation. The `QueryResult` entity uses denormalized chunk data to preserve historical accuracy even when documents are re-chunked or deleted. Relevance annotation is supported via `PATCH /api/query/{id}/results` endpoint with a graded scale (`RelevanceGrade` enum: NotRelevant, MarginallyRelevant, FairlyRelevant, HighlyRelevant). Response quality evaluation is also supported with a `ResponseQuality` enum (CorrectAndComplete, VagueOrIncomplete, Incorrect, Hallucinated) and a language switching detection flag. Ground truth document selection enables proper Recall@K calculation by allowing users to specify which documents should ideally contain relevant information for a query. The frontend includes an annotation UI with relevance badges for each retrieved chunk, response quality evaluation buttons, ground truth document selector, and displays retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K, Response Time) after annotation submission. The frontend supports multi-file upload (up to 20 files) with per-file language selection. A dedicated `MetricsService` in the Application layer handles similarity calculations (cosine similarity) and provides retrieval evaluation metrics. Two chunking strategies are available: `FixedSize` (character-based with configurable size and overlap) and `Semantic` (embedding-based splitting at topic boundaries using cosine similarity between consecutive lines, configurable via `SimilarityThreshold`). The RAG system is fully configurable at runtime via the Settings API (`GET/PATCH /api/settings`), supporting multiple embedding models, chunking strategies (`FixedSize`, `Semantic`), prompt templates (`Basic`, `Instructed`, `LanguageAware`), and numeric parameters (chunk size, chunk overlap, similarity threshold). Prompt templates implement three strategies for cross-language evaluation: a basic English prompt, an English prompt with explicit language instruction, and a native-language prompt. The active embedding model can be hot-swapped at runtime with automatic service reinitialization. The Query History page displays all past queries with collapsible cards showing query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics. Pending queries can be annotated inline directly from the Query History page.
+**Current Implementation Status**: The core RAG functionality is fully implemented with document upload (including language selection and content extraction) and question answering with language selection. Document chunks are persisted in PostgreSQL using pgvector for efficient similarity search across multiple documents. Document management endpoints (list, get, delete, download) are fully implemented. Query history including LLM responses, retrieved chunks, and query embeddings is persisted via the `Query` and `QueryResult` entities for reproducible evaluation. The `QueryResult` entity uses denormalized chunk data to preserve historical accuracy even when documents are re-chunked or deleted. Relevance annotation is supported via `PATCH /api/query/{id}/results` endpoint with a graded scale (`RelevanceGrade` enum: NotRelevant, MarginallyRelevant, FairlyRelevant, HighlyRelevant). Response quality evaluation is also supported with a `ResponseQuality` enum (CorrectAndComplete, VagueOrIncomplete, Incorrect, Hallucinated) and a language switching detection flag. Ground truth document selection enables proper Recall@K calculation by allowing users to specify which documents should ideally contain relevant information for a query. The frontend includes an annotation UI with relevance badges for each retrieved chunk, response quality evaluation buttons, ground truth document selector, and displays retrieval metrics (MRR, Precision@K, Recall@K, NDCG@K, Response Time) after annotation submission. The frontend supports multi-file upload (up to 20 files) with per-file language selection. A dedicated `MetricsService` in the Application layer handles similarity calculations (cosine similarity) and provides retrieval evaluation metrics. Two chunking strategies are available: `FixedSize` (character-based with configurable size and overlap) and `Semantic` (embedding-based splitting at topic boundaries using cosine similarity between consecutive lines, configurable via `SimilarityThreshold`). The RAG system is fully configurable at runtime via the Settings API (`GET/PATCH /api/settings`), supporting multiple embedding models, chunking strategies (`FixedSize`, `Semantic`), prompt templates (`Basic`, `Instructed`, `LanguageAware`), and numeric parameters (chunk size, chunk overlap, similarity threshold). Prompt templates implement three strategies for cross-language evaluation: a basic English prompt, an English prompt with explicit language instruction, and a native-language prompt. The active embedding model can be hot-swapped at runtime with automatic service reinitialization. The Query History page displays all past queries with collapsible cards showing query details, system prompt, parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy), and evaluation metrics. Pending queries can be annotated inline directly from the Query History page. Experiment batch processing is supported via `POST /api/experiments`, which accepts a list of queries and a repeat count, executes them sequentially in the background using a `BackgroundService` with a `Channel<T>`-based queue, and provides aggregated metrics (mean/stddev response time, mean retrieval metrics, response quality distribution, language switching rate) per query group and overall once annotations are complete.
 
 ## Using the API
 
