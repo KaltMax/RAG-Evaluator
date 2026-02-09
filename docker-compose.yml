@@ -59,6 +59,7 @@ services:
       start_period: 60s
 
   ragevaluator-api:
+    image: ragevaluator-api
     container_name: ragevaluator-api
     user: "0:0"
     build:
@@ -91,6 +92,7 @@ services:
       - document_uploads:/app/uploads
 
   ragevaluator-web-ui:
+    image: ragevaluator-web-ui
     container_name: ragevaluator-web-ui
     build:
       context: ./RagEvaluator.WebUi
