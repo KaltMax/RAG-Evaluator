@@ -166,11 +166,14 @@ namespace RagEvaluator.Application.Services
                 : 0.0;
 
             // Calculate NDCG@K using RelevanceGrade if available, otherwise binary (1.0 for relevant, 0.0 for not)
-            var relevanceScores = orderedResults
-                .Select(r => r.RelevanceGrade.HasValue
-                    ? (double)(int)r.RelevanceGrade.Value
-                    : (r.IsRelevant == true ? 1.0 : 0.0))
-                .ToList();
+            double GetRelevanceScore(QueryResult r)
+            {
+                if (r.RelevanceGrade.HasValue)
+                    return (int)r.RelevanceGrade.Value;
+                return r.IsRelevant == true ? 1.0 : 0.0;
+            }
+
+            var relevanceScores = orderedResults.Select(GetRelevanceScore).ToList();
             var ndcgAtK = NormalizedDiscountedCumulativeGainAtK(relevanceScores, topK);
 
             return new QueryMetrics
