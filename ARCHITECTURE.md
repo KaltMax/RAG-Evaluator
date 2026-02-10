@@ -99,7 +99,8 @@ RAG-Evaluator/
 ├── RagEvaluator.Application/                   # Business Logic & Orchestration
 │   ├── Mappers/
 │   │   ├── DocumentMapper.cs                   # Document → DTO mapping
-│   │   ├── ExperimentMapper.cs                 # Experiment → DTO mapping with metrics aggregation
+│   │   ├── ExperimentMapper.cs                 # Experiment → DTO mapping
+│   │   ├── ExperimentMetricsAggregator.cs      # Experiment metrics aggregation (mean, stddev, distributions)
 │   │   ├── QueryMapper.cs                      # Query → DTO mapping
 │   │   └── PromptTemplateResolver.cs           # Prompt template resolution by language
 │   ├── Services/
@@ -538,7 +539,7 @@ RAG-Evaluator/
 
 14. GET /api/experiments/{id} → ExperimentMapper.ToResponse()
     → Groups queries by (Question, Language, TopK)
-    → Computes aggregated metrics per group and overall:
+    → ExperimentMetricsAggregator computes aggregated metrics per group and overall:
        • Mean/StdDev response time
        • Mean MRR, Precision@K, Recall@K, NDCG@K
        • Response quality distribution (categorical count)
