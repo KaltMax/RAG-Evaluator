@@ -24,19 +24,11 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(SettingsResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public ActionResult<SettingsResponse> GetSettings()
         {
-            try
-            {
-                var settings = _settingsService.GetSettings();
-                return Ok(settings);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving settings");
-                return StatusCode(500, new { error = "Failed to retrieve settings", message = ex.Message });
-            }
+            var settings = _settingsService.GetSettings();
+            return Ok(settings);
         }
 
         /// <summary>
@@ -47,25 +39,17 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token.</param>
         [HttpPatch]
         [ProducesResponseType(typeof(SettingsResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<SettingsResponse>> UpdateSettings([FromBody] UpdateSettingsRequest request, CancellationToken cancellationToken)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Invalid settings request received");
-                    return BadRequest(ModelState);
-                }
+                _logger.LogWarning("Invalid settings request received");
+                return BadRequest(ModelState);
+            }
 
-                var response = await _settingsService.UpdateSettingsAsync(request);
-                return Ok(response);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogError(ex, "Invalid settings update request");
-                return BadRequest(new { error = "Invalid settings update request", message = ex.Message });
-            }
+            var response = await _settingsService.UpdateSettingsAsync(request);
+            return Ok(response);
         }
     }
 }

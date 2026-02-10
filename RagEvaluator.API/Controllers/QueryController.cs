@@ -31,37 +31,24 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost]
         [ProducesResponseType(typeof(QueryResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
         public async Task<ActionResult<QueryResponse>> QueryAsync([FromBody] AskQuestionRequest request, CancellationToken cancellationToken)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Invalid query request received");
-                    return BadRequest(ModelState);
-                }
-
-                _logger.LogInformation("Processing query: {Question}", request.Question);
-
-                var result = await _ragService.AskQuestionAsync(request, cancellationToken);
-
-                _logger.LogInformation("Query processed successfully: {QueryId}", result.QueryId);
-
-                return Ok(result);
+                _logger.LogWarning("Invalid query request received");
+                return BadRequest(ModelState);
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogError(ex, "RAG service not initialized");
-                return StatusCode(503, new { error = "RAG service not available", message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing query");
-                return StatusCode(500, new { error = "Failed to process query", message = ex.Message });
-            }
+
+            _logger.LogInformation("Processing query: {Question}", request.Question);
+
+            var result = await _ragService.AskQuestionAsync(request, cancellationToken);
+
+            _logger.LogInformation("Query processed successfully: {QueryId}", result.QueryId);
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -69,19 +56,11 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         [HttpGet("history")]
         [ProducesResponseType(typeof(IEnumerable<QueryResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<QueryResponse>>> GetQueryHistoryAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                var queries = await _queryService.GetAllAsync(cancellationToken);
-                return Ok(queries);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving query history");
-                return StatusCode(500, new { error = "Failed to retrieve query history", message = ex.Message });
-            }
+            var queries = await _queryService.GetAllAsync(cancellationToken);
+            return Ok(queries);
         }
 
         /// <summary>
@@ -91,26 +70,18 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(QueryResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<QueryResponse>> GetQueryByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            try
+            var query = await _queryService.GetByIdAsync(id, cancellationToken);
+            if (query is null)
             {
-                var query = await _queryService.GetByIdAsync(id, cancellationToken);
-                if (query is null)
-                {
-                    _logger.LogWarning("Query not found: {QueryId}", id);
-                    return NotFound();
-                }
+                _logger.LogWarning("Query not found: {QueryId}", id);
+                return NotFound();
+            }
 
-                return Ok(query);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving query by ID: {QueryId}", id);
-                return StatusCode(500, new { error = "Failed to retrieve query", message = ex.Message });
-            }
+            return Ok(query);
         }
 
         /// <summary>
@@ -121,42 +92,29 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPatch("{queryId}/results")]
         [ProducesResponseType(typeof(QueryResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<QueryResponse>> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateResultsRequest request, CancellationToken cancellationToken)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var query = await _queryService.GetByIdAsync(queryId, cancellationToken);
-                if (query is null)
-                {
-                    _logger.LogWarning("Query not found for annotation: {QueryId}", queryId);
-                    return NotFound();
-                }
-
-                await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching, request.RelevantDocumentIds, cancellationToken);
-
-                _logger.LogInformation("Query results annotated and metrics calculated: {QueryId}", queryId);
-
-                var updatedQuery = await _queryService.GetByIdAsync(queryId, cancellationToken);
-                return Ok(updatedQuery);
+                return BadRequest(ModelState);
             }
-            catch (ArgumentException ex)
+
+            var query = await _queryService.GetByIdAsync(queryId, cancellationToken);
+            if (query is null)
             {
-                _logger.LogError(ex, "Invalid argument while annotating query results: {QueryId}", queryId);
-                return BadRequest(new { error = ex.Message });
+                _logger.LogWarning("Query not found for annotation: {QueryId}", queryId);
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error annotating query results: {QueryId}", queryId);
-                return StatusCode(500, new { error = "Failed to annotate results", message = ex.Message });
-            }
+
+            await _queryService.AnnotateResultsAsync(queryId, request.Annotations, request.ResponseQuality, request.HasLanguageSwitching, request.RelevantDocumentIds, cancellationToken);
+
+            _logger.LogInformation("Query results annotated and metrics calculated: {QueryId}", queryId);
+
+            var updatedQuery = await _queryService.GetByIdAsync(queryId, cancellationToken);
+            return Ok(updatedQuery);
         }
 
         /// <summary>
@@ -166,29 +124,21 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteQueryAsync(Guid id, CancellationToken cancellationToken)
         {
-            try
+            var query = await _queryService.GetByIdAsync(id, cancellationToken);
+            if (query is null)
             {
-                var query = await _queryService.GetByIdAsync(id, cancellationToken);
-                if (query is null)
-                {
-                    _logger.LogWarning("Query not found for deletion: {QueryId}", id);
-                    return NotFound();
-                }
-
-                await _queryService.DeleteAsync(id, cancellationToken);
-                _logger.LogInformation("Query deleted: {QueryId}", id);
-
-                return NoContent();
+                _logger.LogWarning("Query not found for deletion: {QueryId}", id);
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting query: {QueryId}", id);
-                return StatusCode(500, new { error = "Failed to delete query", message = ex.Message });
-            }
+
+            await _queryService.DeleteAsync(id, cancellationToken);
+            _logger.LogInformation("Query deleted: {QueryId}", id);
+
+            return NoContent();
         }
     }
 }

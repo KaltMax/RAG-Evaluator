@@ -28,31 +28,23 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost]
         [ProducesResponseType(typeof(ExperimentSummaryResponse), StatusCodes.Status202Accepted)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateExperimentAsync([FromBody] CreateExperimentRequest request, CancellationToken cancellationToken)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Invalid experiment request received");
-                    return BadRequest(ModelState);
-                }
-
-                _logger.LogInformation("Creating experiment: {Name}", request.Name);
-
-                var result = await _experimentService.CreateExperimentAsync(request, cancellationToken);
-
-                _logger.LogInformation("Experiment created: {ExperimentId}", result.Id);
-
-                return Accepted(result);
+                _logger.LogWarning("Invalid experiment request received");
+                return BadRequest(ModelState);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating experiment");
-                return StatusCode(500, new { error = "Failed to create experiment", message = ex.Message });
-            }
+
+            _logger.LogInformation("Creating experiment: {Name}", request.Name);
+
+            var result = await _experimentService.CreateExperimentAsync(request, cancellationToken);
+
+            _logger.LogInformation("Experiment created: {ExperimentId}", result.Id);
+
+            return Accepted(result);
         }
 
         /// <summary>
@@ -60,19 +52,11 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<ExperimentSummaryResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<ExperimentSummaryResponse>>> GetAllAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                var experiments = await _experimentService.GetAllAsync(cancellationToken);
-                return Ok(experiments);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving experiments");
-                return StatusCode(500, new { error = "Failed to retrieve experiments", message = ex.Message });
-            }
+            var experiments = await _experimentService.GetAllAsync(cancellationToken);
+            return Ok(experiments);
         }
 
         /// <summary>
@@ -82,26 +66,18 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ExperimentResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ExperimentResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            try
+            var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
+            if (experiment is null)
             {
-                var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
-                if (experiment is null)
-                {
-                    _logger.LogWarning("Experiment not found: {ExperimentId}", id);
-                    return NotFound();
-                }
+                _logger.LogWarning("Experiment not found: {ExperimentId}", id);
+                return NotFound();
+            }
 
-                return Ok(experiment);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving experiment: {ExperimentId}", id);
-                return StatusCode(500, new { error = "Failed to retrieve experiment", message = ex.Message });
-            }
+            return Ok(experiment);
         }
 
         /// <summary>
@@ -109,31 +85,23 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the experiment</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        [HttpDelete("{id}")]        
+        [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
         {
-            try
+            var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
+            if (experiment is null)
             {
-                var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
-                if (experiment is null)
-                {
-                    _logger.LogWarning("Experiment not found for deletion: {ExperimentId}", id);
-                    return NotFound();
-                }
-
-                await _experimentService.DeleteAsync(id, cancellationToken);
-                _logger.LogInformation("Experiment deleted: {ExperimentId}", id);
-
-                return NoContent();
+                _logger.LogWarning("Experiment not found for deletion: {ExperimentId}", id);
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting experiment: {ExperimentId}", id);
-                return StatusCode(500, new { error = "Failed to delete experiment", message = ex.Message });
-            }
+
+            await _experimentService.DeleteAsync(id, cancellationToken);
+            _logger.LogInformation("Experiment deleted: {ExperimentId}", id);
+
+            return NoContent();
         }
     }
 }

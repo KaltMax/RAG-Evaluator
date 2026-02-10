@@ -84,6 +84,10 @@ namespace RagEvaluator.API
                 });
             });
 
+            // Global exception handling (IExceptionHandler)
+            builder.Services.AddExceptionHandler<API.Middleware.ExceptionHandler>();
+            builder.Services.AddProblemDetails();
+
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
@@ -119,6 +123,8 @@ namespace RagEvaluator.API
                 app.UseSwaggerUI();
             }
 
+            app.UseExceptionHandler();
+            app.UseStatusCodePages();
             app.UseCors();
             app.UseAuthorization();
             app.MapControllers();

@@ -89,7 +89,7 @@ RAG-Evaluator/
 │   │   ├── QueryController.cs                  # Ask questions, RAG queries
 │   │   └── SettingsController.cs               # Runtime RAG configuration
 │   ├── Middleware/
-│   │   └── ExceptionHandlingMiddleware.cs
+│   │   └── ExceptionHandler.cs
 │   ├── Filters/
 │   │   └── ValidationFilter.cs
 │   ├── Program.cs
