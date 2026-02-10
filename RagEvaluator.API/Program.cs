@@ -6,7 +6,6 @@ using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Application.Workers;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
-using RagEvaluator.Contract.Logger;
 using RagEvaluator.Infrastructure.Data;
 using RagEvaluator.Infrastructure.Data.Repositories;
 using RagEvaluator.Infrastructure.Services;
@@ -37,9 +36,6 @@ namespace RagEvaluator.API
                 ragConfig.EmbeddingModel = availableModels[0];
 
             builder.Services.AddSingleton(ragConfig);
-
-            // Register logger wrapper
-            builder.Services.AddSingleton(typeof(ILoggerWrapper<>), typeof(LoggerWrapper<>));
 
             // Register DbContext with PostgreSQL and pgvector support
             builder.Services.AddDbContext<ApplicationDbContext>(options =>

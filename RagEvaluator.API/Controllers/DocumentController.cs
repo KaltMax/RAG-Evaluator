@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
 {
@@ -10,12 +10,12 @@ namespace RagEvaluator.API.Controllers
     [Route("api/documents")]
     public class DocumentController : ControllerBase
     {
-        private readonly ILoggerWrapper<DocumentController> _logger;
+        private readonly ILogger<DocumentController> _logger;
         private readonly IRagService _ragService;
         private readonly IDocumentService _documentService;
 
         public DocumentController(
-            ILoggerWrapper<DocumentController> logger,
+            ILogger<DocumentController> logger,
             IRagService ragService,
             IDocumentService documentService)
         {

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
 {
@@ -10,10 +10,10 @@ namespace RagEvaluator.API.Controllers
     [Route("api/settings")]
     public class SettingsController : ControllerBase
     {
-        private readonly ILoggerWrapper<SettingsController> _logger;
+        private readonly ILogger<SettingsController> _logger;
         private readonly ISettingsService _settingsService;
 
-        public SettingsController(ILoggerWrapper<SettingsController> logger, ISettingsService settingsService)
+        public SettingsController(ILogger<SettingsController> logger, ISettingsService settingsService)
         {
             _logger = logger;
             _settingsService = settingsService;

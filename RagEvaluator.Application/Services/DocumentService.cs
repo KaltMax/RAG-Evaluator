@@ -1,4 +1,5 @@
-﻿using RagEvaluator.Application.Mappers;
+﻿using Microsoft.Extensions.Logging;
+using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
@@ -22,6 +23,7 @@ namespace RagEvaluator.Application.Services
         private readonly ITextChunker _textChunker;
         private readonly IEmbeddingService _embeddingService;
         private readonly RagConfiguration _config;
+        private readonly ILogger<DocumentService> _logger;
 
         public DocumentService(
             IDocumentRepository documentRepository,
@@ -30,7 +32,8 @@ namespace RagEvaluator.Application.Services
             IPdfLoader pdfLoader,
             ITextChunker textChunker,
             IEmbeddingService embeddingService,
-            RagConfiguration config)
+            RagConfiguration config,
+            ILogger<DocumentService> logger)
         {
             _documentRepository = documentRepository;
             _documentChunkRepository = documentChunkRepository;
@@ -39,6 +42,7 @@ namespace RagEvaluator.Application.Services
             _textChunker = textChunker;
             _embeddingService = embeddingService;
             _config = config;
+            _logger = logger;
         }
 
         public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language, CancellationToken cancellationToken = default)
@@ -147,9 +151,11 @@ namespace RagEvaluator.Application.Services
             // Load and extract text from PDF
             var pages = _pdfLoader.LoadPdf(pdfStream);
             var content = string.Join("\n\n", pages);
+            _logger.LogInformation("Document {DocumentId}: extracted {PageCount} pages", documentId, pages.Count);
 
             // Split into chunks
             var textChunks = await _textChunker.CreateDocumentChunksAsync(content, cancellationToken);
+            _logger.LogInformation("Document {DocumentId}: created {ChunkCount} chunks", documentId, textChunks.Count);
 
             // Generate embeddings and create chunk entities
             var documentChunks = new List<DocumentChunk>();
@@ -169,6 +175,7 @@ namespace RagEvaluator.Application.Services
 
             await _documentChunkRepository.AddRangeAsync(documentChunks);
             await UpdateStatusAsync(documentId, DocumentStatus.Completed, pages.Count, textChunks.Count, content);
+            _logger.LogInformation("Document {DocumentId}: processing completed", documentId);
         }
 
         public async Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default)
@@ -182,7 +189,9 @@ namespace RagEvaluator.Application.Services
             await _documentChunkRepository.DeleteAllAsync(cancellationToken);
 
             var documents = await _documentRepository.GetByStatusAsync(DocumentStatus.Completed, cancellationToken);
+            _logger.LogInformation("Reprocessing {DocumentCount} documents", documents.Count);
             var totalChunks = 0;
+            var processed = 0;
 
             // Reprocess each document with current chunking and embedding configuration
             foreach (var document in documents)
@@ -213,6 +222,9 @@ namespace RagEvaluator.Application.Services
                 await _documentRepository.UpdateAsync(document, cancellationToken);
 
                 totalChunks += documentChunks.Count;
+                processed++;
+                _logger.LogInformation("Reprocessed document {Processed}/{Total}: {DocumentId} ({ChunkCount} chunks)",
+                    processed, documents.Count, document.Id, documentChunks.Count);
             }
 
             return new ReprocessResponse

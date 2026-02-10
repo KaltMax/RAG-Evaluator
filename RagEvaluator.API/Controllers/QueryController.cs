@@ -1,9 +1,8 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
 {
@@ -11,12 +10,12 @@ namespace RagEvaluator.API.Controllers
     [Route("api/query")]
     public class QueryController : ControllerBase
     {
-        private readonly ILoggerWrapper<QueryController> _logger;
+        private readonly ILogger<QueryController> _logger;
         private readonly IRagService _ragService;
         private readonly IQueryService _queryService;
 
         public QueryController(
-            ILoggerWrapper<QueryController> logger,
+            ILogger<QueryController> logger,
             IRagService ragService,
             IQueryService queryService)
         {

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
 {
@@ -10,11 +10,11 @@ namespace RagEvaluator.API.Controllers
     [Route("api/experiments")]
     public class ExperimentController : ControllerBase
     {
-        private readonly ILoggerWrapper<ExperimentController> _logger;
+        private readonly ILogger<ExperimentController> _logger;
         private readonly IExperimentService _experimentService;
 
         public ExperimentController(
-            ILoggerWrapper<ExperimentController> logger,
+            ILogger<ExperimentController> logger,
             IExperimentService experimentService)
         {
             _logger = logger;
