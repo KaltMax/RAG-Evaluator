@@ -42,11 +42,13 @@ namespace RagEvaluator.API.Controllers
 
                 if (request.File.Length == 0)
                 {
+                    _logger.LogWarning("Empty file uploaded");
                     return BadRequest("No file uploaded.");
                 }
 
                 if (!request.File.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
+                    _logger.LogWarning("Unsupported file type uploaded: {FileName}", request.File.FileName);
                     return BadRequest("Only PDF files are supported.");
                 }
 
@@ -56,7 +58,6 @@ namespace RagEvaluator.API.Controllers
                 var result = await _ragService.ProcessDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language);
 
                 _logger.LogInformation("Document processed successfully: {DocumentId}", result.Id);
-
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
@@ -77,8 +78,16 @@ namespace RagEvaluator.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllDocumentsAsync(CancellationToken cancellationToken)
         {
-            var documents = await _documentService.GetAllAsync(cancellationToken);
-            return Ok(documents);
+            try
+            {
+                var documents = await _documentService.GetAllAsync(cancellationToken);
+                return Ok(documents);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving documents");
+                return StatusCode(500, new { error = "Failed to retrieve documents", message = ex.Message });
+            }   
         }
 
         /// <summary>
@@ -89,12 +98,22 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDocumentByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var document = await _documentService.GetByIdAsync(id, cancellationToken);
-            if (document is null)
+            try
             {
-                return NotFound();
+                var document = await _documentService.GetByIdAsync(id, cancellationToken);
+                if (document is null)
+                {
+                    _logger.LogWarning("Document not found: {DocumentId}", id);
+                    return NotFound();
+                }
+
+                return Ok(document);
             }
-            return Ok(document);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving document with ID: {DocumentId}", id);
+                return StatusCode(500, new { error = "Failed to retrieve document", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -105,15 +124,24 @@ namespace RagEvaluator.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocumentAsync(Guid id, CancellationToken cancellationToken)
         {
-            var document = await _documentService.GetByIdAsync(id, cancellationToken);
-            if (document is null)
+            try
             {
-                return NotFound();
-            }
+                var document = await _documentService.GetByIdAsync(id, cancellationToken);
+                if (document is null)
+                {
+                    _logger.LogWarning("Attempted to delete non-existent document: {DocumentId}", id);
+                    return NotFound();
+                }
 
-            await _documentService.DeleteAsync(id, cancellationToken);
-            _logger.LogInformation("Document deleted: {DocumentId}", id);
-            return NoContent();
+                await _documentService.DeleteAsync(id, cancellationToken);
+                _logger.LogInformation("Document deleted: {DocumentId}", id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting document with ID: {DocumentId}", id);
+                return StatusCode(500, new { error = "Failed to delete document", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -124,14 +152,23 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("{id}/download")]
         public async Task<IActionResult> DownloadDocumentAsync(Guid id, CancellationToken cancellationToken)
         {
-            var fileInfo = await _documentService.GetDocumentFileInfoAsync(id, cancellationToken);
-            if (fileInfo is null)
+            try
             {
-                return NotFound();
-            }
+                var fileInfo = await _documentService.GetDocumentFileInfoAsync(id, cancellationToken);
+                if (fileInfo is null)
+                {
+                    _logger.LogWarning("Attempted to download non-existent document: {DocumentId}", id);
+                    return NotFound();
+                }
 
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(fileInfo.FilePath, cancellationToken);
-            return File(fileBytes, fileInfo.MimeType, fileInfo.FileName);
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(fileInfo.FilePath, cancellationToken);
+                return File(fileBytes, fileInfo.MimeType, fileInfo.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading document with ID: {DocumentId}", id);
+                return StatusCode(500, new { error = "Failed to download document", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -168,14 +205,23 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("{id}/chunks")]
         public async Task<IActionResult> GetDocumentChunksAsync(Guid id, CancellationToken cancellationToken)
         {
-            var document = await _documentService.GetByIdAsync(id, cancellationToken);
-            if (document is null)
+            try
             {
-                return NotFound();
-            }
+                var document = await _documentService.GetByIdAsync(id, cancellationToken);
+                if (document is null)
+                {
+                    _logger.LogWarning("Attempted to retrieve chunks for non-existent document: {DocumentId}", id);
+                    return NotFound();
+                }
 
-            var chunks = await _documentService.GetChunksByDocumentIdAsync(id, cancellationToken);
-            return Ok(chunks);
+                var chunks = await _documentService.GetChunksByDocumentIdAsync(id, cancellationToken);
+                return Ok(chunks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving chunks for document with ID: {DocumentId}", id);
+                return StatusCode(500, new { error = "Failed to retrieve document chunks", message = ex.Message });
+            }
         }
     }
 }

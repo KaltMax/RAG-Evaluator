@@ -57,8 +57,16 @@ namespace RagEvaluator.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
         {
-            var experiments = await _experimentService.GetAllAsync(cancellationToken);
-            return Ok(experiments);
+            try
+            {
+                var experiments = await _experimentService.GetAllAsync(cancellationToken);
+                return Ok(experiments);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving experiments");
+                return StatusCode(500, new { error = "Failed to retrieve experiments", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -69,14 +77,22 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
-            if (experiment is null)
+            try
             {
-                _logger.LogWarning("Experiment not found: {ExperimentId}", id);
-                return NotFound();
-            }
+                var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
+                if (experiment is null)
+                {
+                    _logger.LogWarning("Experiment not found: {ExperimentId}", id);
+                    return NotFound();
+                }
 
-            return Ok(experiment);
+                return Ok(experiment);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving experiment: {ExperimentId}", id);
+                return StatusCode(500, new { error = "Failed to retrieve experiment", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -87,17 +103,25 @@ namespace RagEvaluator.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
         {
-            var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
-            if (experiment is null)
+            try
             {
-                _logger.LogWarning("Experiment not found for deletion: {ExperimentId}", id);
-                return NotFound();
+                var experiment = await _experimentService.GetByIdAsync(id, cancellationToken);
+                if (experiment is null)
+                {
+                    _logger.LogWarning("Experiment not found for deletion: {ExperimentId}", id);
+                    return NotFound();
+                }
+
+                await _experimentService.DeleteAsync(id, cancellationToken);
+                _logger.LogInformation("Experiment deleted: {ExperimentId}", id);
+
+                return NoContent();
             }
-
-            await _experimentService.DeleteAsync(id, cancellationToken);
-            _logger.LogInformation("Experiment deleted: {ExperimentId}", id);
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting experiment: {ExperimentId}", id);
+                return StatusCode(500, new { error = "Failed to delete experiment", message = ex.Message });
+            }
         }
     }
 }

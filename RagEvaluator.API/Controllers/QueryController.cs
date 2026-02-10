@@ -39,22 +39,22 @@ namespace RagEvaluator.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                _logger.LogInformation($"Processing query: {request.Question}");
+                _logger.LogInformation("Processing query: {Question}", request.Question);
 
                 var result = await _ragService.AskQuestionAsync(request, cancellationToken);
 
-                _logger.LogInformation($"Query processed successfully: {result.QueryId}");
+                _logger.LogInformation("Query processed successfully: {QueryId}", result.QueryId);
 
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError($"RAG service not initialized: {ex.Message}");
+                _logger.LogError(ex, "RAG service not initialized");
                 return StatusCode(503, new { error = "RAG service not available", message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error processing query: {ex.Message}");
+                _logger.LogError(ex, "Error processing query");
                 return StatusCode(500, new { error = "Failed to process query", message = ex.Message });
             }
         }
@@ -65,8 +65,16 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("history")]
         public async Task<IActionResult> GetQueryHistoryAsync(CancellationToken cancellationToken)
         {
-            var queries = await _queryService.GetAllAsync(cancellationToken);
-            return Ok(queries);
+            try
+            {
+                var queries = await _queryService.GetAllAsync(cancellationToken);
+                return Ok(queries);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving query history");
+                return StatusCode(500, new { error = "Failed to retrieve query history", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -77,14 +85,22 @@ namespace RagEvaluator.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetQueryByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var query = await _queryService.GetByIdAsync(id, cancellationToken);
-            if (query is null)
+            try
             {
-                _logger.LogWarning("Query not found: {QueryId}", id);
-                return NotFound();
-            }
+                var query = await _queryService.GetByIdAsync(id, cancellationToken);
+                if (query is null)
+                {
+                    _logger.LogWarning("Query not found: {QueryId}", id);
+                    return NotFound();
+                }
 
-            return Ok(query);
+                return Ok(query);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving query by ID: {QueryId}", id);
+                return StatusCode(500, new { error = "Failed to retrieve query", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -137,17 +153,25 @@ namespace RagEvaluator.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteQueryAsync(Guid id, CancellationToken cancellationToken)
         {
-            var query = await _queryService.GetByIdAsync(id, cancellationToken);
-            if (query is null)
+            try
             {
-                _logger.LogWarning("Query not found for deletion: {QueryId}", id);
-                return NotFound();
+                var query = await _queryService.GetByIdAsync(id, cancellationToken);
+                if (query is null)
+                {
+                    _logger.LogWarning("Query not found for deletion: {QueryId}", id);
+                    return NotFound();
+                }
+
+                await _queryService.DeleteAsync(id, cancellationToken);
+                _logger.LogInformation("Query deleted: {QueryId}", id);
+
+                return NoContent();
             }
-
-            await _queryService.DeleteAsync(id, cancellationToken);
-            _logger.LogInformation("Query deleted: {QueryId}", id);
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting query: {QueryId}", id);
+                return StatusCode(500, new { error = "Failed to delete query", message = ex.Message });
+            }
         }
     }
 }

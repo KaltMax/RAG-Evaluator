@@ -24,7 +24,16 @@ namespace RagEvaluator.API.Controllers
         [HttpGet]
         public IActionResult GetSettings()
         {
-            return Ok(_settingsService.GetSettings());
+            try
+            {
+                var settings = _settingsService.GetSettings();
+                return Ok(settings);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving settings");
+                return StatusCode(500, new { error = "Failed to retrieve settings", message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -49,8 +58,8 @@ namespace RagEvaluator.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogError("Invalid settings update request: {Message}", ex.Message);
-                return BadRequest(new { errors = ex.Message });
+                _logger.LogError(ex, "Invalid settings update request");
+                return BadRequest(new { error = "Invalid settings update request", message = ex.Message });
             }
         }
     }
