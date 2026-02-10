@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Dtos.Requests;
+using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
@@ -29,7 +31,11 @@ namespace RagEvaluator.API.Controllers
         /// <param name="request">Question and search parameters</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost]
-        public async Task<IActionResult> QueryAsync([FromBody] AskQuestionRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(QueryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+        public async Task<ActionResult<QueryResponse>> QueryAsync([FromBody] AskQuestionRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -63,7 +69,9 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves the history of all executed queries
         /// </summary>
         [HttpGet("history")]
-        public async Task<IActionResult> GetQueryHistoryAsync(CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(IEnumerable<QueryResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<QueryResponse>>> GetQueryHistoryAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -83,7 +91,10 @@ namespace RagEvaluator.API.Controllers
         /// <param name="id">The unique identifier of the query</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetQueryByIdAsync(Guid id, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(QueryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<QueryResponse>> GetQueryByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             try
             {
@@ -110,7 +121,11 @@ namespace RagEvaluator.API.Controllers
         /// <param name="request">The relevance annotations for query results</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPatch("{queryId}/results")]
-        public async Task<IActionResult> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateResultsRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(QueryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<QueryResponse>> AnnotateResultsAsync(Guid queryId, [FromBody] AnnotateResultsRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -151,6 +166,9 @@ namespace RagEvaluator.API.Controllers
         /// <param name="id">The unique identifier of the query</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteQueryAsync(Guid id, CancellationToken cancellationToken)
         {
             try

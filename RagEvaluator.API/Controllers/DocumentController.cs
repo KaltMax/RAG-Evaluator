@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Dtos.Requests;
+using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
@@ -30,7 +31,11 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost("upload")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadDocumentAsync([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(DocumentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+        public async Task<ActionResult<DocumentResponse>> UploadDocumentAsync([FromForm] UploadDocumentRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -76,7 +81,9 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves all documents
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAllDocumentsAsync(CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(IEnumerable<DocumentResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DocumentResponse>>> GetAllDocumentsAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -87,7 +94,7 @@ namespace RagEvaluator.API.Controllers
             {
                 _logger.LogError(ex, "Error retrieving documents");
                 return StatusCode(500, new { error = "Failed to retrieve documents", message = ex.Message });
-            }   
+            }
         }
 
         /// <summary>
@@ -96,7 +103,10 @@ namespace RagEvaluator.API.Controllers
         /// <param name="id">The unique identifier of the document</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetDocumentByIdAsync(Guid id, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(DocumentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<DocumentResponse>> GetDocumentByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             try
             {
@@ -122,6 +132,9 @@ namespace RagEvaluator.API.Controllers
         /// <param name="id">The unique identifier of the document</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteDocumentAsync(Guid id, CancellationToken cancellationToken)
         {
             try
@@ -150,6 +163,9 @@ namespace RagEvaluator.API.Controllers
         /// <param name="id">The unique identifier of the document</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}/download")]
+        [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DownloadDocumentAsync(Guid id, CancellationToken cancellationToken)
         {
             try
@@ -176,7 +192,10 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost("reprocess")]
-        public async Task<IActionResult> ReprocessDocumentsAsync(CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ReprocessResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+        public async Task<ActionResult<ReprocessResponse>> ReprocessDocumentsAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -203,7 +222,10 @@ namespace RagEvaluator.API.Controllers
         /// <param name="id">The unique identifier of the document</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}/chunks")]
-        public async Task<IActionResult> GetDocumentChunksAsync(Guid id, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(IEnumerable<DocumentChunkResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DocumentChunkResponse>>> GetDocumentChunksAsync(Guid id, CancellationToken cancellationToken)
         {
             try
             {

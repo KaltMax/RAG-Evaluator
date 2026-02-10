@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Dtos.Requests;
+using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Contract.Logger;
 
 namespace RagEvaluator.API.Controllers
@@ -26,6 +27,9 @@ namespace RagEvaluator.API.Controllers
         /// <param name="request">Experiment name, queries, and repeat count</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost]
+        [ProducesResponseType(typeof(ExperimentSummaryResponse), StatusCodes.Status202Accepted)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateExperimentAsync([FromBody] CreateExperimentRequest request, CancellationToken cancellationToken)
         {
             try
@@ -55,7 +59,9 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves all experiments with progress and configuration summary
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(IEnumerable<ExperimentSummaryResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<ExperimentSummaryResponse>>> GetAllAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -75,7 +81,10 @@ namespace RagEvaluator.API.Controllers
         /// <param name="id">The unique identifier of the experiment</param>
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ExperimentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ExperimentResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             try
             {
@@ -100,7 +109,10 @@ namespace RagEvaluator.API.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the experiment</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id}")]        
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
         {
             try

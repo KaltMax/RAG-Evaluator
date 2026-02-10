@@ -25,11 +25,6 @@ namespace RagEvaluator.Application.Mappers
             };
         }
 
-        public static IReadOnlyList<DocumentResponse> ToResponseList(this IEnumerable<Document> documents)
-        {
-            return documents.Select(d => d.ToResponse()).ToList();
-        }
-
         public static DocumentResponse ToResponse(this DocumentSummary summary)
         {
             return new DocumentResponse
@@ -47,11 +42,6 @@ namespace RagEvaluator.Application.Mappers
             };
         }
 
-        public static IReadOnlyList<DocumentResponse> ToResponseList(this IEnumerable<DocumentSummary> summaries)
-        {
-            return summaries.Select(s => s.ToResponse()).ToList();
-        }
-
         public static DocumentChunkResponse ToResponse(this DocumentChunk chunk)
         {
             return new DocumentChunkResponse
@@ -62,6 +52,16 @@ namespace RagEvaluator.Application.Mappers
                 EmbeddingModel = chunk.EmbeddingModel,
                 DocumentId = chunk.DocumentId
             };
+        }
+
+        public static IReadOnlyList<DocumentResponse> ToResponseList(this IEnumerable<Document> documents)
+        {
+            return documents.Select(d => d.ToResponse()).ToList();
+        }
+
+        public static IReadOnlyList<DocumentResponse> ToResponseList(this IEnumerable<DocumentSummary> summaries)
+        {
+            return summaries.Select(s => s.ToResponse()).ToList();
         }
 
         public static IReadOnlyList<DocumentChunkResponse> ToResponseList(this IEnumerable<DocumentChunk> chunks)
