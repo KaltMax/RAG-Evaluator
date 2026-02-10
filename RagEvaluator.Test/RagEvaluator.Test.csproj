@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RagEvaluator.Test</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
+    <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RagEvaluator.API\RagEvaluator.API.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Application\RagEvaluator.Application.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Contract\RagEvaluator.Contract.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Domain\RagEvaluator.Domain.csproj" />
+    <ProjectReference Include="..\RagEvaluator.Infrastructure\RagEvaluator.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
