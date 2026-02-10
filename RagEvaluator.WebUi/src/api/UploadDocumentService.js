@@ -33,12 +33,10 @@ export const uploadDocument = async (file, language) => {
       console.error('Response data:', error.response.data);
 
       const errorMessage =
-        error.response.data?.message ||
-        error.response.data?.error ||
-        error.response.data ||
+        error.response.data?.title ||
         `Server error: ${error.response.status} ${error.response.statusText}`;
 
-      throw new Error(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
+      throw new Error(errorMessage);
     } else if (error.request) {
       // Network error
       console.error('No response received:', error.request);

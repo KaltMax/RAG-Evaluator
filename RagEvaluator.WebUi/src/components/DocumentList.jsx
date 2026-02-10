@@ -20,8 +20,9 @@ function DocumentList() {
       const data = await getAllDocuments();
       setDocuments(data);
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      const message = `Failed to load documents: ${err.message}`;
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -35,7 +36,7 @@ function DocumentList() {
     try {
       await downloadDocument(id, fileName);
     } catch (err) {
-      toast.error(err.message || 'Failed to download document');
+      toast.error(`Failed to download document: ${err.message}`);
     }
   };
 
@@ -49,7 +50,7 @@ function DocumentList() {
       toast.success('Document deleted successfully');
       fetchDocuments();
     } catch (err) {
-      toast.error(err.message || 'Failed to delete document');
+      toast.error(`Failed to delete document: ${err.message}`);
     }
   };
 

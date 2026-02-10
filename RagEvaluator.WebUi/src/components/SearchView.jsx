@@ -28,7 +28,7 @@ function SearchView() {
       toast.success('Query processed successfully!');
     } catch (error) {
       console.error('Search error:', error);
-      toast.error(error.message || 'Failed to process your query');
+      toast.error(`Failed to process query: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

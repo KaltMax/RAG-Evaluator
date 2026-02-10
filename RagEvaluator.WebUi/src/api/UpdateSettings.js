@@ -14,8 +14,7 @@ export const updateSettings = async (settings) => {
 
     if (error.response) {
       const errorMessage =
-        error.response.data?.message ||
-        error.response.data?.error ||
+        error.response.data?.title ||
         `Server error: ${error.response.status}`;
       throw new Error(errorMessage);
     } else if (error.request) {

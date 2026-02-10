@@ -15,7 +15,7 @@ export const annotateResults = async (queryId, payload) => {
     return response.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data?.error || 'Failed to submit annotations');
+      throw new Error(error.response.data?.title || 'Failed to submit annotations');
     }
     throw new Error('Network error while submitting annotations');
   }

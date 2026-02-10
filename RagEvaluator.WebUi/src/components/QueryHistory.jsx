@@ -27,8 +27,9 @@ function QueryHistory() {
       const data = await getAllQueries();
       setQueries(data);
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      const message = `Failed to load queries: ${err.message}`;
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +66,7 @@ function QueryHistory() {
       setAnnotatingIds(prev => new Set([...prev, id]));
     } catch (err) {
       console.error('Error fetching query details:', err);
-      toast.error('Failed to load query details');
+      toast.error(`Failed to load query details: ${err.message}`);
     } finally {
       setLoadingDetails(prev => {
         const newSet = new Set(prev);
@@ -107,7 +108,7 @@ function QueryHistory() {
       toast.success('Query deleted successfully');
       fetchQueries();
     } catch (err) {
-      toast.error(err.message || 'Failed to delete query');
+      toast.error(`Failed to delete query: ${err.message}`);
     }
   };
 

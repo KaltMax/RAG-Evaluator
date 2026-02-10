@@ -1,1 +1,0 @@
-// API endpoint for getting a document by id

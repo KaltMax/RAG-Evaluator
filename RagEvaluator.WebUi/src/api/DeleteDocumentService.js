@@ -16,8 +16,7 @@ export const deleteDocument = async (id) => {
         throw new Error('Document not found');
       }
       const errorMessage =
-        error.response.data?.message ||
-        error.response.data?.error ||
+        error.response.data?.title ||
         `Server error: ${error.response.status}`;
       throw new Error(errorMessage);
     } else if (error.request) {

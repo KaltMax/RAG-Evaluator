@@ -24,8 +24,6 @@ export const postQuery = async (question, topK = 3, language = 'en') => {
       console.error('Response data:', error.response.data);
 
       const errorMessage =
-        error.response.data?.message ||
-        error.response.data?.error ||
         error.response.data?.title ||
         `Server error: ${error.response.status} ${error.response.statusText}`;
 

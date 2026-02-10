@@ -49,7 +49,7 @@ function SearchResults({ results, onAnnotated }) {
     try {
       await downloadDocument(documentId, fileName);
     } catch (err) {
-      toast.error(err.message || 'Failed to download document');
+      toast.error(`Failed to download document: ${err.message}`);
     }
   };
 
@@ -138,7 +138,7 @@ function SearchResults({ results, onAnnotated }) {
       toast.success('Annotations submitted successfully!');
       onAnnotated?.();
     } catch (error) {
-      toast.error(error.message || 'Failed to submit annotations');
+      toast.error(`Failed to submit annotations: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }

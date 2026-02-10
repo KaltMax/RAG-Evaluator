@@ -21,8 +21,9 @@ function Settings() {
       setSettings(data);
       setDraft(data);
     } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+      const message = `Failed to load settings: ${err.message}`;
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +88,7 @@ function Settings() {
         }
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(`Failed to save settings: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
