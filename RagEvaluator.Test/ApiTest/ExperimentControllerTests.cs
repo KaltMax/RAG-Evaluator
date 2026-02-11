@@ -31,7 +31,7 @@ namespace RagEvaluator.Test.ApiTest
         {
             // Arrange
             var request = CreateSampleExperimentRequest();
-            request.Name = null; // Invalid input to trigger model state error
+            request.Name = null!; // Invalid input to trigger model state error
             _controller.ModelState.AddModelError("Name", "The Name field is required.");
             
             // Act

@@ -34,7 +34,7 @@ namespace RagEvaluator.Test.ApiTest
         {
             // Arrange
             var request = CreateSampleQueryRequest();
-            request.Question = null; // Invalid input to trigger model state error
+            request.Question = null!; // Invalid input to trigger model state error
             _controller.ModelState.AddModelError("Question", "The Question field is required.");
 
             // Act
@@ -152,7 +152,7 @@ namespace RagEvaluator.Test.ApiTest
         {
             // Arrange
             var request = CreateSampleAnnotateResultsRequest();
-            request.Annotations = null; // Invalid input to trigger model state error
+            request.Annotations = null!; // Invalid input to trigger model state error
             _controller.ModelState.AddModelError("Annotations", "The Annotations field is required.");
 
             // Act
