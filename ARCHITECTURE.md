@@ -37,8 +37,9 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 ┌─────────────────────────────────────────────────────────────┐
 │                  RagEvaluator.Application                   │
 │            (Business Logic & Orchestration)                 │
-│ Services: RagService, DocumentService, QueryService,        │
-│       MetricsService, SettingsService, ExperimentService    │
+│ Services: RagService, DocumentService,                      │
+│   DocumentProcessingService, QueryService,                  │
+│   MetricsService, SettingsService, ExperimentService        │
 └──────────┬────────────────────────────────┬─────────────────┘
            │                                │
            ↓                                ↓
@@ -106,13 +107,15 @@ RAG-Evaluator/
 │   ├── Services/
 │   │   ├── Interfaces/
 │   │   │   ├── IRagService.cs
-│   │   │   ├── IDocumentService.cs
+│   │   │   ├── IDocumentService.cs             # Document CRUD operations
+│   │   │   ├── IDocumentProcessingService.cs   # PDF processing, chunking, embedding, chunk search
 │   │   │   ├── IExperimentService.cs           # Experiment batch processing
 │   │   │   ├── IQueryService.cs
 │   │   │   ├── IMetricsService.cs              # Similarity & evaluation metrics
 │   │   │   └── ISettingsService.cs             # Runtime settings management
 │   │   ├── RagService.cs                       # Core RAG orchestration
-│   │   ├── DocumentService.cs                  # Document processing & management
+│   │   ├── DocumentService.cs                  # Document CRUD operations
+│   │   ├── DocumentProcessingService.cs        # PDF processing, chunking, embedding, chunk search
 │   │   ├── ExperimentService.cs                # Experiment creation, processing & aggregation
 │   │   ├── QueryService.cs                     # Query handling & persistence
 │   │   ├── MetricsService.cs                   # Cosine similarity, MRR, Precision@K, etc.
@@ -278,10 +281,17 @@ RAG-Evaluator/
   - `ProcessDocumentAsync()` - Orchestrates document upload workflow
   - `AskQuestionAsync()` - Orchestrates RAG query workflow
   - `IsInitializedAsync()` - Checks if Ollama services are available (used by health endpoint)
-- `IDocumentService` - Document processing and management operations
-  - `ProcessDocumentAsync()` - Orchestrates PDF processing workflow
+- `IDocumentService` - Document CRUD operations
+  - `CreateDocumentAsync()` - Creates document entity and saves file to storage
+  - `GetByIdAsync()` / `GetAllAsync()` - Document retrieval
+  - `GetDocumentFileInfoAsync()` - File info for downloads
+  - `UpdateStatusAsync()` - Updates document processing status
+  - `DeleteAsync()` - Deletes document, file, and associated chunks
+- `IDocumentProcessingService` - PDF processing, chunking, embedding, and chunk search
+  - `ProcessDocumentContentAsync()` - Extracts text, chunks, embeds, and stores chunks
   - `ReprocessAllDocumentsAsync()` - Re-chunks and re-embeds all documents using stored content and current config
-  - `GetDocumentChunksAsync()` - Retrieves document chunks
+  - `GetChunksByDocumentIdAsync()` - Retrieves document chunks
+  - `SearchChunksAsync()` - Vector similarity search across all chunks
 - `IQueryService` - Query handling, persistence, and history management
   - `CreateQuery()` - Creates a query object with configuration snapshot (no persistence)
   - `CompleteQueryAsync()` - Populates query with answer, embedding, response time, retrieved chunks, and persists to database
@@ -470,34 +480,37 @@ RAG-Evaluator/
 ```
 1. PDF Upload (Controller)
    → 2. RagService.ProcessDocumentAsync() (Application Layer)
-      → 3. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
-      → 4. Join pages into single content string
-      → 5. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
-            • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
-            • semantic: Embedding-based splitting at topic boundaries (SimilarityThreshold)
-      → 6. For each chunk:
-         → 7. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
-         → 8. Create DocumentChunk entity with embedding, strategy, model info
-      → 9. DocumentChunkRepository.AddRangeAsync() - Persist all chunks to PostgreSQL
-      → 10. Update Document status to Completed with content stored for future reprocessing
-   → 11. Return DocumentResponse (DTO)
+      → 3. DocumentService.CreateDocumentAsync() - Save file and create document entity
+      → 4. DocumentProcessingService.ProcessDocumentContentAsync()
+         → 5. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
+         → 6. Join pages into single content string
+         → 7. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
+               • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
+               • semantic: Embedding-based splitting at topic boundaries (SimilarityThreshold)
+         → 8. For each chunk:
+            → 9. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
+            → 10. Create DocumentChunk entity with embedding, strategy, model info
+         → 11. DocumentChunkRepository.AddRangeAsync() - Persist all chunks to PostgreSQL
+         → 12. Update Document status to Completed with content stored for future reprocessing
+   → 13. Return DocumentResponse (DTO)
 ```
 
 ### Document Reprocessing Pipeline
 
 ```
 1. Settings Change or Manual Trigger
-   → 2. DocumentService.ReprocessAllDocumentsAsync() (Application Layer)
+   → 2. DocumentProcessingService.ReprocessAllDocumentsAsync() (Application Layer)
       → 3. DocumentChunkRepository.DeleteAllAsync() - Remove all existing chunks
       → 4. Fetch all documents with Status == Completed
-      → 5. For each document:
-         → 6. ITextChunker.CreateDocumentChunksAsync(document.Content) - Re-chunk stored content
-         → 7. For each chunk:
-            → 8. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
-            → 9. Create DocumentChunk entity with current config (strategy, model)
-         → 10. DocumentChunkRepository.AddRangeAsync() - Persist new chunks
-         → 11. Update document ChunkCount and ProcessedAt
-   → 12. Return ReprocessResponse (documents processed, total chunks, config used)
+      → 5. Set all documents to Status = Processing
+      → 6. For each document:
+         → 7. ITextChunker.CreateDocumentChunksAsync(document.Content) - Re-chunk stored content
+         → 8. For each chunk:
+            → 9. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
+            → 10. Create DocumentChunk entity with current config (strategy, model)
+         → 11. DocumentChunkRepository.AddRangeAsync() - Persist new chunks
+         → 12. Update document ChunkCount, ProcessedAt, Status = Completed
+   → 13. Return ReprocessResponse (documents processed, total chunks, config used)
 ```
 
 ### Query Processing Pipeline
@@ -557,9 +570,10 @@ The Infrastructure layer defines **how** it's done (concrete implementations):
 - `DocumentRepository`, `DocumentChunkRepository` (with pgvector integration), `ExperimentRepository`
 
 The Application layer consumes these abstractions:
-- `RagService` uses IChatService, PromptTemplateResolver
-- `DocumentService` uses IPdfLoader, ITextChunker, IFileStorageService, IEmbeddingService
-- `QueryService` uses IQueryRepository, IEmbeddingService, IQueryRepository
+- `RagService` uses IChatService, IDocumentService, IDocumentProcessingService, PromptTemplateResolver
+- `DocumentService` uses IDocumentRepository, IDocumentChunkRepository, IFileStorageService
+- `DocumentProcessingService` uses IDocumentRepository, IDocumentChunkRepository, IPdfLoader, ITextChunker, IEmbeddingService
+- `QueryService` uses IQueryRepository, IEmbeddingService
 - `MetricsService` provides similarity and evaluation metric calculations (CosineSimilarity, MRR, Precision@K, Recall@K with ground truth, NDCG@K)
 - `SettingsService` uses IEmbeddingService (for reinitialization on model change)
 - `ExperimentService` uses IRagService, IExperimentRepository, IQueryRepository

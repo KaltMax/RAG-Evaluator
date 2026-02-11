@@ -3,50 +3,38 @@ using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
-using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.Enums;
-using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services
 {
     /// <summary>
-    /// Service for document and chunk operations including PDF processing, chunking, and embedding.
+    /// Service for document CRUD operations.
     /// </summary>
     public class DocumentService : IDocumentService
     {
+        private readonly ILogger<DocumentService> _logger;
         private readonly IDocumentRepository _documentRepository;
         private readonly IDocumentChunkRepository _documentChunkRepository;
         private readonly IFileStorageService _fileStorageService;
-        private readonly IPdfLoader _pdfLoader;
-        private readonly ITextChunker _textChunker;
-        private readonly IEmbeddingService _embeddingService;
-        private readonly RagConfiguration _config;
-        private readonly ILogger<DocumentService> _logger;
 
         public DocumentService(
+            ILogger<DocumentService> logger,
             IDocumentRepository documentRepository,
             IDocumentChunkRepository documentChunkRepository,
-            IFileStorageService fileStorageService,
-            IPdfLoader pdfLoader,
-            ITextChunker textChunker,
-            IEmbeddingService embeddingService,
-            RagConfiguration config,
-            ILogger<DocumentService> logger)
+            IFileStorageService fileStorageService)
         {
+            _logger = logger;
             _documentRepository = documentRepository;
             _documentChunkRepository = documentChunkRepository;
             _fileStorageService = fileStorageService;
-            _pdfLoader = pdfLoader;
-            _textChunker = textChunker;
-            _embeddingService = embeddingService;
-            _config = config;
-            _logger = logger;
         }
 
         public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language, CancellationToken cancellationToken = default)
         {
+            fileName = Path.GetFileName(fileName);
+
             var document = new Document
             {
                 Id = Guid.NewGuid(),
@@ -139,112 +127,6 @@ namespace RagEvaluator.Application.Services
             }
             await _documentChunkRepository.DeleteByDocumentIdAsync(id);
             await _documentRepository.DeleteAsync(id);
-        }
-
-        public async Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream, CancellationToken cancellationToken = default)
-        {
-            if (!await _embeddingService.IsAvailableAsync(cancellationToken))
-            {
-                throw new InvalidOperationException("Embedding service not available. Ensure Ollama is running with the required model.");
-            }
-
-            // Load and extract text from PDF
-            var pages = _pdfLoader.LoadPdf(pdfStream);
-            var content = string.Join("\n\n", pages);
-            _logger.LogInformation("Document {DocumentId}: extracted {PageCount} pages", documentId, pages.Count);
-
-            // Split into chunks
-            var textChunks = await _textChunker.CreateDocumentChunksAsync(content, cancellationToken);
-            _logger.LogInformation("Document {DocumentId}: created {ChunkCount} chunks", documentId, textChunks.Count);
-
-            // Generate embeddings and create chunk entities
-            var documentChunks = new List<DocumentChunk>();
-            foreach (var chunkText in textChunks)
-            {
-                var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}", cancellationToken);
-                documentChunks.Add(new DocumentChunk
-                {
-                    Id = Guid.NewGuid(),
-                    Text = chunkText,
-                    Embedding = embedding,
-                    ChunkingStrategy = _config.ChunkingStrategy.ToString(),
-                    EmbeddingModel = _config.EmbeddingModel,
-                    DocumentId = documentId
-                });
-            }
-
-            await _documentChunkRepository.AddRangeAsync(documentChunks);
-            await UpdateStatusAsync(documentId, DocumentStatus.Completed, pages.Count, textChunks.Count, content);
-            _logger.LogInformation("Document {DocumentId}: processing completed", documentId);
-        }
-
-        public async Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default)
-        {
-            if (!await _embeddingService.IsAvailableAsync(cancellationToken))
-            {
-                throw new InvalidOperationException("Embedding service not available. Ensure Ollama is running with the required model.");
-            }
-
-            // Delete all existing chunks before reprocessing
-            await _documentChunkRepository.DeleteAllAsync(cancellationToken);
-
-            var documents = await _documentRepository.GetByStatusAsync(DocumentStatus.Completed, cancellationToken);
-            _logger.LogInformation("Reprocessing {DocumentCount} documents", documents.Count);
-            var totalChunks = 0;
-            var processed = 0;
-
-            // Reprocess each document with current chunking and embedding configuration
-            foreach (var document in documents)
-            {
-                var textChunks = await _textChunker.CreateDocumentChunksAsync(document.Content!, cancellationToken);
-
-                var documentChunks = new List<DocumentChunk>();
-                foreach (var chunkText in textChunks)
-                {
-                    var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}", cancellationToken);
-                    documentChunks.Add(new DocumentChunk
-                    {
-                        Id = Guid.NewGuid(),
-                        Text = chunkText,
-                        Embedding = embedding,
-                        ChunkingStrategy = _config.ChunkingStrategy.ToString(),
-                        EmbeddingModel = _config.EmbeddingModel,
-                        DocumentId = document.Id
-                    });
-                }
-
-                // Save new chunks to repository
-                await _documentChunkRepository.AddRangeAsync(documentChunks, cancellationToken);
-
-                // Update document metadata with new chunk count and processed timestamp
-                document.ChunkCount = documentChunks.Count;
-                document.ProcessedAt = DateTime.UtcNow;
-                await _documentRepository.UpdateAsync(document, cancellationToken);
-
-                totalChunks += documentChunks.Count;
-                processed++;
-                _logger.LogInformation("Reprocessed document {Processed}/{Total}: {DocumentId} ({ChunkCount} chunks)",
-                    processed, documents.Count, document.Id, documentChunks.Count);
-            }
-
-            return new ReprocessResponse
-            {
-                DocumentsProcessed = documents.Count,
-                TotalChunksCreated = totalChunks,
-                ChunkingStrategy = _config.ChunkingStrategy.ToString(),
-                EmbeddingModel = _config.EmbeddingModel
-            };
-        }
-
-        public async Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default)
-        {
-            var chunks = await _documentChunkRepository.GetByDocumentIdAsync(documentId, cancellationToken);
-            return chunks.ToResponseList();
-        }
-
-        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchChunksAsync(float[] queryEmbedding, int topK, CancellationToken cancellationToken = default)
-        {
-            return await _documentChunkRepository.SearchAsync(queryEmbedding, topK, cancellationToken);
         }
     }
 }

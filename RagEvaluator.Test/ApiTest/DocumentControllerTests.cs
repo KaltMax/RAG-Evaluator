@@ -18,6 +18,7 @@ namespace RagEvaluator.Test.ApiTest
         private readonly ILogger<DocumentController> _logger;
         private readonly IRagService _ragService;
         private readonly IDocumentService _documentService;
+        private readonly IDocumentProcessingService _documentProcessingService;
         private readonly DocumentController _controller;
 
         public DocumentControllerTests()
@@ -25,7 +26,8 @@ namespace RagEvaluator.Test.ApiTest
             _logger = Substitute.For<ILogger<DocumentController>>();
             _ragService = Substitute.For<IRagService>();
             _documentService = Substitute.For<IDocumentService>();
-            _controller = new DocumentController(_logger, _ragService, _documentService);
+            _documentProcessingService = Substitute.For<IDocumentProcessingService>();
+            _controller = new DocumentController(_logger, _ragService, _documentService, _documentProcessingService);
         }
 
         #region UploadDocumentAsync Tests
@@ -252,7 +254,7 @@ namespace RagEvaluator.Test.ApiTest
                 ChunkingStrategy = "FixedSize",
                 EmbeddingModel = "nomic-embed-text-v2-moe"
             };
-            _documentService.ReprocessAllDocumentsAsync(Arg.Any<CancellationToken>())
+            _documentProcessingService.ReprocessAllDocumentsAsync(Arg.Any<CancellationToken>())
                 .Returns(expectedResponse);
 
             // Act
@@ -282,7 +284,7 @@ namespace RagEvaluator.Test.ApiTest
             };
 
             _documentService.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-            _documentService.GetChunksByDocumentIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(chunks);
+            _documentProcessingService.GetChunksByDocumentIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(chunks);
 
             // Act
             var result = await _controller.GetDocumentChunksAsync(documentId, CancellationToken.None);
@@ -306,7 +308,7 @@ namespace RagEvaluator.Test.ApiTest
 
             // Assert
             Assert.IsType<NotFoundResult>(result.Result);
-            await _documentService.DidNotReceive()
+            await _documentProcessingService.DidNotReceive()
                 .GetChunksByDocumentIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         }
 

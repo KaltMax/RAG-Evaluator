@@ -12,15 +12,18 @@ namespace RagEvaluator.API.Controllers
         private readonly ILogger<DocumentController> _logger;
         private readonly IRagService _ragService;
         private readonly IDocumentService _documentService;
+        private readonly IDocumentProcessingService _documentProcessingService;
 
         public DocumentController(
             ILogger<DocumentController> logger,
             IRagService ragService,
-            IDocumentService documentService)
+            IDocumentService documentService,
+            IDocumentProcessingService documentProcessingService)
         {
             _logger = logger;
             _ragService = ragService;
             _documentService = documentService;
+            _documentProcessingService = documentProcessingService;
         }
 
         /// <summary>
@@ -152,7 +155,7 @@ namespace RagEvaluator.API.Controllers
         public async Task<ActionResult<ReprocessResponse>> ReprocessDocumentsAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Reprocessing all documents with current configuration");
-            var result = await _documentService.ReprocessAllDocumentsAsync(cancellationToken);
+            var result = await _documentProcessingService.ReprocessAllDocumentsAsync(cancellationToken);
             _logger.LogInformation("Reprocessing complete: {Documents} documents, {Chunks} chunks", result.DocumentsProcessed, result.TotalChunksCreated);
             return Ok(result);
         }
@@ -175,7 +178,7 @@ namespace RagEvaluator.API.Controllers
                 return NotFound();
             }
 
-            var chunks = await _documentService.GetChunksByDocumentIdAsync(id, cancellationToken);
+            var chunks = await _documentProcessingService.GetChunksByDocumentIdAsync(id, cancellationToken);
             return Ok(chunks);
         }
     }

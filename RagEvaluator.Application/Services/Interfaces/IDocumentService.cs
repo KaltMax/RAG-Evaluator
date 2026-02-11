@@ -6,7 +6,7 @@ using RagEvaluator.Domain.ValueObjects;
 namespace RagEvaluator.Application.Services.Interfaces
 {
     /// <summary>
-    /// Service for document and chunk operations including PDF processing, chunking, and embedding.
+    /// Service for document CRUD operations.
     /// </summary>
     public interface IDocumentService
     {
@@ -39,25 +39,5 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// Deletes a document, its associated file from storage, and all related chunks.
         /// </summary>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Processes a PDF document by extracting text, splitting into chunks, generating embeddings, and storing the chunks.
-        /// </summary>
-        Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Reprocesses all completed documents by deleting existing chunks and re-chunking + re-embedding with the current configuration.
-        /// </summary>
-        Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Gets all document chunks associated with a specific document.
-        /// </summary>
-        Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Searches for similar document chunks using vector similarity with the provided query embedding.
-        /// </summary>
-        Task<IReadOnlyList<ChunkSearchMatch>> SearchChunksAsync(float[] queryEmbedding, int topK, CancellationToken cancellationToken = default);
     }
 }

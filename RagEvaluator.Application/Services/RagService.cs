@@ -18,17 +18,20 @@ namespace RagEvaluator.Application.Services
         private readonly RagConfiguration _config;
         private readonly IChatService _chatService;
         private readonly IDocumentService _documentService;
+        private readonly IDocumentProcessingService _documentProcessingService;
         private readonly IQueryService _queryService;
 
         public RagService(
             RagConfiguration config,
             IChatService chatService,
             IDocumentService documentService,
+            IDocumentProcessingService documentProcessingService,
             IQueryService queryService)
         {
             _config = config;
             _chatService = chatService;
             _documentService = documentService;
+            _documentProcessingService = documentProcessingService;
             _queryService = queryService;
         }
 
@@ -44,7 +47,7 @@ namespace RagEvaluator.Application.Services
 
                 // Process document content (PDF → chunks → embeddings → store → Completed)
                 documentStream.Position = 0;
-                await _documentService.ProcessDocumentContentAsync(document.Id, documentStream, cancellationToken);
+                await _documentProcessingService.ProcessDocumentContentAsync(document.Id, documentStream, cancellationToken);
 
                 // Return updated document
                 return (await _documentService.GetByIdAsync(document.Id, cancellationToken))!;
@@ -81,7 +84,7 @@ namespace RagEvaluator.Application.Services
                 cancellationToken);
 
             // Search for relevant document chunks
-            var chunkMatches = await _documentService.SearchChunksAsync(query.QueryEmbedding, query.TopK, cancellationToken);
+            var chunkMatches = await _documentProcessingService.SearchChunksAsync(query.QueryEmbedding, query.TopK, cancellationToken);
 
             string answer;
             if (chunkMatches.Count == 0)
