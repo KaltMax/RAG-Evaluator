@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NSubstitute;
+﻿using NSubstitute;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
@@ -327,9 +326,9 @@ namespace RagEvaluator.Test.ApplicationTest
             await _service.DeleteAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
-            await _fileStorageService.Received(1).DeleteFileAsync("/storage/test.pdf", TestContext.Current.CancellationToken);
-            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(documentId, TestContext.Current.CancellationToken);
-            await _documentRepository.Received(1).DeleteAsync(documentId, TestContext.Current.CancellationToken);
+            await _fileStorageService.Received(1).DeleteFileAsync("/storage/test.pdf");
+            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(documentId);
+            await _documentRepository.Received(1).DeleteAsync(documentId);
         }
 
         [Fact]
@@ -345,9 +344,9 @@ namespace RagEvaluator.Test.ApplicationTest
             await _service.DeleteAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
-            await _fileStorageService.DidNotReceive().DeleteFileAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(documentId, TestContext.Current.CancellationToken);
-            await _documentRepository.Received(1).DeleteAsync(documentId, TestContext.Current.CancellationToken);
+            await _fileStorageService.DidNotReceive().DeleteFileAsync(Arg.Any<string>());
+            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(documentId);
+            await _documentRepository.Received(1).DeleteAsync(documentId);
         }
 
         [Fact]
@@ -361,9 +360,9 @@ namespace RagEvaluator.Test.ApplicationTest
             await _service.DeleteAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
-            await _fileStorageService.DidNotReceive().DeleteFileAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(documentId, TestContext.Current.CancellationToken);
-            await _documentRepository.Received(1).DeleteAsync(documentId, TestContext.Current.CancellationToken);
+            await _fileStorageService.DidNotReceive().DeleteFileAsync(Arg.Any<string>());
+            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(documentId);
+            await _documentRepository.Received(1).DeleteAsync(documentId);
         }
 
         #endregion

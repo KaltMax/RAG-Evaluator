@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using RagEvaluator.Application.Mappers;
+﻿using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
@@ -120,10 +119,10 @@ namespace RagEvaluator.Application.Services
 
             if (document?.FilePath != null)
             {
-                await _fileStorageService.DeleteFileAsync(document.FilePath, cancellationToken);
+                await _fileStorageService.DeleteFileAsync(document.FilePath);
             }
-            await _documentChunkRepository.DeleteByDocumentIdAsync(id, cancellationToken);
-            await _documentRepository.DeleteAsync(id, cancellationToken);
+            await _documentChunkRepository.DeleteByDocumentIdAsync(id);
+            await _documentRepository.DeleteAsync(id);
         }
     }
 }
