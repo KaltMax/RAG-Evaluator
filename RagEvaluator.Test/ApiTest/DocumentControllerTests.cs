@@ -9,6 +9,10 @@ using RagEvaluator.Contract.Dtos.Responses;
 
 namespace RagEvaluator.Test.ApiTest
 {
+    /// <summary>
+    /// Contains unit tests for the DocumentController class, validating the behavior of document upload, retrieval,
+    /// deletion, and processing functionalities.
+    /// </summary>
     public class DocumentControllerTests
     {
         private readonly ILogger<DocumentController> _logger;
@@ -310,7 +314,7 @@ namespace RagEvaluator.Test.ApiTest
 
         #region Helper Methods
 
-        private static FormFile CreateFormFile(string fileName, byte[] content, string contentType)
+        private FormFile CreateFormFile(string fileName, byte[] content, string contentType)
         {
             var stream = new MemoryStream(content);
             return new FormFile(stream, 0, content.Length, "file", fileName)
@@ -320,7 +324,7 @@ namespace RagEvaluator.Test.ApiTest
             };
         }
 
-        private static DocumentResponse CreateDocumentResponse(Guid? id = null)
+        private DocumentResponse CreateDocumentResponse(Guid? id = null)
         {
             return new DocumentResponse
             {

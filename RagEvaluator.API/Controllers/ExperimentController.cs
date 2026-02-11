@@ -29,7 +29,7 @@ namespace RagEvaluator.API.Controllers
         [ProducesResponseType(typeof(ExperimentSummaryResponse), StatusCodes.Status202Accepted)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CreateExperimentAsync([FromBody] CreateExperimentRequest request, CancellationToken cancellationToken)
+        public async Task<ActionResult<ExperimentSummaryResponse>> CreateExperimentAsync([FromBody] CreateExperimentRequest request, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
