@@ -54,9 +54,9 @@ namespace RagEvaluator.API.Controllers
         /// Retrieves the history of all executed queries
         /// </summary>
         [HttpGet("history")]
-        [ProducesResponseType(typeof(IEnumerable<QueryResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<QuerySummaryResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<QueryResponse>>> GetQueryHistoryAsync(CancellationToken cancellationToken)
+        public async Task<ActionResult<IEnumerable<QuerySummaryResponse>>> GetQueryHistoryAsync(CancellationToken cancellationToken)
         {
             var queries = await _queryService.GetAllAsync(cancellationToken);
             return Ok(queries);
