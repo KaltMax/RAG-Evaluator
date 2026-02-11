@@ -38,7 +38,7 @@ namespace RagEvaluator.Test.ApiTest
             _controller.ModelState.AddModelError("Question", "The Question field is required.");
 
             // Act
-            var result = await _controller.QueryAsync(request, CancellationToken.None);
+            var result = await _controller.QueryAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -56,7 +56,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(expectedResponse);
 
             // Act
-            var result = await _controller.QueryAsync(request, CancellationToken.None);
+            var result = await _controller.QueryAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -81,7 +81,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(queryHistory);
 
             // Act
-            var result = await _controller.GetQueryHistoryAsync(CancellationToken.None);
+            var result = await _controller.GetQueryHistoryAsync(TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -98,7 +98,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(queryHistory);
 
             // Act
-            var result = await _controller.GetQueryHistoryAsync(CancellationToken.None);
+            var result = await _controller.GetQueryHistoryAsync(TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -120,7 +120,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(query);
 
             // Act
-            var result = await _controller.GetQueryByIdAsync(queryId, CancellationToken.None);
+            var result = await _controller.GetQueryByIdAsync(queryId, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -137,7 +137,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((QueryResponse?)null);
 
             // Act
-            var result = await _controller.GetQueryByIdAsync(queryId, CancellationToken.None);
+            var result = await _controller.GetQueryByIdAsync(queryId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result.Result);
@@ -156,7 +156,7 @@ namespace RagEvaluator.Test.ApiTest
             _controller.ModelState.AddModelError("Annotations", "The Annotations field is required.");
 
             // Act
-            var result = await _controller.AnnotateResultsAsync(Guid.NewGuid(), request, CancellationToken.None);
+            var result = await _controller.AnnotateResultsAsync(Guid.NewGuid(), request, TestContext.Current.CancellationToken);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -173,7 +173,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((QueryResponse?)null);
 
             // Act
-            var result = await _controller.AnnotateResultsAsync(queryId, CreateSampleAnnotateResultsRequest(), CancellationToken.None);
+            var result = await _controller.AnnotateResultsAsync(queryId, CreateSampleAnnotateResultsRequest(), TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result.Result);
@@ -189,7 +189,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(existingQuery);
 
             // Act
-            var result = await _controller.AnnotateResultsAsync(queryId, CreateSampleAnnotateResultsRequest(), CancellationToken.None);
+            var result = await _controller.AnnotateResultsAsync(queryId, CreateSampleAnnotateResultsRequest(), TestContext.Current.CancellationToken);
             
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -217,7 +217,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((QueryResponse?)null);
 
             // Act
-            var result = await _controller.DeleteQueryAsync(queryId, CancellationToken.None);
+            var result = await _controller.DeleteQueryAsync(queryId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result);
@@ -234,7 +234,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(existingQuery);
 
             // Act
-            var result = await _controller.DeleteQueryAsync(queryId, CancellationToken.None);
+            var result = await _controller.DeleteQueryAsync(queryId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NoContentResult>(result);

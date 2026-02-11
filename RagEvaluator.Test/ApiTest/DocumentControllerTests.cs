@@ -41,7 +41,7 @@ namespace RagEvaluator.Test.ApiTest
             _controller.ModelState.AddModelError("Language", "Language must be 'en' or 'de'.");
 
             // Act
-            var result = await _controller.UploadDocumentAsync(request, CancellationToken.None);
+            var result = await _controller.UploadDocumentAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -68,7 +68,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(expectedResponse);
 
             // Act
-            var result = await _controller.UploadDocumentAsync(request, CancellationToken.None);
+            var result = await _controller.UploadDocumentAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -85,7 +85,7 @@ namespace RagEvaluator.Test.ApiTest
             var request = new UploadDocumentRequest { File = formFile, Language = "en" };
 
             // Act
-            var result = await _controller.UploadDocumentAsync(request, CancellationToken.None);
+            var result = await _controller.UploadDocumentAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -100,7 +100,7 @@ namespace RagEvaluator.Test.ApiTest
             var request = new UploadDocumentRequest { File = formFile, Language = "en" };
 
             // Act
-            var result = await _controller.UploadDocumentAsync(request, CancellationToken.None);
+            var result = await _controller.UploadDocumentAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -123,7 +123,7 @@ namespace RagEvaluator.Test.ApiTest
             _documentService.GetAllAsync(Arg.Any<CancellationToken>()).Returns(documents);
 
             // Act
-            var result = await _controller.GetAllDocumentsAsync(CancellationToken.None);
+            var result = await _controller.GetAllDocumentsAsync(TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -139,7 +139,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(new List<DocumentResponse>());
 
             // Act
-            var result = await _controller.GetAllDocumentsAsync(CancellationToken.None);
+            var result = await _controller.GetAllDocumentsAsync(TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -160,7 +160,7 @@ namespace RagEvaluator.Test.ApiTest
             _documentService.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
             // Act
-            var result = await _controller.GetDocumentByIdAsync(documentId, CancellationToken.None);
+            var result = await _controller.GetDocumentByIdAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -177,7 +177,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((DocumentResponse?)null);
 
             // Act
-            var result = await _controller.GetDocumentByIdAsync(documentId, CancellationToken.None);
+            var result = await _controller.GetDocumentByIdAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result.Result);
@@ -196,7 +196,7 @@ namespace RagEvaluator.Test.ApiTest
             _documentService.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
             // Act
-            var result = await _controller.DeleteDocumentAsync(documentId, CancellationToken.None);
+            var result = await _controller.DeleteDocumentAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NoContentResult>(result);
@@ -212,7 +212,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((DocumentResponse?)null);
 
             // Act
-            var result = await _controller.DeleteDocumentAsync(documentId, CancellationToken.None);
+            var result = await _controller.DeleteDocumentAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result);
@@ -232,7 +232,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((DocumentFileInfo?)null);
 
             // Act
-            var result = await _controller.DownloadDocumentAsync(documentId, CancellationToken.None);
+            var result = await _controller.DownloadDocumentAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result);
@@ -258,7 +258,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(expectedResponse);
 
             // Act
-            var result = await _controller.ReprocessDocumentsAsync(CancellationToken.None);
+            var result = await _controller.ReprocessDocumentsAsync(TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -287,7 +287,7 @@ namespace RagEvaluator.Test.ApiTest
             _documentProcessingService.GetChunksByDocumentIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(chunks);
 
             // Act
-            var result = await _controller.GetDocumentChunksAsync(documentId, CancellationToken.None);
+            var result = await _controller.GetDocumentChunksAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -304,7 +304,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((DocumentResponse?)null);
 
             // Act
-            var result = await _controller.GetDocumentChunksAsync(documentId, CancellationToken.None);
+            var result = await _controller.GetDocumentChunksAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result.Result);

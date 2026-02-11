@@ -35,7 +35,7 @@ namespace RagEvaluator.Test.ApiTest
             _controller.ModelState.AddModelError("Name", "The Name field is required.");
             
             // Act
-            var result = await _controller.CreateExperimentAsync(request, CancellationToken.None);
+            var result = await _controller.CreateExperimentAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -53,7 +53,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(expectedResponse);
 
             // Act
-            var result = await _controller.CreateExperimentAsync(request, CancellationToken.None);
+            var result = await _controller.CreateExperimentAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<AcceptedResult>(result.Result);
@@ -77,7 +77,7 @@ namespace RagEvaluator.Test.ApiTest
             _experimentService.GetAllAsync(Arg.Any<CancellationToken>()).Returns(experiments);
 
             // Act
-            var result = await _controller.GetAllAsync(CancellationToken.None);
+            var result = await _controller.GetAllAsync(TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -93,7 +93,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(new List<ExperimentSummaryResponse>());
 
             // Act
-            var result = await _controller.GetAllAsync(CancellationToken.None);
+            var result = await _controller.GetAllAsync(TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -114,7 +114,7 @@ namespace RagEvaluator.Test.ApiTest
             _experimentService.GetByIdAsync(experimentId, Arg.Any<CancellationToken>()).Returns(experiment);
 
             // Act
-            var result = await _controller.GetByIdAsync(experimentId, CancellationToken.None);
+            var result = await _controller.GetByIdAsync(experimentId, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -131,7 +131,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((ExperimentResponse?)null);
 
             // Act
-            var result = await _controller.GetByIdAsync(experimentId, CancellationToken.None);
+            var result = await _controller.GetByIdAsync(experimentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result.Result);
@@ -150,7 +150,7 @@ namespace RagEvaluator.Test.ApiTest
             _experimentService.GetByIdAsync(experimentId, Arg.Any<CancellationToken>()).Returns(experiment);
 
             // Act
-            var result = await _controller.DeleteAsync(experimentId, CancellationToken.None);
+            var result = await _controller.DeleteAsync(experimentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NoContentResult>(result);
@@ -166,7 +166,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns((ExperimentResponse?)null);
 
             // Act
-            var result = await _controller.DeleteAsync(experimentId, CancellationToken.None);
+            var result = await _controller.DeleteAsync(experimentId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.IsType<NotFoundResult>(result);

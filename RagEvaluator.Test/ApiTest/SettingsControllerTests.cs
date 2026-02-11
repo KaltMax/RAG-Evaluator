@@ -51,7 +51,7 @@ namespace RagEvaluator.Test.ApiTest
             _controller.ModelState.AddModelError("ChunkSize", "ChunkSize must be a positive integer.");
 
             // Act
-            var result = await _controller.UpdateSettings(request, CancellationToken.None);
+            var result = await _controller.UpdateSettings(request, TestContext.Current.CancellationToken);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -68,7 +68,7 @@ namespace RagEvaluator.Test.ApiTest
             _settingsService.UpdateSettingsAsync(request).Returns(expectedResponse);
 
             // Act
-            var result = await _controller.UpdateSettings(request, CancellationToken.None);
+            var result = await _controller.UpdateSettings(request, TestContext.Current.CancellationToken);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);

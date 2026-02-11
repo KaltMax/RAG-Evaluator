@@ -14,24 +14,21 @@ namespace RagEvaluator.Application.Services
     /// </summary>
     public class DocumentService : IDocumentService
     {
-        private readonly ILogger<DocumentService> _logger;
         private readonly IDocumentRepository _documentRepository;
         private readonly IDocumentChunkRepository _documentChunkRepository;
         private readonly IFileStorageService _fileStorageService;
 
         public DocumentService(
-            ILogger<DocumentService> logger,
             IDocumentRepository documentRepository,
             IDocumentChunkRepository documentChunkRepository,
             IFileStorageService fileStorageService)
         {
-            _logger = logger;
             _documentRepository = documentRepository;
             _documentChunkRepository = documentChunkRepository;
             _fileStorageService = fileStorageService;
         }
 
-        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long? fileSize, string? mimeType, string language, CancellationToken cancellationToken = default)
+        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, CancellationToken cancellationToken = default)
         {
             fileName = Path.GetFileName(fileName);
 
@@ -123,10 +120,10 @@ namespace RagEvaluator.Application.Services
 
             if (document?.FilePath != null)
             {
-                await _fileStorageService.DeleteFileAsync(document.FilePath);
+                await _fileStorageService.DeleteFileAsync(document.FilePath, cancellationToken);
             }
-            await _documentChunkRepository.DeleteByDocumentIdAsync(id);
-            await _documentRepository.DeleteAsync(id);
+            await _documentChunkRepository.DeleteByDocumentIdAsync(id, cancellationToken);
+            await _documentRepository.DeleteAsync(id, cancellationToken);
         }
     }
 }

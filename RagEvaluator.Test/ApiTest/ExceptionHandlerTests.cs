@@ -29,7 +29,7 @@ namespace RagEvaluator.Test.ApiTest
             var exception = new InvalidOperationException("Service is unavailable");
 
             // Act
-            var result = await _exceptionHandler.TryHandleAsync(httpContext, exception, CancellationToken.None);
+            var result = await _exceptionHandler.TryHandleAsync(httpContext, exception, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -48,7 +48,7 @@ namespace RagEvaluator.Test.ApiTest
             var exception = new ArgumentException("Invalid argument");
 
             // Act
-            var result = await _exceptionHandler.TryHandleAsync(httpContext, exception, CancellationToken.None);
+            var result = await _exceptionHandler.TryHandleAsync(httpContext, exception, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -67,7 +67,7 @@ namespace RagEvaluator.Test.ApiTest
             var exception = new Exception("Something went wrong");
 
             // Act
-            var result = await _exceptionHandler.TryHandleAsync(httpContext, exception, CancellationToken.None);
+            var result = await _exceptionHandler.TryHandleAsync(httpContext, exception, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
