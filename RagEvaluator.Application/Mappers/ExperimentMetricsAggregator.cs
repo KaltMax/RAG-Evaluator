@@ -64,7 +64,10 @@ namespace RagEvaluator.Application.Mappers
 
         private static double ComputeStdDev(List<double> values)
         {
-            if (values.Count <= 1) return 0;
+            if (values.Count <= 1)
+            {
+                return 0;
+            }
             var mean = values.Average();
             var sumSquaredDiff = values.Sum(v => (v - mean) * (v - mean));
             return Math.Sqrt(sumSquaredDiff / (values.Count - 1));
