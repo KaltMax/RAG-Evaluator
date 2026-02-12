@@ -1,11 +1,9 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Application.Workers;
 using RagEvaluator.Contract.Abstractions.Data;
-using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
