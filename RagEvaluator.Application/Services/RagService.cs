@@ -50,7 +50,8 @@ namespace RagEvaluator.Application.Services
                 await _documentProcessingService.ProcessDocumentContentAsync(document.Id, documentStream, cancellationToken);
 
                 // Return updated document
-                return (await _documentService.GetByIdAsync(document.Id, cancellationToken))!;
+                var updatedDocument = await _documentService.GetByIdAsync(document.Id, cancellationToken);
+                return updatedDocument!;
             }
             catch
             {
