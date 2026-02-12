@@ -97,7 +97,7 @@ namespace RagEvaluator.Test.ApplicationTest
         [Fact]
         public async Task UpdateSettingsAsync_WithOverlapGreaterThanChunkSize_ShouldThrowArgumentException()
         {
-            // Arrange — overlap 500 >= effective chunk size 200 (current config ChunkSize=1000, but request overrides)
+            // Arrange — overlap 500 >= effective chunk size 200
             var request = new UpdateSettingsRequest { ChunkSize = 200, ChunkOverlap = 500 };
 
             // Act & Assert
