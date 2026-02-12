@@ -16,27 +16,27 @@ namespace RagEvaluator.Application.Services
     /// </summary>
     public class ExperimentService : IExperimentService
     {
+        private readonly ILogger<ExperimentService> _logger;
         private readonly IExperimentRepository _experimentRepository;
         private readonly IQueryRepository _queryRepository;
         private readonly IRagService _ragService;
         private readonly ExperimentQueue _experimentQueue;
         private readonly RagConfiguration _config;
-        private readonly ILogger<ExperimentService> _logger;
 
         public ExperimentService(
+            ILogger<ExperimentService> logger,
             IExperimentRepository experimentRepository,
             IQueryRepository queryRepository,
             IRagService ragService,
             ExperimentQueue experimentQueue,
-            RagConfiguration config,
-            ILogger<ExperimentService> logger)
+            RagConfiguration config)
         {
+            _logger = logger;
             _experimentRepository = experimentRepository;
             _queryRepository = queryRepository;
             _ragService = ragService;
             _experimentQueue = experimentQueue;
             _config = config;
-            _logger = logger;
         }
 
         public async Task<ExperimentSummaryResponse> CreateExperimentAsync(
