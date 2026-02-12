@@ -17,7 +17,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Annotate each retrieved chunk with relevance grades (Not Relevant, Marginally Relevant, Fairly Relevant, Highly Relevant)
   - Color-coded relevance badges for quick selection
   - Automatic metrics calculation after annotation submission
-  - Metrics display panel showing MRR, Precision@K, NDCG@K, and Response Time
+  - Metrics display panel showing MRR, Precision@K, Recall@k, NDCG@K, and Response Time
 
 - **Response Quality Evaluation** - Evaluate LLM response quality
   - Rate response quality (Correct & Complete, Vague/Incomplete, Incorrect, Hallucinated)
@@ -79,7 +79,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20+ and npm
 - Backend API running on `http://localhost:5000` (or configure `VITE_API_BASE_URL`)
 
 ### Installation
