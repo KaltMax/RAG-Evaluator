@@ -24,7 +24,7 @@ function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-2 md:px-4 py-3 rounded-lg transition-colors ${
+              className={`flex items-center gap-3 px-2 md:px-4 py-3 rounded-lg transition-colors select-none ${
                 isActive(item.path)
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-400 hover:bg-[#1F1F1F] hover:text-white'
