@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { ArrowPathIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ChevronDownIcon, ChevronUpIcon, ChevronUpDownIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { getAllQueries } from '../api/GetAllQueriesService';
 import { deleteQuery } from '../api/DeleteQueryService';
 import { getQueryById } from '../api/GetQueryByIdService';
@@ -9,6 +9,7 @@ import { formatMetric } from '../utils/formatMetric';
 import { getResponseQualityOption, getResponseQualityColor } from '../utils/responseQualityOptions';
 import { formatResponseTime } from '../utils/formatResponseTime';
 import { formatLanguage } from '../utils/formatLanguage';
+import { sortByKey } from '../utils/sortByKey';
 import SearchResults from './SearchResults';
 
 function QueryHistory() {
@@ -19,6 +20,8 @@ function QueryHistory() {
   const [queryDetails, setQueryDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(new Set());
   const [annotatingIds, setAnnotatingIds] = useState(new Set());
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDirection, setSortDirection] = useState('asc');
 
   const fetchQueries = async () => {
     setIsLoading(true);
@@ -112,6 +115,25 @@ function QueryHistory() {
     }
   };
 
+  const sortOptions = [
+    { key: 'question', label: 'Question' },
+    { key: 'language', label: 'Language' },
+    { key: 'createdAt', label: 'Created At' },
+    { key: 'experimentName', label: 'Experiment' },
+    { key: 'responseQuality', label: 'Status' },
+  ];
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedQueries = sortByKey(queries, sortKey, sortDirection);
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       {/* Page header with title and refresh button */}
@@ -151,7 +173,32 @@ function QueryHistory() {
         </div>
       ) : (
         <div className="space-y-4">
-          {queries.map((query) => {
+          {/* Sort controls */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-300 uppercase tracking-wider">Sort by</span>
+            {sortOptions.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => handleSort(key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors select-none ${
+                  sortKey === key
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
+                    : 'bg-[#2D2D2D] text-gray-400 border border-gray-700 hover:border-gray-500'
+                }`}
+              >
+                {label}
+                {sortKey === key ? (
+                  sortDirection === 'asc'
+                    ? <ChevronUpIcon className="w-3 h-3 inline ml-1" />
+                    : <ChevronDownIcon className="w-3 h-3 inline ml-1" />
+                ) : (
+                  <ChevronUpDownIcon className="w-3 h-3 inline ml-1" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {sortedQueries.map((query) => {
             const isExpanded = expandedIds.has(query.id);
             const metricsStatus = getMetricsStatus(query);
 

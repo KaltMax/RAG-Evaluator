@@ -25,6 +25,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Color-coded quality buttons for quick selection
 
 - **Query History** - Review and analyze past queries
+  - Sortable by Question, Language, Created At, Experiment, and Status (ascending/descending)
   - Collapsible cards with query question and ID
   - Experiment association display (experiment name or "None" for standalone queries)
   - Full answer display with system prompt
