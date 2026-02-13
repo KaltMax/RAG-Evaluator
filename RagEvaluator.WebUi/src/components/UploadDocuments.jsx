@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
 import { DocumentArrowUpIcon, DocumentTextIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { uploadDocument } from '../api/UploadDocumentService';
+import { uploadDocument } from '../api/documentService';
 import { formatFileSize } from '../utils/formatFileSize';
 import { formatDate } from '../utils/formatDate';
 

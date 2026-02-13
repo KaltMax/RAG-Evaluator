@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// Create an Axios instance with default configuration
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   headers: {
@@ -37,5 +38,24 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Utility function to wrap API calls and handle errors consistently
+export async function apiRequest(requestFn) {
+  try {
+    const response = await requestFn();
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      const errorMessage =
+        error.response.data?.title ||
+        `Server error: ${error.response.status}`;
+      throw new Error(errorMessage);
+    } else if (error.request) {
+      throw new Error('Network error: Unable to reach the server');
+    } else {
+      throw new Error(`An unexpected error occurred: ${error.message}`);
+    }
+  }
+}
 
 export default axiosInstance;

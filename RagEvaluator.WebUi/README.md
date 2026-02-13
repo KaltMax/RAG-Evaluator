@@ -177,21 +177,11 @@ See `nginx.conf` for the complete configuration.
 ```
 src/
 ├── api/                                # API service layer
-│   ├── axiosConfig.js                  # Axios instance configuration
-│   ├── AnnotateResultsService.js       # Annotation API service (relevance + response quality)
-│   ├── DeleteDocumentService.js        # Document deletion API service
-│   ├── DownloadDocumentService.js      # Document download API service
-│   ├── GetAllDocumentsService.js       # Fetch all documents API service
-│   ├── GetAllQueriesService.js         # Fetch query history API service
-│   ├── GetQueryByIdService.js          # Fetch single query with sources API service
-│   ├── DeleteQueryService.js           # Query deletion API service
-│   ├── GetDocumentByIdService.js       # Fetch single document API service
-│   ├── PostQueryService.js             # Query API service
-│   ├── PostExperimentService.js        # Create experiment API service
-│   ├── GetSettingsService.js           # Fetch settings API service
-│   ├── UpdateSettings.js               # Update settings API service
-│   ├── ReprocessDocumentsService.js    # Reprocess documents API service
-│   └── UploadDocumentService.js        # Upload API service (multi-file, with language)
+│   ├── axiosConfig.js                  # Axios instance configuration with shared error handling
+│   ├── documentService.js              # Document API (CRUD, upload, download, reprocess)
+│   ├── queryService.js                 # Query API (post, history, get by ID, delete, annotate)
+│   ├── experimentService.js            # Experiment API (create)
+│   └── settingsService.js              # Settings API (get, update)
 ├── utils/                              # Utility functions
 │   ├── formatDate.js                   # Date formatting utility
 │   ├── formatLanguage.js               # Language code to name formatting

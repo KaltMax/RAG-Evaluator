@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getSettings } from '../api/GetSettingsService';
-import { updateSettings } from '../api/UpdateSettings';
-import { reprocessDocuments } from '../api/ReprocessDocumentsService';
+import { getSettings, updateSettings } from '../api/settingsService';
+import { reprocessDocuments } from '../api/documentService';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 function Settings() {

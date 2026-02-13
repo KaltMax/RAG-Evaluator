@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { ArrowPathIcon, ChevronDownIcon, ChevronUpIcon, ChevronUpDownIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { getAllQueries } from '../api/GetAllQueriesService';
-import { deleteQuery } from '../api/DeleteQueryService';
-import { getQueryById } from '../api/GetQueryByIdService';
+import { getAllQueries, deleteQuery, getQueryById } from '../api/queryService';
 import { formatDate } from '../utils/formatDate';
 import { formatMetric } from '../utils/formatMetric';
 import { getResponseQualityOption, getResponseQualityColor } from '../utils/responseQualityOptions';

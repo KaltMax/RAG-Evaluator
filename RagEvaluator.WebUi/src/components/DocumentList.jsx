@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { ArrowPathIcon, ArrowDownTrayIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline';
-import { getAllDocuments } from '../api/GetAllDocumentsService';
-import { deleteDocument } from '../api/DeleteDocumentService';
-import { downloadDocument } from '../api/DownloadDocumentService';
+import { getAllDocuments, deleteDocument, downloadDocument } from '../api/documentService';
 import { formatDate } from '../utils/formatDate';
 import { formatFileSize } from '../utils/formatFileSize';
 import { formatLanguage } from '../utils/formatLanguage';

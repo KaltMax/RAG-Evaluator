@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import Searchbar from './Searchbar';
 import SearchResults from './SearchResults';
-import { postQuery } from '../api/PostQueryService';
+import { postQuery } from '../api/queryService';
 
 function SearchView() {
   const [results, setResults] = useState(null);
