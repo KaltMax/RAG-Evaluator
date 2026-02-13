@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { ArrowPathIcon, ArrowDownTrayIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ArrowDownTrayIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline';
 import { getAllDocuments } from '../api/GetAllDocumentsService';
 import { deleteDocument } from '../api/DeleteDocumentService';
 import { downloadDocument } from '../api/DownloadDocumentService';
@@ -12,6 +12,8 @@ function DocumentList() {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDirection, setSortDirection] = useState('asc');
 
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -69,6 +71,35 @@ function DocumentList() {
     );
   };
 
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedDocuments = [...documents].sort((a, b) => {
+    if (!sortKey) return 0;
+    let aVal = a[sortKey];
+    let bVal = b[sortKey];
+    if (typeof aVal === 'string') {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortKey !== columnKey) return <ChevronUpDownIcon className="w-4 h-4 inline ml-1 text-gray-600" />;
+    return sortDirection === 'asc'
+      ? <ChevronUpIcon className="w-4 h-4 inline ml-1 text-blue-400" />
+      : <ChevronDownIcon className="w-4 h-4 inline ml-1 text-blue-400" />;
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-center mb-8">
@@ -110,34 +141,31 @@ function DocumentList() {
             <table className="w-full">
               <thead className="bg-[#1F1F1F]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    File Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Size
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Pages
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Chunks
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Language
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Uploaded At
-                  </th>
+                  {[
+                    { key: 'fileName', label: 'File Name' },
+                    { key: 'fileSize', label: 'Size' },
+                    { key: 'pageCount', label: 'Pages' },
+                    { key: 'chunkCount', label: 'Chunks' },
+                    { key: 'language', label: 'Language' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'uploadedAt', label: 'Uploaded At' },
+                  ].map(({ key, label }) => (
+                    <th
+                      key={key}
+                      onClick={() => handleSort(key)}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-200 transition-colors"
+                    >
+                      {label}
+                      <SortIcon columnKey={key} />
+                    </th>
+                  ))}
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {documents.map((doc) => (
+                {sortedDocuments.map((doc) => (
                   <tr key={doc.id} className="hover:bg-[#252525] transition-colors">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm text-white font-medium truncate max-w-xs" title={doc.fileName}>
