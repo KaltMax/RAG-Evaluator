@@ -219,7 +219,9 @@ Response:
       "embeddingModel": "nomic-embed-text-v2-moe"
     }
   ],
-  "timestamp": "2025-01-04T12:05:00Z"
+  "timestamp": "2025-01-04T12:05:00Z",
+  "experimentId": null,
+  "experimentName": null
 }
 ```
 

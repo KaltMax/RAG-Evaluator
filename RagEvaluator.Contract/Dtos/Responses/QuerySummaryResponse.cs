@@ -22,5 +22,7 @@
         public double? NdcgAtK { get; set; }
         public int? ResponseQuality { get; set; }
         public bool? HasLanguageSwitching { get; set; }
+        public Guid? ExperimentId { get; set; }
+        public string? ExperimentName { get; set; }
     }
 }

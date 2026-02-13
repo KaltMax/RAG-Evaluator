@@ -26,12 +26,14 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             return await _context.Queries
                 .Include(q => q.Results)
                 .Include(q => q.RelevantDocuments)
+                .Include(q => q.Experiment)
                 .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
         }
 
         public async Task<IReadOnlyList<Query>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Queries
+                .Include(q => q.Experiment)
                 .OrderByDescending(q => q.CreatedAt)
                 .ToListAsync(cancellationToken);
         }

@@ -3,6 +3,8 @@ import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
 import { DocumentArrowUpIcon, DocumentTextIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { uploadDocument } from '../api/UploadDocumentService';
+import { formatFileSize } from '../utils/formatFileSize';
+import { formatDate } from '../utils/formatDate';
 
 function UploadDocuments() {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -82,16 +84,6 @@ function UploadDocuments() {
     setSelectedFiles((prev) =>
       prev.map((f) => (f.id === id ? { ...f, language } : f))
     );
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
   };
 
   return (

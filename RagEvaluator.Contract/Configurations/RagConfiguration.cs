@@ -20,6 +20,6 @@ namespace RagEvaluator.Contract.Configurations
         public string PromptLanguageAwareDe { get; set; } = "Du bist ein hilfreicher Assistent. Beantworte die Frage basierend auf dem bereitgestellten Kontext. Sei präzise und genau. Wenn der Kontext die Antwort nicht enthält, antworte mit 'Ich weiß es nicht.' Antworte immer auf Deutsch.";
         public int ChunkSize { get; set; } = 1000;
         public int ChunkOverlap { get; set; } = 200;
-        public double SimilarityThreshold { get; set; } = 0.5;
+        public double SimilarityThreshold { get; set; } = 0.6;
     }
 }

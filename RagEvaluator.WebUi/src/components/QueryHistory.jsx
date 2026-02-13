@@ -175,6 +175,16 @@ function QueryHistory() {
                       <span>{formatDate(query.createdAt)}</span>
                     </div>
                   </div>
+                  <div className="hidden md:block text-center w-48 shrink-0">
+                    <p className="text-xs text-gray-400">Experiment</p>
+                    {query.experimentName ? (
+                      <p className="text-sm text-purple-400 font-medium truncate" title={query.experimentId}>
+                        {query.experimentName}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">None</p>
+                    )}
+                  </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${metricsStatus.color}`}>
                     {metricsStatus.label}
                   </span>

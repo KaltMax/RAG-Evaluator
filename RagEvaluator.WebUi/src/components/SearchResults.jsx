@@ -9,6 +9,7 @@ import { relevanceGrades, getRelevanceGrade } from '../utils/relevanceGrades';
 import { responseQualityOptions, getResponseQualityOption, getResponseQualityColor } from '../utils/responseQualityOptions';
 import { formatMetric } from '../utils/formatMetric';
 import { formatResponseTime } from '../utils/formatResponseTime';
+import { formatDate } from '../utils/formatDate';
 
 function SearchResults({ results, onAnnotated }) {
   const [annotations, setAnnotations] = useState({});
@@ -35,9 +36,6 @@ function SearchResults({ results, onAnnotated }) {
     return null;
   }
 
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
-  };
 
   const getSimilarityColor = (similarity) => {
     if (similarity >= 0.8) return 'text-green-400';
@@ -157,7 +155,7 @@ function SearchResults({ results, onAnnotated }) {
         </div>
         <div className="flex items-center gap-2 mt-4 text-sm text-gray-400">
           <ClockIcon className="w-4 h-4" />
-          <span>{formatTimestamp(results.timestamp)}</span>
+          <span>{formatDate(results.timestamp)}</span>
           <span className="ml-auto">Query ID: {results.queryId}</span>
         </div>
 

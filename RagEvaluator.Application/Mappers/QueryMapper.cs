@@ -29,7 +29,9 @@ namespace RagEvaluator.Application.Mappers
                 RecallAtK = query.RecallAtK,
                 NdcgAtK = query.NDCGAtK,
                 ResponseQuality = query.ResponseQuality.HasValue ? (int)query.ResponseQuality.Value : null,
-                HasLanguageSwitching = query.HasLanguageSwitching
+                HasLanguageSwitching = query.HasLanguageSwitching,
+                ExperimentId = query.ExperimentId,
+                ExperimentName = query.Experiment?.Name
             };
         }
 
@@ -59,7 +61,9 @@ namespace RagEvaluator.Application.Mappers
                 RecallAtK = query.RecallAtK,
                 NdcgAtK = query.NDCGAtK,
                 ResponseQuality = query.ResponseQuality.HasValue ? (int)query.ResponseQuality.Value : null,
-                HasLanguageSwitching = query.HasLanguageSwitching
+                HasLanguageSwitching = query.HasLanguageSwitching,
+                ExperimentId = query.ExperimentId,
+                ExperimentName = query.Experiment?.Name
             };
         }
 
@@ -84,7 +88,9 @@ namespace RagEvaluator.Application.Mappers
                 RecallAtK = query.RecallAtK,
                 NdcgAtK = query.NDCGAtK,
                 ResponseQuality = query.ResponseQuality.HasValue ? (int)query.ResponseQuality.Value : null,
-                HasLanguageSwitching = query.HasLanguageSwitching
+                HasLanguageSwitching = query.HasLanguageSwitching,
+                ExperimentId = query.ExperimentId,
+                ExperimentName = query.Experiment?.Name
             };
         }
 

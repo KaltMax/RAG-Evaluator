@@ -391,7 +391,7 @@ RAG-Evaluator/
 
 - `DocumentRepository` - Document CRUD with status filtering
 - `DocumentChunkRepository` - Chunk persistence with pgvector similarity search (raw SQL with `<=>` operator)
-- `QueryRepository` - Query persistence with eager loading of results and relevant documents
+- `QueryRepository` - Query persistence with eager loading of results, relevant documents, and experiment association
 - `ExperimentRepository` - Experiment persistence with eager loading of queries
 
 **Vector Storage Architecture**:

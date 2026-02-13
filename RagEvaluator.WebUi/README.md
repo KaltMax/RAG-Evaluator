@@ -26,6 +26,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 
 - **Query History** - Review and analyze past queries
   - Collapsible cards with query question and ID
+  - Experiment association display (experiment name or "None" for standalone queries)
   - Full answer display with system prompt
   - Query parameters (Top-K, Language, Chat Model, Embedding Model, Chunking Strategy)
   - Evaluation metrics display (MRR, Precision@K, Recall@K, NDCG@K, Response Time, Response Quality, Language Switching)
@@ -41,7 +42,8 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - View processed document metadata (pages, chunks, language, etc.)
 
 - **Document List**
-  - View all uploaded documents
+  - View all uploaded documents in a sortable table
+  - Sortable columns: file name, size, pages, chunks, language, status, upload date (ascending/descending)
   - See metadata: file name, size, pages, chunks, language, status, upload date
   - Download documents
   - Delete documents
@@ -189,7 +191,8 @@ src/
 │   ├── formatResponseTime.js           # Response time formatting (ms/s)
 │   ├── relevanceGrades.js              # Relevance grade definitions and helpers
 │   ├── formatFileSize.js               # File size formatting utility (B/KB/MB)
-│   └── responseQualityOptions.js       # Response quality options, helpers, and colors
+│   ├── responseQualityOptions.js       # Response quality options, helpers, and colors
+│   └── sortByKey.js                    # Shared sorting utility for tables and lists
 ├── components/                         # React components
 │   ├── DocumentList.jsx                # Document list page
 │   ├── Header.jsx                      # Top navigation bar
