@@ -114,6 +114,7 @@ function QueryHistory() {
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Page header with title and refresh button */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Query History</h1>
@@ -129,6 +130,7 @@ function QueryHistory() {
         </button>
       </div>
 
+      {/* Query cards with loading, error, and empty states */}
       {isLoading && queries.length === 0 ? (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-12 flex items-center justify-center">
           <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin" />
@@ -158,7 +160,7 @@ function QueryHistory() {
                 key={query.id}
                 className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden"
               >
-                {/* Collapsed Header */}
+                {/* Collapsed card header with question, status badge, and delete */}
                 <button
                   onClick={() => toggleExpanded(query.id)}
                   className="w-full px-6 py-4 flex items-center gap-4 hover:bg-[#353535] transition-colors text-left"
@@ -190,10 +192,10 @@ function QueryHistory() {
                   )}
                 </button>
 
-                {/* Expanded Content */}
+                {/* Expanded content: answer, query details, and evaluation metrics */}
                 {isExpanded && (
                   <div className="px-6 pb-6 border-t border-gray-700">
-                    {/* Answer Section */}
+                    {/* LLM-generated answer */}
                     <div className="mt-4">
                       <h3 className="text-sm font-bold text-gray-200 mb-2">Answer</h3>
                       <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700">
@@ -203,7 +205,7 @@ function QueryHistory() {
                       </div>
                     </div>
 
-                    {/* Query Details */}
+                    {/* Query parameters: system prompt, top-k, language, models, chunking */}
                     <div className="mt-4">
                       <h3 className="text-sm font-bold text-gray-200 mb-2">Query Details</h3>
                       <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700 mb-4">
@@ -246,7 +248,7 @@ function QueryHistory() {
                       </div>
                     </div>
 
-                    {/* Pending: Annotate Button or SearchResults */}
+                    {/* Pending: annotate button or SearchResults for evaluation */}
                     {isPending(query) && (
                       <div className="mt-4">
                         <h3 className="text-sm font-bold text-gray-200 mb-2">Evaluation Metrics</h3>
@@ -280,7 +282,7 @@ function QueryHistory() {
                       </div>
                     )}
 
-                    {/* Evaluated: Metrics Section */}
+                    {/* Evaluated: retrieval metrics (MRR, Precision, Recall, NDCG) */}
                     {!isPending(query) && (
                       <div className="mt-4">
                         <h3 className="text-sm font-bold text-gray-200 mb-2">Evaluation Metrics</h3>
@@ -303,7 +305,7 @@ function QueryHistory() {
                           </div>
                         </div>
 
-                        {/* Second Row: Response Time, Language Switching, Response Quality */}
+                        {/* Quality metrics: response time, language switching, response quality */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                           <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700 text-center">
                             <p className="text-gray-400 text-xs mb-1">Response Time</p>
@@ -332,6 +334,7 @@ function QueryHistory() {
         </div>
       )}
 
+      {/* Query count footer */}
       {queries.length > 0 && (
         <div className="text-sm text-gray-500 text-center">
           Showing {queries.length} quer{queries.length === 1 ? 'y' : 'ies'}

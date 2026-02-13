@@ -101,7 +101,7 @@ function UploadDocuments() {
         <p className="text-gray-400">Upload PDF documents for RAG processing (max 20 files)</p>
       </div>
 
-      {/* Dropzone */}
+      {/* Drag-and-drop zone with file list and upload button */}
       <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
         <div
           {...getRootProps()}
@@ -127,7 +127,7 @@ function UploadDocuments() {
           </div>
         </div>
 
-        {/* Selected Files List */}
+        {/* Selected files with language selector and remove button */}
         {selectedFiles.length > 0 && (
           <div className="mt-6 space-y-4">
             <p className="text-gray-300 font-medium">
@@ -199,7 +199,7 @@ function UploadDocuments() {
         )}
       </div>
 
-      {/* Upload Results */}
+      {/* Upload results: success details or error messages per file */}
       {uploadResults.length > 0 && (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold text-white mb-4">Upload Results</h2>

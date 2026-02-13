@@ -15,16 +15,7 @@ function SearchView() {
     try {
       const response = await postQuery(question, topK, language);
 
-      // Transform the response to match our component's expected format
-      const formattedResults = {
-        queryId: response.queryId,
-        question: response.question,
-        answer: response.answer,
-        sources: response.sources,
-        timestamp: response.timestamp,
-      };
-
-      setResults(formattedResults);
+      setResults(response);
       toast.success('Query processed successfully!');
     } catch (error) {
       console.error('Search error:', error);

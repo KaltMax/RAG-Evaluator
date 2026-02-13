@@ -7,6 +7,7 @@ import { downloadDocument } from '../api/DownloadDocumentService';
 import { formatDate } from '../utils/formatDate';
 import { formatFileSize } from '../utils/formatFileSize';
 import { formatLanguage } from '../utils/formatLanguage';
+import { sortByKey } from '../utils/sortByKey';
 
 function DocumentList() {
   const [documents, setDocuments] = useState([]);
@@ -80,20 +81,9 @@ function DocumentList() {
     }
   };
 
-  const sortedDocuments = [...documents].sort((a, b) => {
-    if (!sortKey) return 0;
-    let aVal = a[sortKey];
-    let bVal = b[sortKey];
-    if (typeof aVal === 'string') {
-      aVal = aVal.toLowerCase();
-      bVal = bVal.toLowerCase();
-    }
-    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const sortedDocuments = sortByKey(documents, sortKey, sortDirection);
 
-  const SortIcon = ({ columnKey }) => {
+  const renderSortIcon = (columnKey) => {
     if (sortKey !== columnKey) return <ChevronUpDownIcon className="w-4 h-4 inline ml-1 text-gray-600" />;
     return sortDirection === 'asc'
       ? <ChevronUpIcon className="w-4 h-4 inline ml-1 text-blue-400" />
@@ -102,6 +92,7 @@ function DocumentList() {
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Page header with title and refresh button */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Documents</h1>
@@ -117,6 +108,7 @@ function DocumentList() {
         </button>
       </div>
 
+      {/* Document table with loading, error, and empty states */}
       <div className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden">
         {isLoading && documents.length === 0 ? (
           <div className="flex items-center justify-center py-12">
@@ -139,6 +131,7 @@ function DocumentList() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
+              {/* Sortable column headers */}
               <thead className="bg-[#1F1F1F]">
                 <tr>
                   {[
@@ -156,7 +149,7 @@ function DocumentList() {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-200 transition-colors"
                     >
                       {label}
-                      <SortIcon columnKey={key} />
+                      {renderSortIcon(key)}
                     </th>
                   ))}
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -164,6 +157,7 @@ function DocumentList() {
                   </th>
                 </tr>
               </thead>
+              {/* Document rows with download and delete actions */}
               <tbody className="divide-y divide-gray-700">
                 {sortedDocuments.map((doc) => (
                   <tr key={doc.id} className="hover:bg-[#252525] transition-colors">
@@ -217,6 +211,7 @@ function DocumentList() {
         )}
       </div>
 
+      {/* Document count footer */}
       {documents.length > 0 && (
         <div className="text-sm text-gray-500 text-center">
           Showing {documents.length} document{documents.length === 1 ? '' : 's'}

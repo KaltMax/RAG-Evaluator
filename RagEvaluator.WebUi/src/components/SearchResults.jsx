@@ -146,7 +146,7 @@ function SearchResults({ results, onAnnotated }) {
 
   return (
     <div className="w-full space-y-6">
-      {/* Answer Section */}
+      {/* Answer with timestamp and response quality evaluation */}
       <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <DocumentTextIcon className="w-6 h-6 text-blue-400" />
@@ -161,14 +161,14 @@ function SearchResults({ results, onAnnotated }) {
           <span className="ml-auto">Query ID: {results.queryId}</span>
         </div>
 
-        {/* Response Quality Evaluation */}
+        {/* Response quality buttons and language switching checkbox */}
         <div className="mt-4 pt-4 border-t border-gray-700">
           <details className="text-sm" open={!metrics}>
             <summary className="cursor-pointer text-gray-400 hover:text-gray-300 mb-3 font-medium">
               Response Quality Evaluation
             </summary>
 
-            {/* Response Quality Annotation Buttons */}
+            {/* Quality annotation buttons */}
             <div className="space-y-2 mb-4">
               <p className="text-xs text-gray-500 mb-2">Overall Quality:</p>
               <div className="flex flex-wrap gap-2">
@@ -211,7 +211,7 @@ function SearchResults({ results, onAnnotated }) {
         </div>
       </div>
 
-      {/* Sources Section */}
+      {/* Retrieved sources with similarity scores and relevance annotation */}
       {results.sources && results.sources.length > 0 && (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold text-white mb-4">
@@ -250,7 +250,7 @@ function SearchResults({ results, onAnnotated }) {
                 </div>
                 <p className="text-gray-300 text-sm leading-relaxed">{source.text}</p>
 
-                {/* Relevance Annotation Section */}
+                {/* Relevance grade annotation buttons */}
                 <div className="mt-3 pt-3 border-t border-gray-700">
                   <details className="text-xs" open={!metrics}>
                     <summary className="cursor-pointer text-gray-500 hover:text-gray-400 mb-2">
@@ -282,7 +282,7 @@ function SearchResults({ results, onAnnotated }) {
                   </details>
                 </div>
 
-                {/* Details Section */}
+                {/* Source metadata: chunking strategy and embedding model */}
                 {(source.chunkingStrategy || source.embeddingModel) && (
                   <div className="mt-3 pt-3 border-t border-gray-700">
                     <details className="text-xs text-gray-500">
@@ -306,7 +306,7 @@ function SearchResults({ results, onAnnotated }) {
         </div>
       )}
 
-      {/* Ground Truth Documents Section */}
+      {/* Ground truth document selection for Recall@K */}
       {!metrics && availableDocuments.length > 0 && (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold text-white mb-2">
@@ -347,7 +347,7 @@ function SearchResults({ results, onAnnotated }) {
         </div>
       )}
 
-      {/* Submit Annotations Section */}
+      {/* Annotation progress and submit button */}
       {!metrics && (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
           <div className="flex items-center justify-between">
@@ -372,7 +372,7 @@ function SearchResults({ results, onAnnotated }) {
         </div>
       )}
 
-      {/* Metrics Summary Panel */}
+      {/* Post-submission metrics: MRR, Precision, Recall, NDCG, response quality */}
       {metrics && (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-green-700">
           <div className="flex items-center gap-2 mb-4">

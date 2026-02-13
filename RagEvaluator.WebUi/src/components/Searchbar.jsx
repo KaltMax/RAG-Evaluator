@@ -17,6 +17,7 @@ function Searchbar({ onSearch, isLoading }) {
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 space-y-4">
+        {/* Question input, top-k selector, language selector, and search button */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <label htmlFor="question" className="block text-sm font-medium text-gray-300 mb-2">

@@ -126,6 +126,7 @@ function Settings() {
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Page header with title and refresh button */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
@@ -143,7 +144,7 @@ function Settings() {
 
       {draft && settings && (
         <>
-          {/* Embedding Model */}
+          {/* Embedding model selector */}
           <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
             <h2 className="text-sm font-bold text-gray-200 mb-2">Embedding Model</h2>
             <p className="text-gray-400 text-xs mb-4">Active model used for generating embeddings</p>
@@ -160,7 +161,7 @@ function Settings() {
             </div>
           </div>
 
-          {/* Chunking Strategy */}
+          {/* Chunking strategy selector with FixedSize/Semantic parameters */}
           <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
             <h2 className="text-sm font-bold text-gray-200 mb-2">Chunking Strategy</h2>
             <p className="text-gray-400 text-xs mb-4">How documents are split into chunks for retrieval</p>
@@ -222,7 +223,7 @@ function Settings() {
             )}
           </div>
 
-          {/* Prompt Template */}
+          {/* Prompt template selector: Basic, Instructed, LanguageAware */}
           <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
             <h2 className="text-sm font-bold text-gray-200 mb-2">Prompt Template</h2>
             <p className="text-gray-400 text-xs mb-4">System prompt strategy for cross-language evaluation</p>
@@ -271,7 +272,7 @@ function Settings() {
             </div>
           </div>
 
-          {/* Reprocessing Indicator */}
+          {/* Reprocessing spinner after config changes */}
           {isReprocessing && (
             <div className="sticky bottom-4 flex items-center gap-3 bg-[#2D2D2D] rounded-lg shadow-lg p-4 border border-blue-500/40">
               <ArrowPathIcon className="w-5 h-5 text-blue-400 animate-spin" />
@@ -279,7 +280,7 @@ function Settings() {
             </div>
           )}
 
-          {/* Save / Discard Bar */}
+          {/* Sticky save/discard bar when settings are modified */}
           {hasChanges() && !isReprocessing && (
             <div className="sticky bottom-4 flex justify-end gap-3 bg-[#2D2D2D] rounded-lg shadow-lg p-4 border border-gray-700">
               <button
