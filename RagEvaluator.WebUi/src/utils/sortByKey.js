@@ -7,11 +7,11 @@
 export function sortByKey(array, key, direction = 'asc') {
   if (!key) return array;
   return [...array].sort((a, b) => {
-    let aVal = a[key];
-    let bVal = b[key];
+    let aVal = a[key] ?? '';
+    let bVal = b[key] ?? '';
     if (typeof aVal === 'string') {
       aVal = aVal.toLowerCase();
-      bVal = bVal.toLowerCase();
+      bVal = String(bVal).toLowerCase();
     }
     if (aVal < bVal) return direction === 'asc' ? -1 : 1;
     if (aVal > bVal) return direction === 'asc' ? 1 : -1;

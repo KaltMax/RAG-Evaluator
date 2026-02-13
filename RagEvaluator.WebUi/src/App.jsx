@@ -9,6 +9,7 @@ import DocumentList from "./components/DocumentList";
 import QueryHistory from "./components/QueryHistory";
 import Settings from "./components/Settings";
 import Statistics from "./components/Statistics";
+import Experiments from "./components/Experiments";
 
 function App() {
 
@@ -21,7 +22,8 @@ function App() {
           <main className="flex-1 min-w-0 p-4 md:p-8">
             <Routes>
               <Route path="/" element={<SearchView />} />
-              <Route path="/upload" element={<UploadDocuments />} />
+              <Route path="/experiments" element={<Experiments />} />
+              <Route path="/uploadDocuments" element={<UploadDocuments />} />
               <Route path="/documents" element={<DocumentList />} />
               <Route path="/queryHistory" element={<QueryHistory />} />
               <Route path="/statistics" element={<Statistics />} />

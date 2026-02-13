@@ -208,33 +208,40 @@ function QueryHistory() {
                 className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden"
               >
                 {/* Collapsed card header with question, status badge, and delete */}
-                <button
-                  onClick={() => toggleExpanded(query.id)}
-                  className="w-full px-6 py-4 flex items-center gap-4 hover:bg-[#353535] transition-colors text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate">{query.question}</p>
-                    <p className="text-xs text-gray-400 font-mono truncate mt-1" title={query.id}>
-                      {query.id}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
-                      <ClockIcon className="w-4 h-4" />
-                      <span>{formatDate(query.createdAt)}</span>
-                    </div>
-                  </div>
-                  <div className="hidden md:block text-center w-48 shrink-0">
-                    <p className="text-xs text-gray-400">Experiment</p>
-                    {query.experimentName ? (
-                      <p className="text-sm text-purple-400 font-medium truncate" title={query.experimentId}>
-                        {query.experimentName}
+                <div className="w-full px-6 py-4 flex items-center gap-4">
+                  <button
+                    onClick={() => toggleExpanded(query.id)}
+                    className="flex-1 min-w-0 flex items-center gap-4 hover:bg-[#353535] -m-2 p-2 rounded-lg transition-colors text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">{query.question}</p>
+                      <p className="text-xs text-gray-400 font-mono truncate mt-1" title={query.id}>
+                        {query.id}
                       </p>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+                        <ClockIcon className="w-4 h-4" />
+                        <span>{formatDate(query.createdAt)}</span>
+                      </div>
+                    </div>
+                    <div className="hidden md:block text-center w-48 shrink-0">
+                      <p className="text-xs text-gray-400">Experiment</p>
+                      {query.experimentName ? (
+                        <p className="text-sm text-purple-400 font-medium truncate" title={query.experimentId}>
+                          {query.experimentName}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-500">None</p>
+                      )}
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${metricsStatus.color}`}>
+                      {metricsStatus.label}
+                    </span>
+                    {isExpanded ? (
+                      <ChevronUpIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     ) : (
-                      <p className="text-sm text-gray-500">None</p>
+                      <ChevronDownIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     )}
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${metricsStatus.color}`}>
-                    {metricsStatus.label}
-                  </span>
+                  </button>
                   <button
                     onClick={(e) => handleDelete(e, query.id)}
                     className="p-1 text-gray-400 hover:text-red-400 transition-colors"
@@ -242,12 +249,7 @@ function QueryHistory() {
                   >
                     <TrashIcon className="w-5 h-5" />
                   </button>
-                  {isExpanded ? (
-                    <ChevronUpIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  ) : (
-                    <ChevronDownIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  )}
-                </button>
+                </div>
 
                 {/* Expanded content: answer, query details, and evaluation metrics */}
                 {isExpanded && (

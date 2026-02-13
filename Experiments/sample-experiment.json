@@ -1,0 +1,8 @@
+{
+  "Name": "Sample Experiment",
+  "RepeatCount": 2,
+  "Queries": [
+    { "Question": "Was ist SQL?", "Language": "de", "TopK": 3 },
+    { "Question": "What is SQL?", "Language": "en", "TopK": 5 }
+  ]
+}

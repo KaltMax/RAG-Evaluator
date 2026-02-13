@@ -54,6 +54,12 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Active route highlighting
   - Clean, modern dark theme
 
+- **Experiments** - Run batch experiments to evaluate RAG performance
+  - Upload a JSON file defining experiment name, repeat count, and queries
+  - Client-side validation of experiment structure
+  - Preview experiment details and query list before submission
+  - Submit to create experiment via API
+
 - **Settings** - Configure RAG system parameters at runtime
   - Embedding model selection from available models
   - Chunking strategy selection (FixedSize with chunk size/overlap, Semantic with similarity threshold)
@@ -181,6 +187,7 @@ src/
 │   ├── DeleteQueryService.js           # Query deletion API service
 │   ├── GetDocumentByIdService.js       # Fetch single document API service
 │   ├── PostQueryService.js             # Query API service
+│   ├── PostExperimentService.js        # Create experiment API service
 │   ├── GetSettingsService.js           # Fetch settings API service
 │   ├── UpdateSettings.js               # Update settings API service
 │   ├── ReprocessDocumentsService.js    # Reprocess documents API service
@@ -203,6 +210,7 @@ src/
 │   ├── Searchbar.jsx                   # Search input component
 │   ├── SearchResults.jsx               # Search results display with annotation UI
 │   ├── UploadDocuments.jsx             # Document upload page
+│   ├── Experiments.jsx                 # Experiment creation page (JSON upload)
 │   ├── Statistics.jsx                  # Statistics page (placeholder)
 │   └── Settings.jsx                    # Settings page (embedding model, chunking, prompts)
 ├── assets/                             # Static assets
@@ -252,5 +260,6 @@ Brief summary of implemented API services (see `src/api`):
 | `POST /api/documents/reprocess` | Reprocess all documents with current chunking/embedding config |
 | `GET /api/settings` | Get current RAG configuration and available options |
 | `PATCH /api/settings` | Update RAG configuration (partial update, only changed fields) |
+| `POST /api/experiments` | Create experiment with `{ Name, RepeatCount, Queries[] }` |
 
 Axios base URL is controlled by `VITE_API_BASE_URL` (default `/api`). Timeout is 300000 ms (5 min).
