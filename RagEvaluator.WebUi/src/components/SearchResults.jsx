@@ -312,7 +312,7 @@ function SearchResults({ results, onAnnotated }) {
           <p className="text-sm text-gray-400 mb-4">
             Select which documents should ideally contain relevant information for this query (used for Recall@K calculation).
           </p>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2 max-h-100 overflow-y-auto">
             {availableDocuments.map((doc) => (
               <label
                 key={doc.id}

@@ -285,7 +285,7 @@ function Settings() {
               <button
                 onClick={handleDiscard}
                 disabled={isSaving}
-                className="px-4 py-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg transition-colors disabled:opacity-50"
               >
                 Discard
               </button>
