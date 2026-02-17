@@ -24,6 +24,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task<IReadOnlyList<DocumentSummary>> GetAllSummariesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Returns the subset of the provided IDs that actually exist in the repository.
+        /// </summary>
+        Task<IReadOnlyList<Guid>> GetExistingIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Gets all documents with a specific processing status.
         /// </summary>
         Task<IReadOnlyList<Document>> GetByStatusAsync(DocumentStatus status, CancellationToken cancellationToken = default);

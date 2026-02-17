@@ -1,7 +1,6 @@
 ﻿using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.Enums;
-using RagEvaluator.Domain.ValueObjects;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {

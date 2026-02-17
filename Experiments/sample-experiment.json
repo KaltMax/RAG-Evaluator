@@ -12,7 +12,7 @@
       "Question": "What is SQL?",
       "Language": "en",
       "TopK": 5,
-      "RelevantDocumentIds": []
+      "RelevantDocumentIds": ["dfaa4d3c-80e5-48a8-bf64-d56f018f1689"]
     }
   ]
 }

@@ -19,6 +19,7 @@ namespace RagEvaluator.Application.Services
         private readonly ILogger<ExperimentService> _logger;
         private readonly IExperimentRepository _experimentRepository;
         private readonly IQueryRepository _queryRepository;
+        private readonly IDocumentRepository _documentRepository;
         private readonly IRagService _ragService;
         private readonly ExperimentQueue _experimentQueue;
         private readonly RagConfiguration _config;
@@ -27,6 +28,7 @@ namespace RagEvaluator.Application.Services
             ILogger<ExperimentService> logger,
             IExperimentRepository experimentRepository,
             IQueryRepository queryRepository,
+            IDocumentRepository documentRepository,
             IRagService ragService,
             ExperimentQueue experimentQueue,
             RagConfiguration config)
@@ -34,6 +36,7 @@ namespace RagEvaluator.Application.Services
             _logger = logger;
             _experimentRepository = experimentRepository;
             _queryRepository = queryRepository;
+            _documentRepository = documentRepository;
             _ragService = ragService;
             _experimentQueue = experimentQueue;
             _config = config;
@@ -42,6 +45,19 @@ namespace RagEvaluator.Application.Services
         public async Task<ExperimentSummaryResponse> CreateExperimentAsync(
             CreateExperimentRequest request, CancellationToken cancellationToken = default)
         {
+            var allRelevantDocumentIds = request.Queries
+                .SelectMany(q => q.RelevantDocumentIds)
+                .Distinct()
+                .ToList();
+
+            if (allRelevantDocumentIds.Count > 0)
+            {
+                var existingIds = await _documentRepository.GetExistingIdsAsync(allRelevantDocumentIds, cancellationToken);
+                var missingIds = allRelevantDocumentIds.Except(existingIds).ToList();
+                if (missingIds.Count > 0)
+                    throw new ArgumentException($"Unknown document IDs in RelevantDocumentIds: {string.Join(", ", missingIds)}");
+            }
+
             var experiment = new Experiment
             {
                 Id = Guid.NewGuid(),

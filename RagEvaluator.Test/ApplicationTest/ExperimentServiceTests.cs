@@ -17,6 +17,7 @@ namespace RagEvaluator.Test.ApplicationTest
         private readonly ILogger<ExperimentService> _logger;
         private readonly IExperimentRepository _experimentRepository;
         private readonly IQueryRepository _queryRepository;
+        private readonly IDocumentRepository _documentRepository;
         private readonly IRagService _ragService;
         private readonly ExperimentQueue _experimentQueue;
         private readonly RagConfiguration _config;
@@ -27,10 +28,11 @@ namespace RagEvaluator.Test.ApplicationTest
             _logger = Substitute.For<ILogger<ExperimentService>>();
             _experimentRepository = Substitute.For<IExperimentRepository>();
             _queryRepository = Substitute.For<IQueryRepository>();
+            _documentRepository = Substitute.For<IDocumentRepository>();
             _ragService = Substitute.For<IRagService>();
             _experimentQueue = new ExperimentQueue();
             _config = CreateSampleRagConfiguration();
-            _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _ragService, _experimentQueue, _config);
+            _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _documentRepository, _ragService, _experimentQueue, _config);
         }
 
         #region CreateExperimentAsync Tests
@@ -67,6 +69,49 @@ namespace RagEvaluator.Test.ApplicationTest
             // Assert
             Assert.NotNull(response);
             Assert.Equal(request.Queries.Count * request.RepeatCount, response.Progress.Total);
+        }
+
+        [Fact]
+        public async Task CreateExperimentAsync_WithUnknownRelevantDocumentId_ShouldThrow()
+        {
+            // Arrange
+            var knownId = Guid.NewGuid();
+            var unknownId = Guid.NewGuid();
+            var request = new CreateExperimentRequest
+            {
+                Name = "Test",
+                RepeatCount = 1,
+                Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentIds = [knownId, unknownId] }]
+            };
+            _documentRepository.GetExistingIdsAsync(Arg.Any<IEnumerable<Guid>>(), TestContext.Current.CancellationToken)
+                .Returns([knownId]);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateExperimentAsync(request, TestContext.Current.CancellationToken));
+            Assert.Contains(unknownId.ToString(), ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateExperimentAsync_WithAllValidRelevantDocumentIds_ShouldCreateExperiment()
+        {
+            // Arrange
+            var docId = Guid.NewGuid();
+            var request = new CreateExperimentRequest
+            {
+                Name = "Test",
+                RepeatCount = 1,
+                Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentIds = [docId] }]
+            };
+            _documentRepository.GetExistingIdsAsync(Arg.Any<IEnumerable<Guid>>(), TestContext.Current.CancellationToken)
+                .Returns([docId]);
+
+            // Act
+            var response = await _service.CreateExperimentAsync(request, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(response);
+            await _experimentRepository.Received(1).AddAsync(Arg.Any<Experiment>(), TestContext.Current.CancellationToken);
         }
 
         #endregion

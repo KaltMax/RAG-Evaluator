@@ -47,6 +47,15 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<Guid>> GetExistingIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+        {
+            var idList = ids.ToList();
+            return await _context.Documents
+                .Where(d => idList.Contains(d.Id))
+                .Select(d => d.Id)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IReadOnlyList<Document>> GetByStatusAsync(DocumentStatus status, CancellationToken cancellationToken = default)
         {
             return await _context.Documents
