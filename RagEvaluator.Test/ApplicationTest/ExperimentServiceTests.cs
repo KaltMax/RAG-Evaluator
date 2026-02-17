@@ -100,7 +100,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
             _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
-            _queryRepository.GetByIdAsync(queryId, TestContext.Current.CancellationToken)
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(new Query { Id = queryId });
 
             // Act
@@ -125,7 +125,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
             _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
-            _queryRepository.GetByIdAsync(queryId, TestContext.Current.CancellationToken)
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(new Query { Id = queryId });
 
             // Act
@@ -149,7 +149,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(
                     _ => throw new Exception("Embedding service unavailable"),
                     _ => Task.FromResult(CreateSampleQueryResponse(queryId)));
-            _queryRepository.GetByIdAsync(queryId, TestContext.Current.CancellationToken)
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(new Query { Id = queryId });
 
             // Act
@@ -172,7 +172,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
             _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
-            _queryRepository.GetByIdAsync(queryId, TestContext.Current.CancellationToken)
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(query);
 
             // Act
@@ -181,6 +181,66 @@ namespace RagEvaluator.Test.ApplicationTest
             // Assert
             Assert.Equal(experiment.Id, query.ExperimentId);
             await _queryRepository.Received(2).UpdateAsync(query, TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
+        public async Task ProcessExperimentAsync_WithRelevantDocumentIds_ShouldPopulateGroundTruth()
+        {
+            // Arrange
+            var experiment = CreateSampleExperiment();
+            var docId1 = Guid.NewGuid();
+            var docId2 = Guid.NewGuid();
+            var queries = new List<ExperimentQueryItem>
+            {
+                new ExperimentQueryItem
+                {
+                    Question = "What is Serverless Computing?",
+                    Language = "en",
+                    TopK = 5,
+                    RelevantDocumentIds = [docId1, docId2]
+                }
+            };
+            var queryId = Guid.NewGuid();
+            var query = new Query { Id = queryId };
+
+            _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
+            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+                .Returns(CreateSampleQueryResponse(queryId));
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
+                .Returns(query);
+
+            // Act
+            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(2, query.RelevantDocuments.Count);
+            Assert.Contains(query.RelevantDocuments, rd => rd.DocumentId == docId1);
+            Assert.Contains(query.RelevantDocuments, rd => rd.DocumentId == docId2);
+        }
+
+        [Fact]
+        public async Task ProcessExperimentAsync_WithEmptyRelevantDocumentIds_ShouldNotPopulateGroundTruth()
+        {
+            // Arrange
+            var experiment = CreateSampleExperiment();
+            var queries = new List<ExperimentQueryItem>
+            {
+                new ExperimentQueryItem { Question = "What is SQL?", Language = "en", TopK = 3 }
+            };
+            var queryId = Guid.NewGuid();
+            var query = new Query { Id = queryId };
+
+            _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
+            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+                .Returns(CreateSampleQueryResponse(queryId));
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
+                .Returns(query);
+
+            // Act
+            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Empty(query.RelevantDocuments);
         }
 
         #endregion

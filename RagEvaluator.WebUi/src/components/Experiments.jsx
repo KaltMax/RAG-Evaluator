@@ -136,6 +136,7 @@ function Experiments() {
                     <th className="text-left text-gray-400 font-medium px-4 py-3">Question</th>
                     <th className="text-left text-gray-400 font-medium px-4 py-3">Language</th>
                     <th className="text-left text-gray-400 font-medium px-4 py-3">Top-K</th>
+                    <th className="text-left text-gray-400 font-medium px-4 py-3">Ground Truth</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -145,6 +146,9 @@ function Experiments() {
                       <td className="px-4 py-3 text-gray-200">{query.Question}</td>
                       <td className="px-4 py-3 text-gray-200">{formatLanguage(query.Language)}</td>
                       <td className="px-4 py-3 text-gray-200">{query.TopK ?? '-'}</td>
+                      <td className="px-4 py-3 text-gray-200">
+                        {query.RelevantDocumentIds?.length > 0 ? `${query.RelevantDocumentIds.length} doc(s)` : '-'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

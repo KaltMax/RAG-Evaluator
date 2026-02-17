@@ -83,35 +83,13 @@ namespace RagEvaluator.Application.Services
 
                     try
                     {
-                        var askRequest = new AskQuestionRequest
-                        {
-                            Question = queryItem.Question,
-                            Language = queryItem.Language,
-                            TopK = queryItem.TopK
-                        };
-
-                        var response = await _ragService.AskQuestionAsync(askRequest, cancellationToken);
-
-                        // Link the resulting query to this experiment
-                        var query = await _queryRepository.GetByIdAsync(response.QueryId, cancellationToken);
-                        if (query is not null)
-                        {
-                            query.ExperimentId = experimentId;
-                            await _queryRepository.UpdateAsync(query, cancellationToken);
-                        }
-
-                        experiment.CompletedQueryCount++;
-                        await _experimentRepository.UpdateAsync(experiment, cancellationToken);
-
-                        _logger.LogInformation(
-                            "Experiment {ExperimentId}: completed query {Completed}/{Total}",
-                            experimentId, experiment.CompletedQueryCount, experiment.TotalQueryCount);
+                        await ProcessSingleQueryAsync(experiment, queryItem, cancellationToken);
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex,
                             "Experiment {ExperimentId}: failed to process query '{Question}' (repeat {Repeat})",
-                            experimentId, queryItem.Question, repeat + 1);
+                            experiment.Id, queryItem.Question, repeat + 1);
                     }
                 }
             }
@@ -119,6 +97,42 @@ namespace RagEvaluator.Application.Services
             experiment.Status = ExperimentStatus.Completed;
             experiment.CompletedAt = DateTime.UtcNow;
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
+        }
+
+        private async Task ProcessSingleQueryAsync(Experiment experiment, ExperimentQueryItem queryItem, CancellationToken cancellationToken)
+        {
+            var askRequest = new AskQuestionRequest
+            {
+                Question = queryItem.Question,
+                Language = queryItem.Language,
+                TopK = queryItem.TopK
+            };
+
+            var response = await _ragService.AskQuestionAsync(askRequest, cancellationToken);
+
+            var query = await _queryRepository.GetByIdWithResultsAsync(response.QueryId, cancellationToken);
+            if (query is not null)
+            {
+                query.ExperimentId = experiment.Id;
+
+                foreach (var documentId in queryItem.RelevantDocumentIds)
+                {
+                    query.RelevantDocuments.Add(new QueryRelevantDocument
+                    {
+                        QueryId = query.Id,
+                        DocumentId = documentId
+                    });
+                }
+
+                await _queryRepository.UpdateAsync(query, cancellationToken);
+            }
+
+            experiment.CompletedQueryCount++;
+            await _experimentRepository.UpdateAsync(experiment, cancellationToken);
+
+            _logger.LogInformation(
+                "Experiment {ExperimentId}: completed query {Completed}/{Total}",
+                experiment.Id, experiment.CompletedQueryCount, experiment.TotalQueryCount);
         }
 
         public async Task<ExperimentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

@@ -63,7 +63,8 @@ namespace RagEvaluator.Application.Mappers
                 ResponseQuality = query.ResponseQuality.HasValue ? (int)query.ResponseQuality.Value : null,
                 HasLanguageSwitching = query.HasLanguageSwitching,
                 ExperimentId = query.ExperimentId,
-                ExperimentName = query.Experiment?.Name
+                ExperimentName = query.Experiment?.Name,
+                RelevantDocumentIds = query.RelevantDocuments.Select(rd => rd.DocumentId).ToList()
             };
         }
 

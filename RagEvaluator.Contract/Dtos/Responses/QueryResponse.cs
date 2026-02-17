@@ -25,5 +25,6 @@
         public bool? HasLanguageSwitching { get; set; }
         public Guid? ExperimentId { get; set; }
         public string? ExperimentName { get; set; }
+        public List<Guid> RelevantDocumentIds { get; set; } = [];
     }
 }

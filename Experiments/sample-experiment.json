@@ -2,7 +2,17 @@
   "Name": "Sample Experiment",
   "RepeatCount": 2,
   "Queries": [
-    { "Question": "Was ist SQL?", "Language": "de", "TopK": 3 },
-    { "Question": "What is SQL?", "Language": "en", "TopK": 5 }
+    {
+      "Question": "Was ist SQL?",
+      "Language": "de",
+      "TopK": 3,
+      "RelevantDocumentIds": ["dfaa4d3c-80e5-48a8-bf64-d56f018f1689"]
+    },
+    {
+      "Question": "What is SQL?",
+      "Language": "en",
+      "TopK": 5,
+      "RelevantDocumentIds": []
+    }
   ]
 }
