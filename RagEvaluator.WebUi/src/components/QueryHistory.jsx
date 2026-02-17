@@ -206,11 +206,8 @@ function QueryHistory() {
                 className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden"
               >
                 {/* Collapsed card header with question, status badge, and delete */}
-                <div className="w-full px-6 py-4 flex items-center gap-4">
-                  <button
-                    onClick={() => toggleExpanded(query.id)}
-                    className="flex-1 min-w-0 flex items-center gap-4 hover:bg-[#353535] -m-2 p-2 rounded-lg transition-colors text-left"
-                  >
+                <div className="w-full px-6 py-4 flex items-center gap-4 hover:bg-[#353535] transition-colors cursor-pointer" onClick={() => toggleExpanded(query.id)}>
+                  <div className="flex-1 min-w-0 flex items-center gap-4">
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium truncate">{query.question}</p>
                       <p className="text-xs text-gray-400 font-mono truncate mt-1" title={query.id}>
@@ -239,7 +236,7 @@ function QueryHistory() {
                     ) : (
                       <ChevronDownIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     )}
-                  </button>
+                  </div>
                   <button
                     onClick={(e) => handleDelete(e, query.id)}
                     className="p-1 text-gray-400 hover:text-red-400 transition-colors"
