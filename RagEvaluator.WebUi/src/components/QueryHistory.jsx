@@ -206,7 +206,7 @@ function QueryHistory() {
                 className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden"
               >
                 {/* Collapsed card header with question, status badge, and delete */}
-                <div className="w-full px-6 py-4 flex items-center gap-4 hover:bg-[#353535] transition-colors cursor-pointer" onClick={() => toggleExpanded(query.id)}>
+                <div className="w-full px-6 py-4 flex items-center gap-4 hover:bg-[#353535] transition-colors cursor-pointer select-none" onClick={() => toggleExpanded(query.id)}>
                   <div className="flex-1 min-w-0 flex items-center gap-4">
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium truncate">{query.question}</p>
