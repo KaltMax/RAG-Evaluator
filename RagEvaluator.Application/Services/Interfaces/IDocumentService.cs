@@ -13,7 +13,7 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// <summary>
         /// Creates a new document entity and saves the file to storage.
         /// </summary>
-        Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, string? course = null, CancellationToken cancellationToken = default);
+        Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, string course, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets a document by its unique identifier.

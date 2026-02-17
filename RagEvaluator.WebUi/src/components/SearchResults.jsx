@@ -61,30 +61,20 @@ function SearchResults({ results, onAnnotated }) {
     return Object.keys(annotations).length;
   };
 
-  const hasPreDefinedGroundTruth = (results?.relevantDocumentIds?.length ?? 0) > 0;
-
   const getTotalAnnotationsCount = () => {
-    const sourcesAnnotated = getAnnotatedCount();
-    const responseQualityAnnotated = responseQuality === null ? 0 : 1;
-    const relevantDocsAnnotated = hasPreDefinedGroundTruth ? 0 : (relevantDocuments.length > 0 ? 1 : 0);
-    return sourcesAnnotated + responseQualityAnnotated + relevantDocsAnnotated;
+    return getAnnotatedCount() + (responseQuality === null ? 0 : 1) + (relevantDocuments.length > 0 ? 1 : 0);
   };
 
   const getTotalAnnotationsNeeded = () => {
-    const extra = hasPreDefinedGroundTruth ? 1 : 2; // pre-defined: only response quality; otherwise also need relevant docs
-    return (results.sources?.length || 0) + extra;
+    return (results.sources?.length || 0) + 2; // sources + response quality + at least 1 relevant document
   };
 
   const allSourcesAnnotated = () => {
     return getAnnotatedCount() === results.sources?.length;
   };
 
-  const hasRelevantDocuments = () => {
-    return relevantDocuments.length > 0;
-  };
-
   const canSubmitAnnotations = () => {
-    return allSourcesAnnotated() && responseQuality !== null && (hasPreDefinedGroundTruth || hasRelevantDocuments());
+    return allSourcesAnnotated() && responseQuality !== null && relevantDocuments.length > 0;
   };
 
   const handleRelevantDocumentToggle = (documentId) => {
@@ -103,7 +93,7 @@ function SearchResults({ results, onAnnotated }) {
         toast.warning('Please annotate all sources before submitting');
       } else if (responseQuality === null) {
         toast.warning('Please evaluate the response quality before submitting');
-      } else if (!hasRelevantDocuments()) {
+      } else {
         toast.warning('Please select at least one relevant document for Recall@K calculation');
       }
       return;
@@ -313,9 +303,7 @@ function SearchResults({ results, onAnnotated }) {
             Ground Truth Documents
           </h2>
           <p className="text-sm text-gray-400 mb-4">
-            {hasPreDefinedGroundTruth
-              ? `Ground truth pre-defined from experiment (${results.relevantDocumentIds.length} doc${results.relevantDocumentIds.length === 1 ? '' : 's'} pre-selected). You can adjust if needed.`
-              : 'Select which documents should ideally contain relevant information for this query (used for Recall@K calculation).'}
+            Select which documents contain relevant information for this query (used for Recall@K calculation).
           </p>
           <div className="space-y-2 max-h-100 overflow-y-auto">
             {availableDocuments.map((doc) => (

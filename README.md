@@ -127,7 +127,7 @@ dotnet test
 Once running, the API is available at `http://localhost:5000`:
 
 ### Documents
-- `POST /api/documents/upload` - Upload PDF document with language and optional course for RAG processing
+- `POST /api/documents/upload` - Upload PDF document with language and course for RAG processing
 - `GET /api/documents` - List all documents
 - `GET /api/documents/{id}` - Get document details
 - `GET /api/documents/{id}/chunks` - Get document chunks with embeddings

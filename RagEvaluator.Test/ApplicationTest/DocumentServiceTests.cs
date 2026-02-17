@@ -34,7 +34,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(expectedFilePath);
 
             // Act
-            var result = await _service.CreateDocumentAsync(stream, "test.pdf", 1024, "application/pdf", "en", null, TestContext.Current.CancellationToken);
+            var result = await _service.CreateDocumentAsync(stream, "test.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("test.pdf", result.FileName);
@@ -56,7 +56,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns("/storage/some-guid.pdf");
 
             // Act
-            var result = await _service.CreateDocumentAsync(stream, "../../../evil.pdf", 1024, "application/pdf", "en", null, TestContext.Current.CancellationToken);
+            var result = await _service.CreateDocumentAsync(stream, "../../../evil.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("evil.pdf", result.FileName);

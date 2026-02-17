@@ -490,7 +490,7 @@ RAG-Evaluator/
       → 9. For each repeat (1..repeatCount):
          → For each query in queries:
             → 10. RagService.AskQuestionAsync() - Runs full RAG pipeline
-            → 11. Load resulting Query, set ExperimentId, save
+            → 11. Load resulting Query, set ExperimentId, populate ground truth from RelevantDocumentIds, save
             → 12. Increment CompletedQueryCount, update experiment
       → 13. Set status to Completed, set CompletedAt
 

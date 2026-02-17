@@ -35,7 +35,7 @@ namespace RagEvaluator.Application.Services
             _queryService = queryService;
         }
 
-        public async Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string? course = null, CancellationToken cancellationToken = default)
+        public async Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string course, CancellationToken cancellationToken = default)
         {
             // Create document with Pending status
             var document = await _documentService.CreateDocumentAsync(documentStream, fileName, documentStream.Length, contentType, language, course, cancellationToken);

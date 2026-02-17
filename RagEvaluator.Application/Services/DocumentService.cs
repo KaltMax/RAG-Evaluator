@@ -27,7 +27,7 @@ namespace RagEvaluator.Application.Services
             _fileStorageService = fileStorageService;
         }
 
-        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, string? course = null, CancellationToken cancellationToken = default)
+        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, string course, CancellationToken cancellationToken = default)
         {
             fileName = Path.GetFileName(fileName);
 
