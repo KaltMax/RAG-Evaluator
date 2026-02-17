@@ -80,6 +80,7 @@ services:
       - RagConfiguration__PromptInstructed=${RAG_PROMPT_INSTRUCTED}
       - RagConfiguration__PromptLanguageAwareEn=${RAG_PROMPT_LANGUAGE_AWARE_EN}
       - RagConfiguration__PromptLanguageAwareDe=${RAG_PROMPT_LANGUAGE_AWARE_DE}
+      - RagConfiguration__AvailableCourses=${AVAILABLE_COURSES}
       - FileStorageConfiguration__BaseDirectory=${FILE_STORAGE_BASE_DIRECTORY}
     ports:
       - "${API_PORT}:8080"

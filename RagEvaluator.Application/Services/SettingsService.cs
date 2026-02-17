@@ -93,12 +93,20 @@ namespace RagEvaluator.Application.Services
                 PromptLanguageAwareDeText = _config.PromptLanguageAwareDe,
                 AvailableEmbeddingModels = ParseAvailableModels(),
                 AvailableChunkingStrategies = AvailableChunkingStrategies,
+                AvailableCourses = ParseAvailableCourses(),
             };
         }
 
         private List<string> ParseAvailableModels()
         {
             return _config.AvailableEmbeddingModels
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+        }
+
+        private List<string> ParseAvailableCourses()
+        {
+            return _config.AvailableCourses
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToList();
         }

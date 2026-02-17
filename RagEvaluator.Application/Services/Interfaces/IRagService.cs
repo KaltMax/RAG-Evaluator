@@ -11,7 +11,7 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// <summary>
         /// Processes a document by creating it, extracting content, generating chunks with embeddings, and storing them.
         /// </summary>
-        Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language, CancellationToken cancellationToken = default);
+        Task<DocumentResponse> ProcessDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string? course = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Answers a question using RAG: searches for relevant document chunks and generates an answer using the LLM with retrieved context.

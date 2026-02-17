@@ -37,6 +37,7 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                     FileSize = d.FileSize,
                     MimeType = d.MimeType,
                     Language = d.Language,
+                    Course = d.Course,
                     PageCount = d.PageCount,
                     ChunkCount = d.ChunkCount,
                     UploadedAt = d.UploadedAt,

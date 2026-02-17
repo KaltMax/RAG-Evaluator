@@ -13,5 +13,7 @@ namespace RagEvaluator.Contract.Dtos.Requests
         [Required]
         [RegularExpression("^(en|de)$", ErrorMessage = "Language must be 'en' or 'de'.")]
         public required string Language { get; set; }
+
+        public string? Course { get; set; }
     }
 }

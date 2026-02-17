@@ -57,10 +57,10 @@ namespace RagEvaluator.API.Controllers
                 return BadRequest("Only PDF files are supported.");
             }
 
-            _logger.LogInformation("Uploading document: {FileName}, Language: {Language}", request.File.FileName, request.Language);
+            _logger.LogInformation("Uploading document: {FileName}, Language: {Language}, Course: {Course}", request.File.FileName, request.Language, request.Course);
 
             using var stream = request.File.OpenReadStream();
-            var result = await _ragService.ProcessDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, cancellationToken);
+            var result = await _ragService.ProcessDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
 
             _logger.LogInformation("Document processed successfully: {DocumentId}", result.Id);
             return Ok(result);

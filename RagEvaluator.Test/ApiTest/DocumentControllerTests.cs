@@ -64,6 +64,7 @@ namespace RagEvaluator.Test.ApiTest
                 fileName,
                 "application/pdf",
                 "en",
+                Arg.Any<string?>(),
                 Arg.Any<CancellationToken>())
                 .Returns(expectedResponse);
 

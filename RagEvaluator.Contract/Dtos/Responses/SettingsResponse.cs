@@ -18,6 +18,7 @@ namespace RagEvaluator.Contract.Dtos.Responses
         // Available options
         public required List<string> AvailableEmbeddingModels { get; set; }
         public required List<ChunkingStrategy> AvailableChunkingStrategies { get; set; }
+        public required List<string> AvailableCourses { get; set; }
 
         // Prompt template texts
         public required string PromptBasicText { get; set; }

@@ -21,5 +21,6 @@ namespace RagEvaluator.Contract.Configurations
         public int ChunkSize { get; set; } = 1000;
         public int ChunkOverlap { get; set; } = 200;
         public double SimilarityThreshold { get; set; } = 0.6;
+        public string AvailableCourses { get; set; } = string.Empty;
     }
 }

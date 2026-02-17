@@ -108,10 +108,15 @@ namespace RagEvaluator.Test.ApiTest
                     "nomic-embed-text-v2-moe", 
                     "text-embedding-3-small" 
                 },
-                AvailableChunkingStrategies = new List<Domain.Enums.ChunkingStrategy> 
-                { 
-                    Domain.Enums.ChunkingStrategy.FixedSize, 
-                    Domain.Enums.ChunkingStrategy.Semantic 
+                AvailableChunkingStrategies = new List<Domain.Enums.ChunkingStrategy>
+                {
+                    Domain.Enums.ChunkingStrategy.FixedSize,
+                    Domain.Enums.ChunkingStrategy.Semantic
+                },
+                AvailableCourses = new List<string>
+                {
+                    "Software Engineering I",
+                    "Datenmanagement"
                 },
                 PromptBasicText = "This is a basic prompt template.",
                 PromptInstructedText = "This is an instructed prompt template.",

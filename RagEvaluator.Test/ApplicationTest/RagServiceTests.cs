@@ -42,13 +42,13 @@ namespace RagEvaluator.Test.ApplicationTest
             var expectedResponse = new DocumentResponse { Id = documentId, FileName = "test.pdf", Status = "Completed" };
             var stream = new MemoryStream("PDF content"u8.ToArray());
 
-            _documentService.CreateDocumentAsync(stream, "test.pdf", stream.Length, "application/pdf", "en", TestContext.Current.CancellationToken)
+            _documentService.CreateDocumentAsync(stream, "test.pdf", stream.Length, "application/pdf", "en", Arg.Any<string?>(), TestContext.Current.CancellationToken)
                 .Returns(document);
             _documentService.GetByIdAsync(documentId, TestContext.Current.CancellationToken)
                 .Returns(expectedResponse);
 
             // Act
-            var result = await _service.ProcessDocumentAsync(stream, "test.pdf", "application/pdf", "en", TestContext.Current.CancellationToken);
+            var result = await _service.ProcessDocumentAsync(stream, "test.pdf", "application/pdf", "en", null, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(documentId, result.Id);
@@ -64,14 +64,14 @@ namespace RagEvaluator.Test.ApplicationTest
             var document = new Document { Id = documentId, FileName = "test.pdf" };
             var stream = new MemoryStream("PDF content"u8.ToArray());
 
-            _documentService.CreateDocumentAsync(stream, "test.pdf", stream.Length, "application/pdf", "en", TestContext.Current.CancellationToken)
+            _documentService.CreateDocumentAsync(stream, "test.pdf", stream.Length, "application/pdf", "en", Arg.Any<string?>(), TestContext.Current.CancellationToken)
                 .Returns(document);
             _documentProcessingService.ProcessDocumentContentAsync(documentId, stream, TestContext.Current.CancellationToken)
                 .ThrowsAsync(new Exception("PDF extraction failed"));
 
             // Act & Assert
             await Assert.ThrowsAsync<Exception>(() =>
-                _service.ProcessDocumentAsync(stream, "test.pdf", "application/pdf", "en", TestContext.Current.CancellationToken));
+                _service.ProcessDocumentAsync(stream, "test.pdf", "application/pdf", "en", null, TestContext.Current.CancellationToken));
 
             await _documentService.Received(1).UpdateStatusAsync(documentId, DocumentStatus.Failed, cancellationToken: CancellationToken.None);
         }
