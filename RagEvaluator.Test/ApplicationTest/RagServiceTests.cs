@@ -39,7 +39,7 @@ namespace RagEvaluator.Test.ApplicationTest
             // Arrange
             var documentId = Guid.NewGuid();
             var document = new Document { Id = documentId, FileName = "test.pdf" };
-            var expectedResponse = new DocumentResponse { Id = documentId, FileName = "test.pdf", Status = "Completed" };
+            var expectedResponse = new DocumentResponse { Id = documentId, FileName = "test.pdf", Course = "Test Course", Status = "Completed" };
             var stream = new MemoryStream("PDF content"u8.ToArray());
 
             _documentService.CreateDocumentAsync(stream, "test.pdf", stream.Length, "application/pdf", "en", Arg.Any<string?>(), TestContext.Current.CancellationToken)

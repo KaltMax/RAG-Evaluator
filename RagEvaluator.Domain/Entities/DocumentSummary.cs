@@ -12,7 +12,7 @@ namespace RagEvaluator.Domain.Entities
         public long? FileSize { get; init; }
         public string? MimeType { get; init; }
         public string? Language { get; init; }
-        public string? Course { get; init; }
+        public string Course { get; init; } = string.Empty;
         public int PageCount { get; init; }
         public int ChunkCount { get; init; }
         public DateTime UploadedAt { get; init; }

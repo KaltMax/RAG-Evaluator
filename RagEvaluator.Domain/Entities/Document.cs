@@ -14,7 +14,7 @@ namespace RagEvaluator.Domain.Entities
         public string? MimeType { get; set; }
         public string? Content { get; set; }
         public string? Language { get; set; }
-        public string? Course { get; set; }
+        public string Course { get; set; } = string.Empty;
         public int PageCount { get; set; }
         public int ChunkCount { get; set; }
         public DateTime UploadedAt { get; init; }

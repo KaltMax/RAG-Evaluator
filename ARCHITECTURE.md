@@ -521,6 +521,7 @@ CREATE TABLE Documents (
     MimeType VARCHAR(100),
     Content TEXT,                -- Full extracted PDF text
     Language VARCHAR(50),        -- Document language (en, de)
+    Course VARCHAR(100),         -- Course name for categorization
     PageCount INT,
     ChunkCount INT,
     UploadedAt TIMESTAMP NOT NULL,
@@ -677,6 +678,7 @@ Content-Type: multipart/form-data
 
 file: <PDF file>
 language: "en" or "de"
+course: "Software Engineering I"
 ```
 
 **Upload Document Response**:
@@ -686,6 +688,7 @@ language: "en" or "de"
   "id": "123e4567-e89b-12d3-a456-426614174000",
   "fileName": "document.pdf",
   "language": "en",
+  "course": "Software Engineering I",
   "pageCount": 15,
   "chunkCount": 38,
   "uploadedAt": "2025-01-04T12:00:00Z",
@@ -807,10 +810,13 @@ environment:
   - RagConfiguration__PromptInstructed=${RAG_PROMPT_INSTRUCTED}
   - RagConfiguration__PromptLanguageAwareEn=${RAG_PROMPT_LANGUAGE_AWARE_EN}
   - RagConfiguration__PromptLanguageAwareDe=${RAG_PROMPT_LANGUAGE_AWARE_DE}
+  - RagConfiguration__AvailableCourses=${AVAILABLE_COURSES}
   - FileStorageConfiguration__BaseDirectory=/app/uploads
 ```
 
 **Prompt Templates**: Three prompt strategies are available via `RAG_PROMPT_TEMPLATE` in `.env`: `Basic` (basic English prompt), `Instructed` (English prompt with explicit language instruction), and `LanguageAware` (prompt in the query's native language, selected automatically based on the query language). Each template's text is independently configurable via `RAG_PROMPT_BASIC`, `RAG_PROMPT_INSTRUCTED`, `RAG_PROMPT_LANGUAGE_AWARE_EN`, and `RAG_PROMPT_LANGUAGE_AWARE_DE`. All RAG parameters can also be changed at runtime via the Settings API without restarting the container.
+
+**Available Courses**: Course names for document categorization are configured via `AVAILABLE_COURSES` in `.env` as a comma-separated list (e.g., `Datenmanagement,Software Engineering I`). These appear in the upload UI dropdown and are returned by the Settings API.
 
 ### Docker Networking
 

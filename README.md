@@ -127,7 +127,7 @@ dotnet test
 Once running, the API is available at `http://localhost:5000`:
 
 ### Documents
-- `POST /api/documents/upload` - Upload PDF document with language for RAG processing
+- `POST /api/documents/upload` - Upload PDF document with language and optional course for RAG processing
 - `GET /api/documents` - List all documents
 - `GET /api/documents/{id}` - Get document details
 - `GET /api/documents/{id}/chunks` - Get document chunks with embeddings
@@ -170,7 +170,8 @@ curl -X 'POST' \
   -H 'accept: */*' \
   -H 'Content-Type: multipart/form-data' \
   -F 'file=@your-document.pdf' \
-  -F 'language=en'
+  -F 'language=en' \
+  -F 'course=Software Engineering I'
 ```
 
 Response:
@@ -179,6 +180,7 @@ Response:
   "id": "guid",
   "fileName": "your-document.pdf",
   "language": "en",
+  "course": "Software Engineering I",
   "pageCount": 10,
   "chunkCount": 25,
   "uploadedAt": "2025-01-04T12:00:00Z",

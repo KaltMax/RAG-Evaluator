@@ -37,7 +37,7 @@ namespace RagEvaluator.Test.ApiTest
         {
             // Arrange
             var formFile = CreateFormFile("test.pdf", "content"u8.ToArray(), "application/pdf");
-            var request = new UploadDocumentRequest { File = formFile, Language = "es" };
+            var request = new UploadDocumentRequest { File = formFile, Language = "es", Course = "Test Course" };
             _controller.ModelState.AddModelError("Language", "Language must be 'en' or 'de'.");
 
             // Act
@@ -56,7 +56,7 @@ namespace RagEvaluator.Test.ApiTest
             var fileName = "test.pdf";
             var content = "PDF content"u8.ToArray();
             var formFile = CreateFormFile(fileName, content, "application/pdf");
-            var request = new UploadDocumentRequest { File = formFile, Language = "en" };
+            var request = new UploadDocumentRequest { File = formFile, Language = "en", Course = "Test Course" };
             var expectedResponse = CreateDocumentResponse();
 
             _ragService.ProcessDocumentAsync(
@@ -83,7 +83,7 @@ namespace RagEvaluator.Test.ApiTest
         {
             // Arrange
             var formFile = CreateFormFile("test.pdf", Array.Empty<byte>(), "application/pdf");
-            var request = new UploadDocumentRequest { File = formFile, Language = "en" };
+            var request = new UploadDocumentRequest { File = formFile, Language = "en", Course = "Test Course" };
 
             // Act
             var result = await _controller.UploadDocumentAsync(request, TestContext.Current.CancellationToken);
@@ -98,7 +98,7 @@ namespace RagEvaluator.Test.ApiTest
         {
             // Arrange
             var formFile = CreateFormFile("test.txt", "content"u8.ToArray(), "text/plain");
-            var request = new UploadDocumentRequest { File = formFile, Language = "en" };
+            var request = new UploadDocumentRequest { File = formFile, Language = "en", Course = "Test Course" };
 
             // Act
             var result = await _controller.UploadDocumentAsync(request, TestContext.Current.CancellationToken);
@@ -336,6 +336,7 @@ namespace RagEvaluator.Test.ApiTest
                 FileSize = 1024,
                 MimeType = "application/pdf",
                 Language = "en",
+                Course = "Test Course",
                 PageCount = 10,
                 ChunkCount = 5,
                 UploadedAt = DateTime.UtcNow,

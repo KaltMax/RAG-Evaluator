@@ -138,6 +138,7 @@ function DocumentList() {
                     { key: 'pageCount', label: 'Pages' },
                     { key: 'chunkCount', label: 'Chunks' },
                     { key: 'language', label: 'Language' },
+                    { key: 'course', label: 'Course' },
                     { key: 'status', label: 'Status' },
                     { key: 'uploadedAt', label: 'Uploaded At' },
                   ].map(({ key, label }) => (
@@ -178,6 +179,9 @@ function DocumentList() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
                       {formatLanguage(doc.language)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                      {doc.course}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       {getStatusBadge(doc.status)}

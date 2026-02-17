@@ -3,10 +3,11 @@ import axiosInstance, { apiRequest } from './axiosConfig';
 export const getAllDocuments = () =>
   apiRequest(() => axiosInstance.get('/documents'));
 
-export const uploadDocument = async (file, language) => {
+export const uploadDocument = async (file, language, course) => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('language', language);
+  formData.append('course', course);
 
   try {
     const response = await axiosInstance.post('/documents/upload', formData, {

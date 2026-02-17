@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
 import { DocumentArrowUpIcon, DocumentTextIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { uploadDocument } from '../api/documentService';
+import { getSettings } from '../api/settingsService';
 import { formatFileSize } from '../utils/formatFileSize';
 import { formatDate } from '../utils/formatDate';
 
@@ -10,6 +11,19 @@ function UploadDocuments() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState([]);
+  const [availableCourses, setAvailableCourses] = useState([]);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await getSettings();
+        setAvailableCourses(settings.availableCourses || []);
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -26,6 +40,7 @@ function UploadDocuments() {
           id: crypto.randomUUID(),
           file,
           language: 'en',
+          course: '',
         }));
         setSelectedFiles((prev) => {
           const combined = [...prev, ...newFiles];
@@ -46,12 +61,18 @@ function UploadDocuments() {
       return;
     }
 
+    const missingCourse = selectedFiles.some((f) => !f.course);
+    if (missingCourse) {
+      toast.error('Please select a course for all files');
+      return;
+    }
+
     setIsUploading(true);
     const results = [];
 
-    for (const { id, file, language } of selectedFiles) {
+    for (const { id, file, language, course } of selectedFiles) {
       try {
-        const result = await uploadDocument(file, language);
+        const result = await uploadDocument(file, language, course);
         results.push({ id, success: true, result });
       } catch (error) {
         console.error('Upload error:', error);
@@ -83,6 +104,12 @@ function UploadDocuments() {
   const handleLanguageChange = (id, language) => {
     setSelectedFiles((prev) =>
       prev.map((f) => (f.id === id ? { ...f, language } : f))
+    );
+  };
+
+  const handleCourseChange = (id, course) => {
+    setSelectedFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, course } : f))
     );
   };
 
@@ -125,7 +152,7 @@ function UploadDocuments() {
             <p className="text-gray-300 font-medium">
               Selected Files ({selectedFiles.length})
             </p>
-            {selectedFiles.map(({ id, file, language }) => (
+            {selectedFiles.map(({ id, file, language, course }) => (
               <div key={id} className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1">
@@ -146,20 +173,37 @@ function UploadDocuments() {
                   </button>
                 </div>
 
-                {/* Language Selection for this file */}
+                {/* Language and Course Selection for this file */}
                 <div className="mt-3 pt-3 border-t border-gray-700">
-                  <div className="flex items-center gap-4">
-                    <label htmlFor={`language-${id}`} className="text-gray-400 text-sm">Language:</label>
-                    <select
-                      id={`language-${id}`}
-                      value={language}
-                      onChange={(e) => handleLanguageChange(id, e.target.value)}
-                      disabled={isUploading}
-                      className="px-3 py-1.5 bg-[#2D2D2D] border border-gray-600 rounded-lg text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="en">English</option>
-                      <option value="de">German</option>
-                    </select>
+                  <div className="flex items-center gap-6 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor={`language-${id}`} className="text-gray-400 text-sm">Language:</label>
+                      <select
+                        id={`language-${id}`}
+                        value={language}
+                        onChange={(e) => handleLanguageChange(id, e.target.value)}
+                        disabled={isUploading}
+                        className="px-3 py-1.5 bg-[#2D2D2D] border border-gray-600 rounded-lg text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="en">English</option>
+                        <option value="de">German</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label htmlFor={`course-${id}`} className="text-gray-400 text-sm">Course:</label>
+                      <select
+                        id={`course-${id}`}
+                        value={course}
+                        onChange={(e) => handleCourseChange(id, e.target.value)}
+                        disabled={isUploading}
+                        className={`px-3 py-1.5 bg-[#2D2D2D] border rounded-lg text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${!course ? 'border-red-500' : 'border-gray-600'}`}
+                      >
+                        <option value="">Select course...</option>
+                        {availableCourses.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -216,6 +260,8 @@ function UploadDocuments() {
                       <span className="text-gray-200 truncate">{result.result.fileName}</span>
                       <span className="text-gray-400">Language:</span>
                       <span className="text-gray-200">{result.result.language === 'en' ? 'English' : 'German'}</span>
+                      <span className="text-gray-400">Course:</span>
+                      <span className="text-gray-200">{result.result.course}</span>
                       <span className="text-gray-400">Pages:</span>
                       <span className="text-gray-200">{result.result.pageCount}</span>
                       <span className="text-gray-400">Chunks:</span>

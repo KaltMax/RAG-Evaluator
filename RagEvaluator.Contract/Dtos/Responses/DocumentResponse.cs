@@ -10,7 +10,7 @@
         public long? FileSize { get; set; }
         public string? MimeType { get; set; }
         public string? Language { get; set; }
-        public string? Course { get; set; }
+        public required string Course { get; set; }
         public int PageCount { get; set; }
         public int ChunkCount { get; set; }
         public DateTime UploadedAt { get; set; }
