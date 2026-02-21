@@ -234,7 +234,7 @@ Response:
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML**: Microsoft Semantic Kernel 1.66.0
 - **LLM Provider**: Ollama (local models, configurable via `.env` and runtime Settings API)
-  - Embedding Models: `nomic-embed-text-v2-moe` (default), `nomic-embed-text` (configurable, hot-swappable at runtime)
+  - Embedding Models: `nomic-embed-text-v2-moe` (default, multilingual), `mxbai-embed-large` (configurable, hot-swappable at runtime, monolingual en)
   - Chat Model: `qwen2.5:14b`
 - **PDF Processing**: PdfPig 0.1.9
 - **Database**: PostgreSQL 18 with Entity Framework Core 10.0

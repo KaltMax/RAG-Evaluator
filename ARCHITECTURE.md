@@ -737,7 +737,7 @@ course: "Software Engineering I"
 - **Architecture**: Clean Architecture (Onion Architecture)
 - **AI/ML Framework**: Microsoft Semantic Kernel 1.70.0
 - **LLM Provider**: Ollama (local models, configurable via `.env` and runtime Settings API)
-  - **Embedding Models**: nomic-embed-text-v2-moe (default), nomic-embed-text (configurable, hot-swappable at runtime)
+  - **Embedding Models**: `nomic-embed-text-v2-moe` (default, multilingual), `mxbai-embed-large` (configurable, hot-swappable at runtime, monolingual en)
   - **Chat Model**: qwen2.5:14b
 - **PDF Processing**: PdfPig 0.1.13
 - **Vector Store**: PostgreSQL with pgvector extension
@@ -783,7 +783,7 @@ The Ollama container uses a custom initialization script (`ollama-init.sh`) that
 1. Starts the Ollama service in the background
 2. Waits for the service to be ready
 3. Checks for required models (configured via `.env`) and pulls them if missing:
-   - All embedding models listed in `OLLAMA_EMBEDDING_MODELS` (comma-separated, e.g., `nomic-embed-text-v2-moe,nomic-embed-text`)
+   - All embedding models listed in `OLLAMA_EMBEDDING_MODELS` (comma-separated, e.g., `nomic-embed-text-v2-moe, mxbai-embed-large`)
    - `qwen2.5:14b` - Chat completion model (approximately 9 GB)
 4. Models are persisted in the `ollama_data` Docker volume
 
@@ -828,7 +828,7 @@ Containers communicate via Docker's internal network:
 
 ## In Progress / Planned
 
-- [ ] Refine which embedding models will be used and refine the prompt templates
+- [ ] Refine prompt templates
 - [ ] Analytics and metrics Dashboard
 
 ## Resources
