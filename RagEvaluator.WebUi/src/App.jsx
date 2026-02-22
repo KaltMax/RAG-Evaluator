@@ -12,7 +12,6 @@ import Statistics from "./components/Statistics";
 import Experiments from "./components/Experiments";
 
 function App() {
-
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-[#1F1F1F]">
@@ -34,7 +33,7 @@ function App() {
         <ToastContainer position="bottom-left" theme="dark" />
       </div>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

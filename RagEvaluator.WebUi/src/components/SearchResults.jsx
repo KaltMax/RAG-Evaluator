@@ -1,14 +1,23 @@
-import { useState, useEffect } from 'react';
-import { DocumentTextIcon, ClockIcon, ArrowDownTrayIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { PropTypes } from 'prop-types';
-import { toast } from 'react-toastify';
-import { downloadDocument, getAllDocuments } from '../api/documentService';
-import { annotateResults } from '../api/queryService';
-import { relevanceGrades, getRelevanceGrade } from '../utils/relevanceGrades';
-import { responseQualityOptions, getResponseQualityOption, getResponseQualityColor } from '../utils/responseQualityOptions';
-import { formatMetric } from '../utils/formatMetric';
-import { formatResponseTime } from '../utils/formatResponseTime';
-import { formatDate } from '../utils/formatDate';
+import { useState, useEffect } from "react";
+import {
+  DocumentTextIcon,
+  ClockIcon,
+  ArrowDownTrayIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline";
+import { PropTypes } from "prop-types";
+import { toast } from "react-toastify";
+import { downloadDocument, getAllDocuments } from "../api/documentService";
+import { annotateResults } from "../api/queryService";
+import { relevanceGrades, getRelevanceGrade } from "../utils/relevanceGrades";
+import {
+  responseQualityOptions,
+  getResponseQualityOption,
+  getResponseQualityColor,
+} from "../utils/responseQualityOptions";
+import { formatMetric } from "../utils/formatMetric";
+import { formatResponseTime } from "../utils/formatResponseTime";
+import { formatDate } from "../utils/formatDate";
 
 function SearchResults({ results, onAnnotated }) {
   const [annotations, setAnnotations] = useState({});
@@ -16,7 +25,9 @@ function SearchResults({ results, onAnnotated }) {
   const [hasLanguageSwitching, setHasLanguageSwitching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [metrics, setMetrics] = useState(null);
-  const [relevantDocuments, setRelevantDocuments] = useState(results?.relevantDocumentIds ?? []);
+  const [relevantDocuments, setRelevantDocuments] = useState(
+    results?.relevantDocumentIds ?? [],
+  );
   const [availableDocuments, setAvailableDocuments] = useState([]);
 
   useEffect(() => {
@@ -25,7 +36,7 @@ function SearchResults({ results, onAnnotated }) {
         const docs = await getAllDocuments();
         setAvailableDocuments(docs);
       } catch (error) {
-        console.error('Failed to fetch documents:', error);
+        console.error("Failed to fetch documents:", error);
       }
     };
     fetchDocuments();
@@ -35,11 +46,10 @@ function SearchResults({ results, onAnnotated }) {
     return null;
   }
 
-
   const getSimilarityColor = (similarity) => {
-    if (similarity >= 0.8) return 'text-green-400';
-    if (similarity >= 0.6) return 'text-yellow-400';
-    return 'text-orange-400';
+    if (similarity >= 0.8) return "text-green-400";
+    if (similarity >= 0.6) return "text-yellow-400";
+    return "text-orange-400";
   };
 
   const handleDownload = async (documentId, fileName) => {
@@ -51,9 +61,9 @@ function SearchResults({ results, onAnnotated }) {
   };
 
   const handleAnnotationChange = (sourceId, gradeValue) => {
-    setAnnotations(prev => ({
+    setAnnotations((prev) => ({
       ...prev,
-      [sourceId]: gradeValue
+      [sourceId]: gradeValue,
     }));
   };
 
@@ -62,7 +72,11 @@ function SearchResults({ results, onAnnotated }) {
   };
 
   const getTotalAnnotationsCount = () => {
-    return getAnnotatedCount() + (responseQuality === null ? 0 : 1) + (relevantDocuments.length > 0 ? 1 : 0);
+    return (
+      getAnnotatedCount() +
+      (responseQuality === null ? 0 : 1) +
+      (relevantDocuments.length > 0 ? 1 : 0)
+    );
   };
 
   const getTotalAnnotationsNeeded = () => {
@@ -74,13 +88,17 @@ function SearchResults({ results, onAnnotated }) {
   };
 
   const canSubmitAnnotations = () => {
-    return allSourcesAnnotated() && responseQuality !== null && relevantDocuments.length > 0;
+    return (
+      allSourcesAnnotated() &&
+      responseQuality !== null &&
+      relevantDocuments.length > 0
+    );
   };
 
   const handleRelevantDocumentToggle = (documentId) => {
-    setRelevantDocuments(prev => {
+    setRelevantDocuments((prev) => {
       if (prev.includes(documentId)) {
-        return prev.filter(id => id !== documentId);
+        return prev.filter((id) => id !== documentId);
       } else {
         return [...prev, documentId];
       }
@@ -90,27 +108,31 @@ function SearchResults({ results, onAnnotated }) {
   const handleSubmitAnnotations = async () => {
     if (!canSubmitAnnotations()) {
       if (!allSourcesAnnotated()) {
-        toast.warning('Please annotate all sources before submitting');
+        toast.warning("Please annotate all sources before submitting");
       } else if (responseQuality === null) {
-        toast.warning('Please evaluate the response quality before submitting');
+        toast.warning("Please evaluate the response quality before submitting");
       } else {
-        toast.warning('Please select at least one relevant document for Recall@K calculation');
+        toast.warning(
+          "Please select at least one relevant document for Recall@K calculation",
+        );
       }
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const annotationList = Object.entries(annotations).map(([resultId, relevanceGrade]) => ({
-        resultId,
-        relevanceGrade
-      }));
+      const annotationList = Object.entries(annotations).map(
+        ([resultId, relevanceGrade]) => ({
+          resultId,
+          relevanceGrade,
+        }),
+      );
 
       const payload = {
         annotations: annotationList,
         responseQuality: responseQuality,
         hasLanguageSwitching: hasLanguageSwitching,
-        relevantDocumentIds: relevantDocuments
+        relevantDocumentIds: relevantDocuments,
       };
 
       const updatedQuery = await annotateResults(results.queryId, payload);
@@ -122,10 +144,10 @@ function SearchResults({ results, onAnnotated }) {
         ndcgAtK: updatedQuery.ndcgAtK,
         responseTimeMs: updatedQuery.responseTimeMs,
         responseQuality: responseQuality,
-        hasLanguageSwitching: hasLanguageSwitching
+        hasLanguageSwitching: hasLanguageSwitching,
       });
 
-      toast.success('Annotations submitted successfully!');
+      toast.success("Annotations submitted successfully!");
       onAnnotated?.();
     } catch (error) {
       toast.error(`Failed to submit annotations: ${error.message}`);
@@ -143,7 +165,9 @@ function SearchResults({ results, onAnnotated }) {
           <h2 className="text-xl font-semibold text-white">Answer</h2>
         </div>
         <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700">
-          <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">{results.answer}</p>
+          <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+            {results.answer}
+          </p>
         </div>
         <div className="flex items-center gap-2 mt-4 text-sm text-gray-400">
           <ClockIcon className="w-4 h-4" />
@@ -171,7 +195,7 @@ function SearchResults({ results, onAnnotated }) {
                       disabled={isSubmitting || metrics}
                       className={`px-3 py-1.5 rounded-md text-xs font-bold text-white transition-all ${
                         isSelected ? option.selectedColor : option.color
-                      } ${(isSubmitting || metrics) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      } ${isSubmitting || metrics ? "opacity-50 cursor-not-allowed" : ""}`}
                       title={option.label}
                     >
                       {option.label}
@@ -215,7 +239,9 @@ function SearchResults({ results, onAnnotated }) {
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-400">Source {index + 1}</span>
+                    <span className="text-sm font-medium text-gray-400">
+                      Source {index + 1}
+                    </span>
                     {source.fileName && (
                       <span className="text-xs text-gray-500">
                         ({source.fileName})
@@ -223,7 +249,9 @@ function SearchResults({ results, onAnnotated }) {
                     )}
                     {source.documentId && (
                       <button
-                        onClick={() => handleDownload(source.documentId, source.fileName)}
+                        onClick={() =>
+                          handleDownload(source.documentId, source.fileName)
+                        }
                         className="text-gray-400 hover:text-blue-400 transition-colors"
                         title="Download source document"
                       >
@@ -233,12 +261,16 @@ function SearchResults({ results, onAnnotated }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">Similarity:</span>
-                    <span className={`text-sm font-bold ${getSimilarityColor(source.similarity)}`}>
+                    <span
+                      className={`text-sm font-bold ${getSimilarityColor(source.similarity)}`}
+                    >
                       {(source.similarity * 100).toFixed(1)}%
                     </span>
                   </div>
                 </div>
-                <p className="text-gray-300 text-sm leading-relaxed">{source.text}</p>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  {source.text}
+                </p>
 
                 {/* Relevance grade annotation buttons */}
                 <div className="mt-3 pt-3 border-t border-gray-700">
@@ -248,15 +280,18 @@ function SearchResults({ results, onAnnotated }) {
                     </summary>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {relevanceGrades.map((grade) => {
-                        const isSelected = annotations[source.id] === grade.value;
+                        const isSelected =
+                          annotations[source.id] === grade.value;
                         return (
                           <button
                             key={grade.value}
-                            onClick={() => handleAnnotationChange(source.id, grade.value)}
+                            onClick={() =>
+                              handleAnnotationChange(source.id, grade.value)
+                            }
                             disabled={isSubmitting || metrics}
                             className={`px-3 py-1.5 rounded-md text-xs font-bold text-white transition-all ${
                               isSelected ? grade.selectedColor : grade.color
-                            } ${(isSubmitting || metrics) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${isSubmitting || metrics ? "opacity-50 cursor-not-allowed" : ""}`}
                             title={grade.label}
                           >
                             {grade.label}
@@ -266,7 +301,8 @@ function SearchResults({ results, onAnnotated }) {
                     </div>
                     {annotations[source.id] !== undefined && (
                       <p className="text-gray-400 text-xs mt-2">
-                        Selected: {getRelevanceGrade(annotations[source.id])?.label}
+                        Selected:{" "}
+                        {getRelevanceGrade(annotations[source.id])?.label}
                       </p>
                     )}
                   </details>
@@ -281,10 +317,20 @@ function SearchResults({ results, onAnnotated }) {
                       </summary>
                       <div className="mt-2 space-y-1">
                         {source.chunkingStrategy && (
-                          <p><span className="text-gray-400">Chunking Strategy:</span> {source.chunkingStrategy}</p>
+                          <p>
+                            <span className="text-gray-400">
+                              Chunking Strategy:
+                            </span>{" "}
+                            {source.chunkingStrategy}
+                          </p>
                         )}
                         {source.embeddingModel && (
-                          <p><span className="text-gray-400">Embedding Model:</span> {source.embeddingModel}</p>
+                          <p>
+                            <span className="text-gray-400">
+                              Embedding Model:
+                            </span>{" "}
+                            {source.embeddingModel}
+                          </p>
                         )}
                       </div>
                     </details>
@@ -303,7 +349,8 @@ function SearchResults({ results, onAnnotated }) {
             Ground Truth Documents
           </h2>
           <p className="text-sm text-gray-400 mb-4">
-            Select which documents contain relevant information for this query (used for Recall@K calculation).
+            Select which documents contain relevant information for this query
+            (used for Recall@K calculation).
           </p>
           <div className="space-y-2 max-h-100 overflow-y-auto">
             {availableDocuments.map((doc) => (
@@ -320,7 +367,10 @@ function SearchResults({ results, onAnnotated }) {
                 />
                 <span className="text-gray-300 text-sm">{doc.fileName}</span>
                 <button
-                  onClick={(e) => { e.preventDefault(); handleDownload(doc.id, doc.fileName); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownload(doc.id, doc.fileName);
+                  }}
                   className="text-gray-400 hover:text-blue-400 transition-colors"
                   title="Download document"
                 >
@@ -331,7 +381,8 @@ function SearchResults({ results, onAnnotated }) {
           </div>
           {relevantDocuments.length > 0 && (
             <p className="text-gray-400 text-xs mt-3">
-              {relevantDocuments.length} document{relevantDocuments.length === 1 ? '' : 's'} selected as relevant
+              {relevantDocuments.length} document
+              {relevantDocuments.length === 1 ? "" : "s"} selected as relevant
             </p>
           )}
         </div>
@@ -342,7 +393,8 @@ function SearchResults({ results, onAnnotated }) {
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-400">
-              {getTotalAnnotationsCount()} of {getTotalAnnotationsNeeded()} annotations completed
+              {getTotalAnnotationsCount()} of {getTotalAnnotationsNeeded()}{" "}
+              annotations completed
             </p>
             <button
               onClick={handleSubmitAnnotations}
@@ -367,39 +419,56 @@ function SearchResults({ results, onAnnotated }) {
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-green-700">
           <div className="flex items-center gap-2 mb-4">
             <CheckCircleIcon className="w-6 h-6 text-green-400" />
-            <h2 className="text-xl font-semibold text-white">Evaluation Metrics</h2>
+            <h2 className="text-xl font-semibold text-white">
+              Evaluation Metrics
+            </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">MRR</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.mrr)}</p>
+              <p className="text-2xl font-bold text-blue-400">
+                {formatMetric(metrics.mrr)}
+              </p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">Precision@K</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.precisionAtK)}</p>
+              <p className="text-2xl font-bold text-blue-400">
+                {formatMetric(metrics.precisionAtK)}
+              </p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">Recall@K</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.recallAtK)}</p>
+              <p className="text-2xl font-bold text-blue-400">
+                {formatMetric(metrics.recallAtK)}
+              </p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">NDCG@K</p>
-              <p className="text-2xl font-bold text-blue-400">{formatMetric(metrics.ndcgAtK)}</p>
+              <p className="text-2xl font-bold text-blue-400">
+                {formatMetric(metrics.ndcgAtK)}
+              </p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">Response Time</p>
-              <p className="text-2xl font-bold text-purple-400">{formatResponseTime(metrics.responseTimeMs)}</p>
+              <p className="text-2xl font-bold text-purple-400">
+                {formatResponseTime(metrics.responseTimeMs)}
+              </p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center">
               <p className="text-gray-400 text-sm mb-1">Language Switching</p>
-              <p className={`text-2xl font-bold ${metrics.hasLanguageSwitching ? 'text-red-400' : 'text-green-400'}`}>
-                {metrics.hasLanguageSwitching ? 'Yes' : 'No'}
+              <p
+                className={`text-2xl font-bold ${metrics.hasLanguageSwitching ? "text-red-400" : "text-green-400"}`}
+              >
+                {metrics.hasLanguageSwitching ? "Yes" : "No"}
               </p>
             </div>
             <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700 text-center col-span-2 md:col-span-2">
               <p className="text-gray-400 text-sm mb-1">Response Quality</p>
-              <p className={`text-2xl font-bold ${getResponseQualityColor(metrics.responseQuality)}`}>
-                {getResponseQualityOption(metrics.responseQuality)?.label || 'N/A'}
+              <p
+                className={`text-2xl font-bold ${getResponseQualityColor(metrics.responseQuality)}`}
+              >
+                {getResponseQualityOption(metrics.responseQuality)?.label ||
+                  "N/A"}
               </p>
             </div>
           </div>
@@ -410,25 +479,25 @@ function SearchResults({ results, onAnnotated }) {
 }
 
 SearchResults.propTypes = {
-    results: PropTypes.shape({
-        queryId: PropTypes.string.isRequired,
-        question: PropTypes.string.isRequired,
-        answer: PropTypes.string.isRequired,
-        sources: PropTypes.arrayOf(
-            PropTypes.shape({
-                id: PropTypes.string,
-                text: PropTypes.string.isRequired,
-                similarity: PropTypes.number.isRequired,
-                documentId: PropTypes.string,
-                fileName: PropTypes.string,
-                chunkingStrategy: PropTypes.string,
-                embeddingModel: PropTypes.string,
-            })
-        ),
-        timestamp: PropTypes.string.isRequired,
-        relevantDocumentIds: PropTypes.arrayOf(PropTypes.string),
-    }),
-    onAnnotated: PropTypes.func,
+  results: PropTypes.shape({
+    queryId: PropTypes.string.isRequired,
+    question: PropTypes.string.isRequired,
+    answer: PropTypes.string.isRequired,
+    sources: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string,
+        text: PropTypes.string.isRequired,
+        similarity: PropTypes.number.isRequired,
+        documentId: PropTypes.string,
+        fileName: PropTypes.string,
+        chunkingStrategy: PropTypes.string,
+        embeddingModel: PropTypes.string,
+      }),
+    ),
+    timestamp: PropTypes.string.isRequired,
+    relevantDocumentIds: PropTypes.arrayOf(PropTypes.string),
+  }),
+  onAnnotated: PropTypes.func,
 };
 
 export default SearchResults;

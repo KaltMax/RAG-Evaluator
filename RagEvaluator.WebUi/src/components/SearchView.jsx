@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { toast } from 'react-toastify';
-import Searchbar from './Searchbar';
-import SearchResults from './SearchResults';
-import { postQuery } from '../api/queryService';
+import { useState } from "react";
+import { toast } from "react-toastify";
+import Searchbar from "./Searchbar";
+import SearchResults from "./SearchResults";
+import { postQuery } from "../api/queryService";
 
 function SearchView() {
   const [results, setResults] = useState(null);
@@ -16,9 +16,9 @@ function SearchView() {
       const response = await postQuery(question, topK, language);
 
       setResults(response);
-      toast.success('Query processed successfully!');
+      toast.success("Query processed successfully!");
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
       toast.error(`Failed to process query: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -28,8 +28,12 @@ function SearchView() {
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">RAG Document Search</h1>
-        <p className="text-gray-400">Ask questions and get AI-powered answers from your documents</p>
+        <h1 className="text-3xl font-bold text-white mb-2">
+          RAG Document Search
+        </h1>
+        <p className="text-gray-400">
+          Ask questions and get AI-powered answers from your documents
+        </p>
       </div>
 
       <Searchbar onSearch={handleSearch} isLoading={isLoading} />

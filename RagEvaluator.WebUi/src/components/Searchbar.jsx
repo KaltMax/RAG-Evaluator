@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { PropTypes } from 'prop-types';
+import { useState } from "react";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { PropTypes } from "prop-types";
 
 function Searchbar({ onSearch, isLoading }) {
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState("");
   const [topK, setTopK] = useState(3);
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState("en");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -20,7 +20,10 @@ function Searchbar({ onSearch, isLoading }) {
         {/* Question input, top-k selector, language selector, and search button */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label htmlFor="question" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="question"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Ask a Question
             </label>
             <input
@@ -37,7 +40,10 @@ function Searchbar({ onSearch, isLoading }) {
           </div>
 
           <div className="w-full md:w-32">
-            <label htmlFor="topK" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="topK"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Top Results
             </label>
             <select
@@ -55,7 +61,10 @@ function Searchbar({ onSearch, isLoading }) {
           </div>
 
           <div className="w-full md:w-32">
-            <label htmlFor="language" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="language"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Language
             </label>
             <select
