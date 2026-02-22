@@ -236,7 +236,7 @@ Response:
 - **LLM Provider**: Ollama (local models, configurable via `.env` and runtime Settings API)
   - Embedding Models: `nomic-embed-text-v2-moe` (default, multilingual), `mxbai-embed-large` (configurable, hot-swappable at runtime, monolingual en)
   - Chat Model: `qwen2.5:14b`
-- **PDF Processing**: PdfPig 0.1.9
+- **PDF Processing**: PdfPig 0.1.13
 - **Database**: PostgreSQL 18 with Entity Framework Core 10.0
 - **Vector Store**: PostgreSQL with pgvector extension (cosine similarity search)
 - **Evaluation Metrics**: MetricsService (Cosine Similarity, MRR, Precision@K, Recall@K, NDCG@K)

@@ -382,7 +382,7 @@ RAG-Evaluator/
 
 - `OllamaChatService` - Chat completion via Semantic Kernel, implements `IChatService`
 - `OllamaEmbeddingService` - Embedding generation via Semantic Kernel, implements `IEmbeddingService`. Exposes `GenerateQueryEmbeddingAsync` and `GenerateDocumentEmbeddingAsync`; internally applies model-specific prefixes (e.g. `search_query:`/`search_document:` for nomic, `Represent this sentence for searching relevant passages:` for mxbai). Supports runtime reinitialization for model switching
-- `PdfPigLoader` - PDF text extraction using ContentOrderTextExtractor with whitespace normalization, implements `IPdfLoader`
+- `PdfPigLoader` - PDF text extraction with geometric filtering to remove headers/footers and adaptive gap detection (2.2x average word height threshold) to preserve paragraph structure, implements `IPdfLoader`
 - `LocalFileStorageService` - Local file system storage with configurable directory, implements `IFileStorageService`
 - `FixedSizeTextChunker` - Character-based text chunking with configurable size and overlap, implements `ITextChunker`
 - `SemanticTextChunker` - Embedding-based chunking that splits at topic boundaries via cosine similarity drops between consecutive line embeddings, implements `ITextChunker`

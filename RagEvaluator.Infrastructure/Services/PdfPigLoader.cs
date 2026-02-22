@@ -1,41 +1,17 @@
 ﻿using System.Text.RegularExpressions;
 using UglyToad.PdfPig;
-using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
+using UglyToad.PdfPig.Content;
 using RagEvaluator.Contract.Abstractions.Services;
 
 namespace RagEvaluator.Infrastructure.Services
 {
     /// <summary>
-    /// Service for loading and extracting text from PDF documents using ContentOrderTextExtractor.
-    /// Includes post-processing to remove bare URLs and normalize whitespace.
+    /// Service for loading and extracting text from PDF documents.
+    /// Includes adaptive gap detection to preserve paragraph structure while removing
+    /// headers and footers.
     /// </summary>
     public partial class PdfPigLoader : IPdfLoader
     {
-        /// <summary>
-        /// Loads a PDF file and extracts text from each page
-        /// </summary>
-        public List<string> LoadPdf(string pdfPath)
-        {
-            if (!File.Exists(pdfPath))
-            {
-                throw new FileNotFoundException($"PDF file not found: {pdfPath}");
-            }
-
-            var pages = new List<string>();
-            using var pdfDocument = PdfDocument.Open(pdfPath);
-
-            foreach (var page in pdfDocument.GetPages())
-            {
-                var text = ContentOrderTextExtractor.GetText(page, addDoubleNewline: true);
-                pages.Add(CleanPageText(text));
-            }
-
-            return pages;
-        }
-
-        /// <summary>
-        /// Loads a PDF from a stream and extracts text from each page
-        /// </summary>
         public List<string> LoadPdf(Stream stream)
         {
             var pages = new List<string>();
@@ -43,33 +19,81 @@ namespace RagEvaluator.Infrastructure.Services
 
             foreach (var page in pdfDocument.GetPages())
             {
-                var text = ContentOrderTextExtractor.GetText(page, addDoubleNewline: true);
+                var text = ExtractTextIgnoringBorders(page);
                 pages.Add(CleanPageText(text));
             }
 
             return pages;
         }
 
-        /// <summary>
-        /// Gets the number of pages in a PDF without loading all content
-        /// </summary>
-        public int GetPageCount(string pdfPath)
+        private static string ExtractTextIgnoringBorders(Page page)
         {
-            using var pdfDocument = PdfDocument.Open(pdfPath);
-            return pdfDocument.NumberOfPages;
+            // 1. Geometric Filtering: Get words only within the central content area
+            var contentWords = GetContentWords(page);
+            if (contentWords.Count == 0) return string.Empty;
+
+            // 2. Structural Analysis: Group words into lines and calculate adaptive spacing
+            var groupedLines = contentWords
+                .GroupBy(w => Math.Round(w.BoundingBox.Bottom))
+                .OrderByDescending(g => g.Key)
+                .ToList();
+
+            var adaptiveThreshold = CalculateAdaptiveThreshold(contentWords);
+
+            // 3. Text Reconstruction: Join lines using gap detection for paragraphs
+            return ReconstructTextWithGapDetection(groupedLines, adaptiveThreshold);
         }
 
-        /// <summary>
-        /// Gets the number of pages in a PDF from a stream
-        /// </summary>
-        public int GetPageCount(Stream stream)
+        private static List<Word> GetContentWords(Page page)
         {
-            using var pdfDocument = PdfDocument.Open(stream);
-            return pdfDocument.NumberOfPages;
+            var pageHeight = page.Height;
+
+            // Thresholds to remove institutional headers (logos) and footers (page numbers/copyright)
+            var footerThreshold = pageHeight * 0.07;
+            var headerThreshold = pageHeight * 0.95;
+
+            return page.GetWords()
+                .Where(w => w.BoundingBox.Bottom >= footerThreshold &&
+                            w.BoundingBox.Top <= headerThreshold)
+                .ToList();
+        }
+
+        private static double CalculateAdaptiveThreshold(List<Word> words)
+        {
+            // Multiplier of 2.2 differentiates between standard line spacing and paragraph breaks
+            var avgHeight = words.Average(w => w.BoundingBox.Height);
+            return avgHeight * 2.2;
+        }
+
+        private static string ReconstructTextWithGapDetection(IEnumerable<IGrouping<double, Word>> groupedLines, double threshold)
+        {
+            var sb = new System.Text.StringBuilder();
+            double? lastY = null;
+
+            foreach (var lineGroup in groupedLines)
+            {
+                var currentY = lineGroup.Key;
+                var lineText = string.Join(" ", lineGroup.OrderBy(w => w.BoundingBox.Left).Select(w => w.Text));
+
+                if (lastY.HasValue)
+                {
+                    double gap = lastY.Value - currentY;
+
+                    // If the vertical drop exceeds the adaptive threshold, insert a double newline
+                    sb.Append(gap > threshold ? "\n\n" : "\n");
+                }
+
+                sb.Append(lineText);
+                lastY = currentY;
+            }
+
+            return sb.ToString();
         }
 
         private static string CleanPageText(string pageText)
         {
+            if (string.IsNullOrWhiteSpace(pageText)) return string.Empty;
+
             var lines = pageText.Split('\n');
             var cleanedLines = new List<string>();
 
