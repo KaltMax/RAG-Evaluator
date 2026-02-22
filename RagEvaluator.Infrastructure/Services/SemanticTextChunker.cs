@@ -37,8 +37,8 @@ namespace RagEvaluator.Infrastructure.Services
             for (var i = 0; i < lines.Count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                embeddings[i] = await _embeddingService.GenerateEmbeddingAsync(
-                    $"search_document: {lines[i]}", cancellationToken);
+                embeddings[i] = await _embeddingService.GenerateDocumentEmbeddingAsync(
+                    lines[i], cancellationToken);
             }
 
             // Calculate cosine similarity between consecutive lines

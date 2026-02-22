@@ -56,7 +56,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
             _pdfLoader.LoadPdf(pdfStream).Returns(pages);
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(chunks);
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(embedding);
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(embedding);
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
             // Act
@@ -86,7 +86,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _pdfLoader.LoadPdf(pdfStream).Returns(new List<string> { "Page text" });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk 1" });
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(embedding);
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(embedding);
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
             // Act
@@ -102,7 +102,7 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task ProcessDocumentContentAsync_PrefixesChunkTextForEmbedding()
+        public async Task ProcessDocumentContentAsync_PassesRawChunkTextForEmbedding()
         {
             // Arrange
             var documentId = Guid.NewGuid();
@@ -113,7 +113,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _pdfLoader.LoadPdf(pdfStream).Returns(new List<string> { "Page text" });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Hello world" });
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new float[] { 0.1f });
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
@@ -121,8 +121,8 @@ namespace RagEvaluator.Test.ApplicationTest
             await _service.ProcessDocumentContentAsync(documentId, pdfStream, TestContext.Current.CancellationToken);
 
             // Assert
-            await _embeddingService.Received(1).GenerateEmbeddingAsync(
-                "search_document: Hello world", Arg.Any<CancellationToken>());
+            await _embeddingService.Received(1).GenerateDocumentEmbeddingAsync(
+                "Hello world", Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -147,7 +147,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _pdfLoader.LoadPdf(pdfStream).Returns(new List<string> { "Page text" });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk" });
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new float[] { 0.1f });
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns((Document?)null);
 
@@ -174,7 +174,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository.GetByStatusAsync(DocumentStatus.Completed, Arg.Any<CancellationToken>()).Returns(documents);
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk A", "Chunk B" });
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new float[] { 0.1f, 0.2f });
 
             // Act
@@ -200,7 +200,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository.GetByStatusAsync(DocumentStatus.Completed, Arg.Any<CancellationToken>()).Returns(documents);
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk" });
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new float[] { 0.1f });
 
             var statusHistory = new List<DocumentStatus>();

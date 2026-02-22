@@ -25,7 +25,7 @@ namespace RagEvaluator.Test.InfrastructureTest
             var text = "Line one\nLine two\nLine three";
 
             // Return similar embeddings for all lines
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
                 .Returns(new float[] { 1.0f, 0.0f, 0.0f });
 
             // Act
@@ -46,11 +46,11 @@ namespace RagEvaluator.Test.InfrastructureTest
             var similarEmbedding = new float[] { 1.0f, 0.0f, 0.0f };
             var differentEmbedding = new float[] { 0.0f, 1.0f, 0.0f }; // orthogonal → similarity 0
 
-            _embeddingService.GenerateEmbeddingAsync("search_document: Topic A first", TestContext.Current.CancellationToken)
+            _embeddingService.GenerateDocumentEmbeddingAsync("Topic A first", TestContext.Current.CancellationToken)
                 .Returns(similarEmbedding);
-            _embeddingService.GenerateEmbeddingAsync("search_document: Topic A second", TestContext.Current.CancellationToken)
+            _embeddingService.GenerateDocumentEmbeddingAsync("Topic A second", TestContext.Current.CancellationToken)
                 .Returns(similarEmbedding);
-            _embeddingService.GenerateEmbeddingAsync("search_document: Topic B first", TestContext.Current.CancellationToken)
+            _embeddingService.GenerateDocumentEmbeddingAsync("Topic B first", TestContext.Current.CancellationToken)
                 .Returns(differentEmbedding);
 
             // Act
@@ -96,34 +96,34 @@ namespace RagEvaluator.Test.InfrastructureTest
             var chunker = CreateChunker(similarityThreshold: 0.5);
             var text = "Line one\n\n\nLine two";
 
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
                 .Returns(new float[] { 1.0f, 0.0f });
 
             // Act
             var result = await chunker.CreateDocumentChunksAsync(text, TestContext.Current.CancellationToken);
 
             // Assert: blank lines filtered, 2 non-blank lines embedded
-            await _embeddingService.Received(2).GenerateEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken);
+            await _embeddingService.Received(2).GenerateDocumentEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken);
             Assert.Single(result);
         }
 
         [Fact]
-        public async Task CreateDocumentChunksAsync_ShouldPrefixLinesForEmbedding()
+        public async Task CreateDocumentChunksAsync_ShouldPassRawLinesForEmbedding()
         {
             // Arrange: need at least 2 lines (single line hits early return without embedding)
             var chunker = CreateChunker(similarityThreshold: 0.5);
 
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
                 .Returns(new float[] { 1.0f });
 
             // Act
             await chunker.CreateDocumentChunksAsync("Hello world\nSecond line", TestContext.Current.CancellationToken);
 
             // Assert
-            await _embeddingService.Received(1).GenerateEmbeddingAsync(
-                "search_document: Hello world", TestContext.Current.CancellationToken);
-            await _embeddingService.Received(1).GenerateEmbeddingAsync(
-                "search_document: Second line", TestContext.Current.CancellationToken);
+            await _embeddingService.Received(1).GenerateDocumentEmbeddingAsync(
+                "Hello world", TestContext.Current.CancellationToken);
+            await _embeddingService.Received(1).GenerateDocumentEmbeddingAsync(
+                "Second line", TestContext.Current.CancellationToken);
         }
 
         [Fact]

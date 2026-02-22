@@ -33,7 +33,7 @@ namespace RagEvaluator.Application.Services
 
         public async Task<Query> CreateQueryAsync(string question, string language, int topK, string systemPrompt, string chunkingStrategy, string embeddingModel, string chatModel, CancellationToken cancellationToken = default)
         {
-            var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_query: {question}", cancellationToken);
+            var embedding = await _embeddingService.GenerateQueryEmbeddingAsync(question, cancellationToken);
 
             return new Query
             {

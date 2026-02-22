@@ -62,7 +62,7 @@ namespace RagEvaluator.Application.Services
             var documentChunks = new List<DocumentChunk>();
             foreach (var chunkText in textChunks)
             {
-                var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}", cancellationToken);
+                var embedding = await _embeddingService.GenerateDocumentEmbeddingAsync(chunkText, cancellationToken);
                 documentChunks.Add(new DocumentChunk
                 {
                     Id = Guid.NewGuid(),
@@ -123,7 +123,7 @@ namespace RagEvaluator.Application.Services
                 var documentChunks = new List<DocumentChunk>();
                 foreach (var chunkText in textChunks)
                 {
-                    var embedding = await _embeddingService.GenerateEmbeddingAsync($"search_document: {chunkText}", cancellationToken);
+                    var embedding = await _embeddingService.GenerateDocumentEmbeddingAsync(chunkText, cancellationToken);
                     documentChunks.Add(new DocumentChunk
                     {
                         Id = Guid.NewGuid(),

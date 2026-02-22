@@ -381,7 +381,7 @@ RAG-Evaluator/
 **Implemented Services**:
 
 - `OllamaChatService` - Chat completion via Semantic Kernel, implements `IChatService`
-- `OllamaEmbeddingService` - Embedding generation via Semantic Kernel, implements `IEmbeddingService`. Supports runtime reinitialization for model switching
+- `OllamaEmbeddingService` - Embedding generation via Semantic Kernel, implements `IEmbeddingService`. Exposes `GenerateQueryEmbeddingAsync` and `GenerateDocumentEmbeddingAsync`; internally applies model-specific prefixes (e.g. `search_query:`/`search_document:` for nomic, `Represent this sentence for searching relevant passages:` for mxbai). Supports runtime reinitialization for model switching
 - `PdfPigLoader` - PDF text extraction using ContentOrderTextExtractor with whitespace normalization, implements `IPdfLoader`
 - `LocalFileStorageService` - Local file system storage with configurable directory, implements `IFileStorageService`
 - `FixedSizeTextChunker` - Character-based text chunking with configurable size and overlap, implements `ITextChunker`
@@ -429,7 +429,7 @@ RAG-Evaluator/
                • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
                • semantic: Embedding-based splitting at topic boundaries (SimilarityThreshold)
          → 9. For each chunk:
-            → 10. IEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
+            → 10. IEmbeddingService.GenerateDocumentEmbeddingAsync(chunk)
             → 11. Create DocumentChunk entity with embedding, strategy, model info
          → 12. DocumentChunkRepository.AddRangeAsync() - Persist all chunks to PostgreSQL
          → 13. Update Document status to Completed with content stored for future reprocessing
@@ -448,7 +448,7 @@ RAG-Evaluator/
       → 6. For each document:
          → 7. ITextChunker.CreateDocumentChunksAsync(document.Content) - Re-chunk stored content
          → 8. For each chunk:
-            → 9. OllamaEmbeddingService.GenerateEmbeddingAsync("search_document: " + chunk)
+            → 9. IEmbeddingService.GenerateDocumentEmbeddingAsync(chunk)
             → 10. Create DocumentChunk entity with current config (strategy, model)
          → 11. DocumentChunkRepository.AddRangeAsync() - Persist new chunks
          → 12. Update document ChunkCount, ProcessedAt, Status = Completed
@@ -463,7 +463,7 @@ RAG-Evaluator/
       → 3. Start timing with Stopwatch
       → 4. PromptTemplateResolver.Resolve() - Resolve system prompt from template + query language
       → 5. QueryService.CreateQueryAsync() - Create query object with configuration snapshot
-           and generate query embedding via IEmbeddingService ("search_query: " + question)
+           and generate query embedding via IEmbeddingService.GenerateQueryEmbeddingAsync(question)
            (in-memory only, not persisted yet)
       → 6. DocumentProcessingService.SearchChunksAsync() - Find top K similar chunks
            (delegates to DocumentChunkRepository, uses pgvector cosine distance for ordering)

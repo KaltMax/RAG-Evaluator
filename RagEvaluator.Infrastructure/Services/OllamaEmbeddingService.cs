@@ -40,7 +40,17 @@ namespace RagEvaluator.Infrastructure.Services
             }
         }
 
-        public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
+        public async Task<float[]> GenerateQueryEmbeddingAsync(string text, CancellationToken cancellationToken = default)
+        {
+            return await GenerateEmbeddingCoreAsync(ApplyQueryPrefix(text), cancellationToken);
+        }
+
+        public async Task<float[]> GenerateDocumentEmbeddingAsync(string text, CancellationToken cancellationToken = default)
+        {
+            return await GenerateEmbeddingCoreAsync(ApplyDocumentPrefix(text), cancellationToken);
+        }
+
+        private async Task<float[]> GenerateEmbeddingCoreAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!_isInitialized || _embeddingGenerator == null)
             {
@@ -61,6 +71,25 @@ namespace RagEvaluator.Infrastructure.Services
             _isInitialized = false;
             _embeddingGenerator = null;
             await InitializeAsync();
+        }
+
+        private string ApplyQueryPrefix(string text)
+        {
+            return _config.EmbeddingModel switch
+            {
+                var m when m.StartsWith("nomic-embed-text") => $"search_query: {text}",
+                var m when m.StartsWith("mxbai-embed-large") => $"Represent this sentence for searching relevant passages: {text}",
+                _ => text
+            };
+        }
+
+        private string ApplyDocumentPrefix(string text)
+        {
+            return _config.EmbeddingModel switch
+            {
+                var m when m.StartsWith("nomic-embed-text") => $"search_document: {text}",
+                _ => text
+            };
         }
     }
 }

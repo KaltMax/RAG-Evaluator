@@ -62,7 +62,7 @@ namespace RagEvaluator.Test.ApplicationTest
         {
             // Arrange
             var embedding = new float[] { 0.1f, 0.2f, 0.3f };
-            _embeddingService.GenerateEmbeddingAsync("search_query: What is Cloud Computing?", TestContext.Current.CancellationToken)
+            _embeddingService.GenerateQueryEmbeddingAsync("What is Cloud Computing?", TestContext.Current.CancellationToken)
                 .Returns(embedding);
 
             // Act
@@ -81,10 +81,10 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task CreateQueryAsync_ShouldPrefixQuestionForEmbedding()
+        public async Task CreateQueryAsync_ShouldPassRawQuestionForEmbedding()
         {
             // Arrange
-            _embeddingService.GenerateEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
+            _embeddingService.GenerateQueryEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
                 .Returns(new float[] { 0.1f });
 
             // Act
@@ -94,8 +94,8 @@ namespace RagEvaluator.Test.ApplicationTest
                 TestContext.Current.CancellationToken);
 
             // Assert
-            await _embeddingService.Received(1).GenerateEmbeddingAsync(
-                "search_query: Test question", TestContext.Current.CancellationToken);
+            await _embeddingService.Received(1).GenerateQueryEmbeddingAsync(
+                "Test question", TestContext.Current.CancellationToken);
         }
 
         #endregion

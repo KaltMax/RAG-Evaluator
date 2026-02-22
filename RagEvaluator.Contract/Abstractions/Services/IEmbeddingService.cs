@@ -6,9 +6,14 @@ namespace RagEvaluator.Contract.Abstractions.Services
     public interface IEmbeddingService
     {
         /// <summary>
-        /// Generates a vector embedding from the provided text.
+        /// Generates a vector embedding for a search query, applying model-specific query prefixes.
         /// </summary>
-        Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default);
+        Task<float[]> GenerateQueryEmbeddingAsync(string text, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Generates a vector embedding for a document chunk, applying model-specific document prefixes.
+        /// </summary>
+        Task<float[]> GenerateDocumentEmbeddingAsync(string text, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks whether the embedding service is available and ready to generate embeddings.
