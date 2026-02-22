@@ -139,11 +139,30 @@ namespace RagEvaluator.Test.InfrastructureTest
             Assert.Empty(result);
         }
 
+        [Fact]
+        public async Task CreateDocumentChunksAsync_WithSimilarLines_ShouldSplitWhenExceedingChunkSize()
+        {
+            // Arrange: all lines are highly similar, but chunk size is small enough to force splits
+            var chunker = CreateChunker(similarityThreshold: 0.5, chunkSize: 30);
+            var text = "Line one here\nLine two here\nLine three here";
+
+            // Return identical embeddings → similarity = 1.0, well above threshold
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
+                .Returns(new float[] { 1.0f, 0.0f, 0.0f });
+
+            // Act
+            var result = await chunker.CreateDocumentChunksAsync(text, TestContext.Current.CancellationToken);
+
+            // Assert: despite high similarity, chunks are split because joining would exceed chunkSize
+            Assert.True(result.Count > 1, $"Expected multiple chunks but got {result.Count}");
+            Assert.All(result, chunk => Assert.True(chunk.Length <= 30, $"Chunk exceeds max size: \"{chunk}\" ({chunk.Length} chars)"));
+        }
+
         #endregion
 
         #region Helper Methods
 
-        private SemanticTextChunker CreateChunker(double similarityThreshold)
+        private SemanticTextChunker CreateChunker(double similarityThreshold, int chunkSize = 1000)
         {
             var config = new RagConfiguration
             {
@@ -158,7 +177,7 @@ namespace RagEvaluator.Test.InfrastructureTest
                 PromptInstructed = "",
                 PromptLanguageAwareEn = "",
                 PromptLanguageAwareDe = "",
-                ChunkSize = 1000,
+                ChunkSize = chunkSize,
                 ChunkOverlap = 200
             };
             return new SemanticTextChunker(_embeddingService, config);

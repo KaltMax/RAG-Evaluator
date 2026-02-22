@@ -51,16 +51,29 @@ namespace RagEvaluator.Infrastructure.Services
             // Build chunks by splitting at low-similarity boundaries
             var chunks = new List<string>();
             var currentLines = new List<string> {lines[0]};
+            var currentLength = lines[0].Length;
 
             for (var i = 1; i < lines.Count; i++)
             {
-                if (similarities[i - 1] < _config.SimilarityThreshold)
+                var candidateLength = currentLength + 1 + lines[i].Length;
+
+                if (similarities[i - 1] < _config.SimilarityThreshold || candidateLength > _config.ChunkSize)
                 {
                     chunks.Add(string.Join("\n", currentLines));
                     currentLines = new List<string>();
+                    currentLength = 0;
                 }
 
                 currentLines.Add(lines[i]);
+
+                if (currentLength > 0)
+                {
+                    currentLength += 1 + lines[i].Length; // +1 for '\n' separator
+                }
+                else
+                {
+                    currentLength = lines[i].Length;
+                }
             }
 
             // Add the last chunk
@@ -84,7 +97,12 @@ namespace RagEvaluator.Infrastructure.Services
             }
 
             var magnitude = Math.Sqrt(magnitudeA) * Math.Sqrt(magnitudeB);
-            return magnitude == 0 ? 0 : dotProduct / magnitude;
+            if (magnitude == 0)
+            {
+                return 0;
+            }
+
+            return dotProduct / magnitude;
         }
     }
 }

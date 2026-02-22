@@ -175,49 +175,49 @@ function Settings() {
                 </button>
               ))}
             </div>
-            {draft.chunkingStrategy === 'FixedSize' && (
+            {(draft.chunkingStrategy === 'FixedSize' || draft.chunkingStrategy === 'Semantic') && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
-                  <label htmlFor="chunkSize" className="text-gray-400 text-xs mb-1 block">Chunk Size</label>
+                  <label htmlFor="chunkSize" className="text-gray-400 text-xs mb-1 block">{draft.chunkingStrategy === 'Semantic' ? 'Max Chunk Size' : 'Chunk Size'}</label>
                   <input
                     id="chunkSize"
                     type="number"
                     min="1"
-                    max="2000"
+                    max="1500"
                     value={draft.chunkSize}
                     onChange={(e) => setDraft({ ...draft, chunkSize: Number.parseInt(e.target.value) || 0 })}
                     className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"
                   />
                 </div>
-                <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
-                  <label htmlFor="chunkOverlap" className="text-gray-400 text-xs mb-1 block">Chunk Overlap</label>
-                  <input
-                    id="chunkOverlap"
-                    type="number"
-                    min="0"
-                    max="1000"
-                    value={draft.chunkOverlap}
-                    onChange={(e) => setDraft({ ...draft, chunkOverlap: Number.parseInt(e.target.value) || 0 })}
-                    className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"
-                  />
-                </div>
-              </div>
-            )}
-            {draft.chunkingStrategy === 'Semantic' && (
-              <div className="grid grid-cols-1 max-w-xs gap-4">
-                <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
-                  <label htmlFor="similarityThreshold" className="text-gray-400 text-xs mb-1 block">Similarity Threshold</label>
-                  <input
-                    id="similarityThreshold"
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={draft.similarityThreshold}
-                    onChange={(e) => setDraft({ ...draft, similarityThreshold: Number.parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"
-                  />
-                </div>
+                {draft.chunkingStrategy === 'FixedSize' && (
+                  <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
+                    <label htmlFor="chunkOverlap" className="text-gray-400 text-xs mb-1 block">Chunk Overlap</label>
+                    <input
+                      id="chunkOverlap"
+                      type="number"
+                      min="0"
+                      max="1000"
+                      value={draft.chunkOverlap}
+                      onChange={(e) => setDraft({ ...draft, chunkOverlap: Number.parseInt(e.target.value) || 0 })}
+                      className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"
+                    />
+                  </div>
+                )}
+                {draft.chunkingStrategy === 'Semantic' && (
+                  <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
+                    <label htmlFor="similarityThreshold" className="text-gray-400 text-xs mb-1 block">Similarity Threshold</label>
+                    <input
+                      id="similarityThreshold"
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={draft.similarityThreshold}
+                      onChange={(e) => setDraft({ ...draft, similarityThreshold: Number.parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -427,7 +427,7 @@ RAG-Evaluator/
          → 7. Join pages into single content string
          → 8. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
                • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
-               • semantic: Embedding-based splitting at topic boundaries (SimilarityThreshold)
+               • semantic: Embedding-based splitting at topic boundaries (SimilarityThreshold, ChunkSize as max cap)
          → 9. For each chunk:
             → 10. IEmbeddingService.GenerateDocumentEmbeddingAsync(chunk)
             → 11. Create DocumentChunk entity with embedding, strategy, model info

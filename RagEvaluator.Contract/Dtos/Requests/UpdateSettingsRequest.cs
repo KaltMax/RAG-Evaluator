@@ -13,7 +13,7 @@ namespace RagEvaluator.Contract.Dtos.Requests
         public ChunkingStrategy? ChunkingStrategy { get; set; }
         public PromptTemplate? PromptTemplate { get; set; }
 
-        [Range(1, 2000)]
+        [Range(1, 1500)]
         public int? ChunkSize { get; set; }
 
         [Range(0, 1000)]
