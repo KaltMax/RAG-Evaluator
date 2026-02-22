@@ -828,7 +828,6 @@ Containers communicate via Docker's internal network:
 
 ## In Progress / Planned
 
-- [ ] Refine prompt templates
 - [ ] Analytics and metrics Dashboard
 
 ## Resources
