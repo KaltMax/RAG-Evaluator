@@ -127,10 +127,10 @@ namespace RagEvaluator.Test.ApplicationTest
             var result = ExperimentMetricsAggregator.ComputeAggregatedMetrics(queries);
 
             // Assert
-            Assert.Equal(0.75, result.MeanMRR);
-            Assert.Equal(0.7, result.MeanPrecisionAtK);
-            Assert.Equal(0.75, result.MeanRecallAtK);
-            Assert.Equal(0.8, result.MeanNDCGAtK);
+            Assert.Equal(0.75, result.MRR!.Mean);
+            Assert.Equal(0.7, result.PrecisionAtK!.Mean);
+            Assert.Equal(0.75, result.RecallAtK!.Mean);
+            Assert.Equal(0.8, result.NDCGAtK!.Mean);
         }
 
         [Fact]
@@ -146,10 +146,10 @@ namespace RagEvaluator.Test.ApplicationTest
             var result = ExperimentMetricsAggregator.ComputeAggregatedMetrics(queries);
 
             // Assert
-            Assert.Null(result.MeanMRR);
-            Assert.Null(result.MeanPrecisionAtK);
-            Assert.Null(result.MeanRecallAtK);
-            Assert.Null(result.MeanNDCGAtK);
+            Assert.Null(result.MRR);
+            Assert.Null(result.PrecisionAtK);
+            Assert.Null(result.RecallAtK);
+            Assert.Null(result.NDCGAtK);
         }
 
         [Fact]

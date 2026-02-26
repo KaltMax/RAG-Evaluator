@@ -53,10 +53,10 @@ namespace RagEvaluator.Application.Mappers
                     Mean = responseTimes.Average(),
                     StdDev = ComputeStdDev(responseTimes)
                 },
-                MeanMRR = mrrValues.Count > 0 ? mrrValues.Average() : null,
-                MeanPrecisionAtK = precisionValues.Count > 0 ? precisionValues.Average() : null,
-                MeanRecallAtK = recallValues.Count > 0 ? recallValues.Average() : null,
-                MeanNDCGAtK = ndcgValues.Count > 0 ? ndcgValues.Average() : null,
+                MRR = mrrValues.Count > 0 ? new MetricAggregate { Mean = mrrValues.Average(), StdDev = ComputeStdDev(mrrValues) } : null,
+                PrecisionAtK = precisionValues.Count > 0 ? new MetricAggregate { Mean = precisionValues.Average(), StdDev = ComputeStdDev(precisionValues) } : null,
+                RecallAtK = recallValues.Count > 0 ? new MetricAggregate { Mean = recallValues.Average(), StdDev = ComputeStdDev(recallValues) } : null,
+                NDCGAtK = ndcgValues.Count > 0 ? new MetricAggregate { Mean = ndcgValues.Average(), StdDev = ComputeStdDev(ndcgValues) } : null,
                 ResponseQualityDistribution = qualityDistribution,
                 LanguageSwitchingRate = languageSwitchingRate
             };

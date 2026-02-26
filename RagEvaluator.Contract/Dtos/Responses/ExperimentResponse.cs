@@ -61,10 +61,10 @@ namespace RagEvaluator.Contract.Dtos.Responses
     public class ExperimentAggregatedMetrics
     {
         public MetricAggregate? ResponseTimeMs { get; set; }
-        public double? MeanMRR { get; set; }
-        public double? MeanPrecisionAtK { get; set; }
-        public double? MeanRecallAtK { get; set; }
-        public double? MeanNDCGAtK { get; set; }
+        public MetricAggregate? MRR { get; set; }
+        public MetricAggregate? PrecisionAtK { get; set; }
+        public MetricAggregate? RecallAtK { get; set; }
+        public MetricAggregate? NDCGAtK { get; set; }
         public Dictionary<string, int>? ResponseQualityDistribution { get; set; }
         public double? LanguageSwitchingRate { get; set; }
     }
