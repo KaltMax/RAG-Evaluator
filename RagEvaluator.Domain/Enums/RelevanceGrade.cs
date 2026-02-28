@@ -6,8 +6,7 @@ namespace RagEvaluator.Domain.Enums
     public enum RelevanceGrade
     {
         NotRelevant = 0,
-        MarginallyRelevant = 1,
-        FairlyRelevant = 2,
-        HighlyRelevant = 3
+        Related = 1,
+        HighlyRelevant = 2
     }
 }
