@@ -1,0 +1,138 @@
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ErrorBar,
+  ResponsiveContainer,
+} from "recharts";
+import { PropTypes } from "prop-types";
+import { formatMetric } from "../../utils/formatMetric";
+
+const RETRIEVAL_METRICS = [
+  { key: "mrr", label: "MRR" },
+  { key: "precisionAtK", label: "Precision@K" },
+  { key: "recallAtK", label: "Recall@K" },
+  { key: "ndcgAtK", label: "NDCG@K" },
+];
+
+function buildChartData(selectedExperiments) {
+  return RETRIEVAL_METRICS.map((metric) => {
+    const row = { name: metric.label };
+    selectedExperiments.forEach((exp) => {
+      const val = exp.overallMetrics?.[metric.key];
+      row[exp.id] = val?.mean ?? 0;
+      row[`${exp.id}_err`] = val?.stdDev ?? 0;
+    });
+    return row;
+  });
+}
+
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-[#1F1F1F] border border-gray-700 rounded-lg p-3 shadow-lg">
+      <p className="text-white font-medium text-sm mb-2">{label}</p>
+      {payload.map((entry) => (
+        <div
+          key={entry.dataKey}
+          className="flex items-center gap-2 text-xs mb-1"
+        >
+          <span
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-gray-300">{entry.name}:</span>
+          <span className="text-white font-mono">
+            {formatMetric(entry.value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+CustomTooltip.propTypes = {
+  active: PropTypes.bool,
+  payload: PropTypes.arrayOf(
+    PropTypes.shape({
+      dataKey: PropTypes.string,
+      name: PropTypes.string,
+      value: PropTypes.number,
+      color: PropTypes.string,
+    }),
+  ),
+  label: PropTypes.string,
+};
+
+function RetrievalMetricsChart({
+  selectedExperiments,
+  colorMap,
+  title,
+  metricsAccessor,
+}) {
+  const data = metricsAccessor
+    ? RETRIEVAL_METRICS.map((metric) => {
+        const row = { name: metric.label };
+        selectedExperiments.forEach((exp) => {
+          const metrics = metricsAccessor(exp);
+          const val = metrics?.[metric.key];
+          row[exp.id] = val?.mean ?? 0;
+          row[`${exp.id}_err`] = val?.stdDev ?? 0;
+        });
+        return row;
+      })
+    : buildChartData(selectedExperiments);
+
+  return (
+    <div className="bg-[#2D2D2D] rounded-lg p-6">
+      <h2 className="text-lg font-semibold text-white mb-4">
+        {title || "Retrieval Metrics"}
+      </h2>
+      <ResponsiveContainer width="100%" height={350}>
+        <BarChart
+          data={data}
+          margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis dataKey="name" tick={{ fill: "#9ca3af", fontSize: 12 }} />
+          <YAxis domain={[0, 1]} tick={{ fill: "#9ca3af", fontSize: 12 }} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            wrapperStyle={{ color: "#d1d5db", fontSize: 12 }}
+            formatter={(value) => (
+              <span className="text-gray-300 text-xs">{value}</span>
+            )}
+          />
+          {selectedExperiments.map((exp) => (
+            <Bar
+              key={exp.id}
+              dataKey={exp.id}
+              name={exp.name}
+              fill={colorMap[exp.id]?.hex}
+              radius={[2, 2, 0, 0]}
+            >
+              <ErrorBar
+                dataKey={`${exp.id}_err`}
+                width={4}
+                stroke={colorMap[exp.id]?.hex}
+              />
+            </Bar>
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+RetrievalMetricsChart.propTypes = {
+  selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,
+  colorMap: PropTypes.objectOf(colorEntryShape).isRequired,
+  title: PropTypes.string,
+  metricsAccessor: PropTypes.func,
+};
+
+export default RetrievalMetricsChart;

@@ -5,8 +5,8 @@
  */
 export const formatLanguage = (lang) => {
   const languages = {
-    en: 'English',
-    de: 'German',
+    en: "English",
+    de: "German",
   };
-  return languages[lang] || lang || '-';
+  return languages[lang] || lang || "-";
 };

@@ -4,6 +4,6 @@
  * @returns {string} Formatted value or 'N/A' if invalid
  */
 export const formatMetric = (value) => {
-  if (value === null || value === undefined) return 'N/A';
+  if (value === null || value === undefined) return "N/A";
   return value.toFixed(3);
 };

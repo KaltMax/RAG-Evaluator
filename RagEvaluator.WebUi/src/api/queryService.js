@@ -1,16 +1,16 @@
-import axiosInstance, { apiRequest } from './axiosConfig';
+import axiosInstance, { apiRequest } from "./axiosConfig";
 
-export const postQuery = (question, topK = 3, language = 'en') =>
+export const postQuery = (question, topK = 3, language = "en") =>
   apiRequest(() =>
-    axiosInstance.post('/query', {
+    axiosInstance.post("/query", {
       Question: question,
       TopK: topK,
       Language: language,
-    })
+    }),
   );
 
 export const getAllQueries = () =>
-  apiRequest(() => axiosInstance.get('/query/history'));
+  apiRequest(() => axiosInstance.get("/query/history"));
 
 export const getQueryById = (id) =>
   apiRequest(() => axiosInstance.get(`/query/${id}`));

@@ -4,6 +4,6 @@
  * @returns {string} Formatted date or '-' if invalid
  */
 export const formatDate = (dateString) => {
-  if (!dateString) return '-';
+  if (!dateString) return "-";
   return new Date(dateString).toLocaleString();
 };
