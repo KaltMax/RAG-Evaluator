@@ -8,3 +8,6 @@ export const getExperiments = () =>
 
 export const getExperimentById = (id) =>
   apiRequest(() => axiosInstance.get(`/experiments/${id}`));
+
+export const deleteExperiment = (id) =>
+  apiRequest(() => axiosInstance.delete(`/experiments/${id}`));

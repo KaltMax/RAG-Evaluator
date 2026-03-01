@@ -28,9 +28,7 @@ export function formatCell(metric, value) {
   if (metric.key === "responseTimeMs") {
     if (typeof value === "object") {
       const std =
-        value.stdDev == null
-          ? ""
-          : ` ± ${formatResponseTime(value.stdDev)}`;
+        value.stdDev == null ? "" : ` ± ${formatResponseTime(value.stdDev)}`;
       return `${formatResponseTime(value.mean)}${std}`;
     }
     return formatResponseTime(value);
@@ -39,8 +37,7 @@ export function formatCell(metric, value) {
     return `${(value * 100).toFixed(1)}%`;
   }
   if (typeof value === "object" && value.mean != null) {
-    const std =
-      value.stdDev == null ? "" : ` ± ${formatMetric(value.stdDev)}`;
+    const std = value.stdDev == null ? "" : ` ± ${formatMetric(value.stdDev)}`;
     return `${formatMetric(value.mean)}${std}`;
   }
   return formatMetric(value);

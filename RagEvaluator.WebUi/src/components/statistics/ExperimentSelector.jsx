@@ -1,11 +1,18 @@
 import { PropTypes } from "prop-types";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { getExperimentColor } from "../../utils/experimentColors";
 import {
   experimentSummaryShape,
   colorEntryShape,
 } from "../../utils/statisticsPropTypes";
 
-function ExperimentSelector({ experiments, selectedIds, onToggle, colorMap }) {
+function ExperimentSelector({
+  experiments,
+  selectedIds,
+  onToggle,
+  onDelete,
+  colorMap,
+}) {
   const allSelectableIds = experiments
     .filter(
       (e) =>
@@ -75,9 +82,17 @@ function ExperimentSelector({ experiments, selectedIds, onToggle, colorMap }) {
                   className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: color.hex }}
                 />
-                <span className="text-sm font-medium text-white truncate">
+                <span className="text-sm font-medium text-white truncate flex-1">
                   {exp.name}
                 </span>
+                {/* Delete button */}
+                <TrashIcon
+                  className="w-4 h-4 text-gray-500 hover:text-red-400 shrink-0 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(exp.id);
+                  }}
+                />
               </div>
               <p className="text-xs text-gray-400 truncate">
                 {exp.embeddingModel} | {exp.chunkingStrategy} |{" "}
@@ -101,6 +116,7 @@ ExperimentSelector.propTypes = {
   experiments: PropTypes.arrayOf(experimentSummaryShape).isRequired,
   selectedIds: PropTypes.instanceOf(Set).isRequired,
   onToggle: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
   colorMap: PropTypes.objectOf(colorEntryShape).isRequired,
 };
 

@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
-import { getExperiments, getExperimentById } from "../api/experimentService";
+import {
+  getExperiments,
+  getExperimentById,
+  deleteExperiment,
+} from "../api/experimentService";
 import { getExperimentColor } from "../utils/experimentColors";
 import ExperimentSelector from "./statistics/ExperimentSelector";
 import OverallComparisonTable from "./statistics/OverallComparisonTable";
@@ -75,6 +79,27 @@ function Statistics() {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this experiment?")) return;
+    try {
+      await deleteExperiment(id);
+      toast.success("Experiment deleted successfully");
+      setSelectedIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+      setExperimentDetails((prev) => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
+      fetchExperiments();
+    } catch (err) {
+      toast.error(`Failed to delete experiment: ${err.message}`);
+    }
+  };
+
   const selectedExperiments = [...selectedIds]
     .map((id) => experimentDetails[id])
     .filter(Boolean);
@@ -129,6 +154,7 @@ function Statistics() {
             experiments={experiments}
             selectedIds={selectedIds}
             onToggle={handleToggle}
+            onDelete={handleDelete}
             colorMap={colorMap}
           />
 
