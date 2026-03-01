@@ -1,5 +1,9 @@
 import { PropTypes } from "prop-types";
 import RetrievalMetricsChart from "./RetrievalMetricsChart";
+import {
+  experimentDetailShape,
+  colorEntryShape,
+} from "../../utils/statisticsPropTypes";
 
 function averageMetrics(queryGroups) {
   if (!queryGroups || queryGroups.length === 0) return null;
@@ -37,6 +41,7 @@ function LanguageComparison({ selectedExperiments, colorMap }) {
   const deAccessor = (exp) =>
     averageMetrics(exp.queryGroups?.filter((g) => g.language === "de"));
 
+  // Side-by-side retrieval metric charts filtered by query language
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {hasEn && (
@@ -58,33 +63,6 @@ function LanguageComparison({ selectedExperiments, colorMap }) {
     </div>
   );
 }
-
-const metricAggregateShape = PropTypes.shape({
-  mean: PropTypes.number.isRequired,
-  stdDev: PropTypes.number,
-});
-
-const colorEntryShape = PropTypes.shape({
-  hex: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-});
-
-const queryGroupShape = PropTypes.shape({
-  question: PropTypes.string.isRequired,
-  language: PropTypes.string.isRequired,
-  metrics: PropTypes.shape({
-    mrr: metricAggregateShape,
-    precisionAtK: metricAggregateShape,
-    recallAtK: metricAggregateShape,
-    ndcgAtK: metricAggregateShape,
-  }),
-});
-
-const experimentDetailShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  queryGroups: PropTypes.arrayOf(queryGroupShape),
-});
 
 LanguageComparison.propTypes = {
   selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,

@@ -248,6 +248,7 @@ Response:
 - **Styling**: Tailwind CSS 4
 - **Routing**: React Router DOM 7
 - **HTTP Client**: Axios
+- **Charting**: Recharts (bar charts, error bars, stacked bars)
 - **UI Libraries**: React Dropzone, React Toastify, Heroicons
 - **Testing**: Vitest with coverage
 

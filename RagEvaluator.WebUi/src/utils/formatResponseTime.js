@@ -5,6 +5,6 @@
  */
 export const formatResponseTime = (ms) => {
   if (ms === null || ms === undefined) return "N/A";
-  if (ms < 1000) return `${ms}ms`;
+  if (ms < 1000) return `${Math.round(ms)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
 };

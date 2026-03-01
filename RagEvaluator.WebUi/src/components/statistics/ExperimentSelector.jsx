@@ -1,5 +1,9 @@
 import { PropTypes } from "prop-types";
 import { getExperimentColor } from "../../utils/experimentColors";
+import {
+  experimentSummaryShape,
+  colorEntryShape,
+} from "../../utils/statisticsPropTypes";
 
 function ExperimentSelector({ experiments, selectedIds, onToggle, colorMap }) {
   const allSelectableIds = experiments
@@ -23,6 +27,7 @@ function ExperimentSelector({ experiments, selectedIds, onToggle, colorMap }) {
 
   return (
     <div className="bg-[#2D2D2D] rounded-lg p-6">
+      {/* Header with Select All / Clear controls */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-white">Select Experiments</h2>
         <div className="flex gap-2">
@@ -42,6 +47,7 @@ function ExperimentSelector({ experiments, selectedIds, onToggle, colorMap }) {
           </button>
         </div>
       </div>
+      {/* Experiment pills: color dot, name, config, annotation progress */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {experiments.map((exp) => {
           const isSelectable =
@@ -90,25 +96,6 @@ function ExperimentSelector({ experiments, selectedIds, onToggle, colorMap }) {
     </div>
   );
 }
-
-const colorEntryShape = PropTypes.shape({
-  hex: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-});
-
-const experimentSummaryShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  status: PropTypes.string.isRequired,
-  embeddingModel: PropTypes.string,
-  chunkingStrategy: PropTypes.string,
-  promptTemplate: PropTypes.string,
-  progress: PropTypes.shape({
-    total: PropTypes.number.isRequired,
-    completed: PropTypes.number.isRequired,
-    annotated: PropTypes.number.isRequired,
-  }).isRequired,
-});
 
 ExperimentSelector.propTypes = {
   experiments: PropTypes.arrayOf(experimentSummaryShape).isRequired,

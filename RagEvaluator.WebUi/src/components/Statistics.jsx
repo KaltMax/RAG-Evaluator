@@ -103,7 +103,7 @@ function Statistics() {
         </button>
       </div>
 
-      {/* Loading / Error / Content */}
+      {/* Experiment list with loading, error, and empty states */}
       {isLoading && experiments.length === 0 ? (
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-12 flex items-center justify-center">
           <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin" />
@@ -124,6 +124,7 @@ function Statistics() {
         </div>
       ) : (
         <>
+          {/* Pill-style experiment toggle selector */}
           <ExperimentSelector
             experiments={experiments}
             selectedIds={selectedIds}
@@ -140,6 +141,7 @@ function Statistics() {
             </div>
           )}
 
+          {/* Comparison sections: require at least 2 selected experiments */}
           {selectedExperiments.length >= 2 ? (
             <div className="space-y-6">
               <OverallComparisonTable

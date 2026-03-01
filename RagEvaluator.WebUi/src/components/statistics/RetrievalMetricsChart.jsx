@@ -11,6 +11,10 @@ import {
 } from "recharts";
 import { PropTypes } from "prop-types";
 import { formatMetric } from "../../utils/formatMetric";
+import {
+  experimentDetailShape,
+  colorEntryShape,
+} from "../../utils/statisticsPropTypes";
 
 const RETRIEVAL_METRICS = [
   { key: "mrr", label: "MRR" },
@@ -19,17 +23,7 @@ const RETRIEVAL_METRICS = [
   { key: "ndcgAtK", label: "NDCG@K" },
 ];
 
-function buildChartData(selectedExperiments) {
-  return RETRIEVAL_METRICS.map((metric) => {
-    const row = { name: metric.label };
-    selectedExperiments.forEach((exp) => {
-      const val = exp.overallMetrics?.[metric.key];
-      row[exp.id] = val?.mean ?? 0;
-      row[`${exp.id}_err`] = val?.stdDev ?? 0;
-    });
-    return row;
-  });
-}
+const defaultAccessor = (exp) => exp.overallMetrics;
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -74,24 +68,23 @@ function RetrievalMetricsChart({
   title,
   metricsAccessor,
 }) {
-  const data = metricsAccessor
-    ? RETRIEVAL_METRICS.map((metric) => {
-        const row = { name: metric.label };
-        selectedExperiments.forEach((exp) => {
-          const metrics = metricsAccessor(exp);
-          const val = metrics?.[metric.key];
-          row[exp.id] = val?.mean ?? 0;
-          row[`${exp.id}_err`] = val?.stdDev ?? 0;
-        });
-        return row;
-      })
-    : buildChartData(selectedExperiments);
+  const accessor = metricsAccessor || defaultAccessor;
+  const data = RETRIEVAL_METRICS.map((metric) => {
+    const row = { name: metric.label };
+    selectedExperiments.forEach((exp) => {
+      const val = accessor(exp)?.[metric.key];
+      row[exp.id] = val?.mean ?? 0;
+      row[`${exp.id}_err`] = val?.stdDev ?? 0;
+    });
+    return row;
+  });
 
   return (
     <div className="bg-[#2D2D2D] rounded-lg p-6">
       <h2 className="text-lg font-semibold text-white mb-4">
         {title || "Retrieval Metrics"}
       </h2>
+      {/* Grouped bar chart with one bar per experiment and stddev error bars */}
       <ResponsiveContainer width="100%" height={350}>
         <BarChart
           data={data}
@@ -127,27 +120,6 @@ function RetrievalMetricsChart({
     </div>
   );
 }
-
-const metricAggregateShape = PropTypes.shape({
-  mean: PropTypes.number.isRequired,
-  stdDev: PropTypes.number,
-});
-
-const colorEntryShape = PropTypes.shape({
-  hex: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-});
-
-const experimentDetailShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  overallMetrics: PropTypes.shape({
-    mrr: metricAggregateShape,
-    precisionAtK: metricAggregateShape,
-    recallAtK: metricAggregateShape,
-    ndcgAtK: metricAggregateShape,
-  }),
-});
 
 RetrievalMetricsChart.propTypes = {
   selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,

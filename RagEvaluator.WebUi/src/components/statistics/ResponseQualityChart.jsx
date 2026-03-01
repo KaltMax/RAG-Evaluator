@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { PropTypes } from "prop-types";
+import { experimentDetailShape } from "../../utils/statisticsPropTypes";
 
 const QUALITY_SEGMENTS = [
   { key: "CorrectAndComplete", label: "Correct", color: "#22c55e" },
@@ -82,6 +83,7 @@ function ResponseQualityChart({ selectedExperiments }) {
       <h2 className="text-lg font-semibold text-white mb-4">
         Response Quality Distribution
       </h2>
+      {/* Horizontal stacked bars: Correct / Vague / Incorrect / Hallucinated */}
       <ResponsiveContainer
         width="100%"
         height={Math.max(200, selectedExperiments.length * 50 + 80)}
@@ -126,15 +128,7 @@ function ResponseQualityChart({ selectedExperiments }) {
 }
 
 ResponseQualityChart.propTypes = {
-  selectedExperiments: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      overallMetrics: PropTypes.shape({
-        responseQualityDistribution: PropTypes.objectOf(PropTypes.number),
-      }),
-    }),
-  ).isRequired,
+  selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,
 };
 
 export default ResponseQualityChart;

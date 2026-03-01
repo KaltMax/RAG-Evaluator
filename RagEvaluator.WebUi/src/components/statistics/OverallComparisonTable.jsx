@@ -1,51 +1,14 @@
 import { PropTypes } from "prop-types";
-import { formatMetric } from "../../utils/formatMetric";
-import { formatResponseTime } from "../../utils/formatResponseTime";
-
-const METRICS = [
-  { key: "mrr", label: "MRR", higher: true },
-  { key: "precisionAtK", label: "Precision@K", higher: true },
-  { key: "recallAtK", label: "Recall@K", higher: true },
-  { key: "ndcgAtK", label: "NDCG@K", higher: true },
-  { key: "responseTimeMs", label: "Response Time", higher: false },
-  { key: "languageSwitchingRate", label: "Lang. Switching", higher: false },
-];
-
-function findBestIndex(values, higher) {
-  let bestIdx = -1;
-  let bestVal = higher ? -Infinity : Infinity;
-  values.forEach((v, i) => {
-    if (v == null) return;
-    if (higher ? v > bestVal : v < bestVal) {
-      bestVal = v;
-      bestIdx = i;
-    }
-  });
-  return bestIdx;
-}
-
-function formatCell(metric, value) {
-  if (!value) return "N/A";
-  if (metric.key === "responseTimeMs") {
-    const std =
-      value.stdDev == null ? "" : ` \u00b1 ${formatResponseTime(value.stdDev)}`;
-    return `${formatResponseTime(value.mean)}${std}`;
-  }
-  if (metric.key === "languageSwitchingRate") {
-    return value == null ? "N/A" : `${(value * 100).toFixed(1)}%`;
-  }
-  const std =
-    value.stdDev == null ? "" : ` \u00b1 ${formatMetric(value.stdDev)}`;
-  return `${formatMetric(value.mean)}${std}`;
-}
-
-function getMeanValue(metric, overallMetrics) {
-  if (!overallMetrics) return null;
-  const val = overallMetrics[metric.key];
-  if (val == null) return null;
-  if (metric.key === "languageSwitchingRate") return val;
-  return val.mean ?? null;
-}
+import {
+  METRICS,
+  findBestIndex,
+  formatCell,
+  getMeanValue,
+} from "../../utils/metricHelpers";
+import {
+  experimentDetailShape,
+  colorEntryShape,
+} from "../../utils/statisticsPropTypes";
 
 function OverallComparisonTable({ selectedExperiments, colorMap }) {
   return (
@@ -53,6 +16,7 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
       <h2 className="text-lg font-semibold text-white mb-4">
         Overall Comparison
       </h2>
+      {/* Horizontally scrollable table with sticky metric column */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -81,6 +45,7 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
               ))}
             </tr>
           </thead>
+          {/* Metric rows with best value highlighted per row */}
           <tbody>
             {METRICS.map((metric) => {
               const means = selectedExperiments.map((exp) =>
@@ -126,31 +91,6 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
     </div>
   );
 }
-
-const metricAggregateShape = PropTypes.shape({
-  mean: PropTypes.number.isRequired,
-  stdDev: PropTypes.number,
-});
-
-const colorEntryShape = PropTypes.shape({
-  hex: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-});
-
-const experimentDetailShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  embeddingModel: PropTypes.string,
-  chunkingStrategy: PropTypes.string,
-  overallMetrics: PropTypes.shape({
-    mrr: metricAggregateShape,
-    precisionAtK: metricAggregateShape,
-    recallAtK: metricAggregateShape,
-    ndcgAtK: metricAggregateShape,
-    responseTimeMs: metricAggregateShape,
-    languageSwitchingRate: PropTypes.number,
-  }),
-});
 
 OverallComparisonTable.propTypes = {
   selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,

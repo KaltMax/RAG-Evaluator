@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { PropTypes } from "prop-types";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
-import { formatMetric } from "../../utils/formatMetric";
-import { formatResponseTime } from "../../utils/formatResponseTime";
 import { formatLanguage } from "../../utils/formatLanguage";
+import {
+  METRICS,
+  findBestIndex,
+  formatCell,
+  getMeanValue,
+} from "../../utils/metricHelpers";
+import {
+  experimentDetailShape,
+  colorEntryShape,
+} from "../../utils/statisticsPropTypes";
 
 function getUniqueQuestions(selectedExperiments) {
   const questionMap = new Map();
@@ -22,60 +30,6 @@ function getUniqueQuestions(selectedExperiments) {
 
 function getQueryGroupForQuestion(exp, question) {
   return exp.queryGroups?.find((qg) => qg.question === question);
-}
-
-const METRICS = [
-  { key: "mrr", label: "MRR", higher: true },
-  { key: "precisionAtK", label: "Precision@K", higher: true },
-  { key: "recallAtK", label: "Recall@K", higher: true },
-  { key: "ndcgAtK", label: "NDCG@K", higher: true },
-  { key: "responseTimeMs", label: "Response Time", higher: false },
-  { key: "languageSwitchingRate", label: "Lang. Switching", higher: false },
-];
-
-function findBestIndex(values, higher) {
-  let bestIdx = -1;
-  let bestVal = higher ? -Infinity : Infinity;
-  values.forEach((v, i) => {
-    if (v == null) return;
-    if (higher ? v > bestVal : v < bestVal) {
-      bestVal = v;
-      bestIdx = i;
-    }
-  });
-  return bestIdx;
-}
-
-function formatCell(metric, value) {
-  if (value == null) return "N/A";
-  if (metric.key === "responseTimeMs") {
-    if (typeof value === "object") {
-      const std =
-        value.stdDev == null
-          ? ""
-          : ` \u00b1 ${formatResponseTime(value.stdDev)}`;
-      return `${formatResponseTime(value.mean)}${std}`;
-    }
-    return formatResponseTime(value);
-  }
-  if (metric.key === "languageSwitchingRate") {
-    const v = typeof value === "object" ? value : value;
-    return v == null ? "N/A" : `${(v * 100).toFixed(1)}%`;
-  }
-  if (typeof value === "object" && value.mean != null) {
-    const std =
-      value.stdDev == null ? "" : ` \u00b1 ${formatMetric(value.stdDev)}`;
-    return `${formatMetric(value.mean)}${std}`;
-  }
-  return formatMetric(value);
-}
-
-function getMeanValue(metric, metrics) {
-  if (!metrics) return null;
-  const val = metrics[metric.key];
-  if (val == null) return null;
-  if (metric.key === "languageSwitchingRate") return val;
-  return val?.mean ?? val;
 }
 
 function PerQueryBreakdown({ selectedExperiments, colorMap }) {
@@ -98,21 +52,10 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
       <h2 className="text-lg font-semibold text-white mb-4">
         Per-Query Breakdown
       </h2>
+      {/* Expandable accordion: one row per unique question across experiments */}
       <div className="space-y-2">
         {questions.map(({ question, language }) => {
           const isExpanded = expandedQuestions.has(question);
-
-          // Quick preview: average MRR across selected experiments for this question
-          const mrrValues = selectedExperiments
-            .map(
-              (exp) =>
-                getQueryGroupForQuestion(exp, question)?.metrics?.mrr?.mean,
-            )
-            .filter((v) => v != null);
-          const avgMrr =
-            mrrValues.length > 0
-              ? mrrValues.reduce((a, b) => a + b, 0) / mrrValues.length
-              : null;
 
           return (
             <div
@@ -136,6 +79,7 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
                 )}
               </button>
 
+              {/* Expanded: per-experiment comparison table for this question */}
               {isExpanded && (
                 <div className="border-t border-gray-700 px-4 py-3 overflow-x-auto">
                   <table className="w-full text-xs">
@@ -219,35 +163,6 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
     </div>
   );
 }
-
-const metricAggregateShape = PropTypes.shape({
-  mean: PropTypes.number.isRequired,
-  stdDev: PropTypes.number,
-});
-
-const colorEntryShape = PropTypes.shape({
-  hex: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-});
-
-const queryGroupShape = PropTypes.shape({
-  question: PropTypes.string.isRequired,
-  language: PropTypes.string.isRequired,
-  metrics: PropTypes.shape({
-    mrr: metricAggregateShape,
-    precisionAtK: metricAggregateShape,
-    recallAtK: metricAggregateShape,
-    ndcgAtK: metricAggregateShape,
-    responseTimeMs: metricAggregateShape,
-    languageSwitchingRate: PropTypes.number,
-  }),
-});
-
-const experimentDetailShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  queryGroups: PropTypes.arrayOf(queryGroupShape),
-});
 
 PerQueryBreakdown.propTypes = {
   selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,

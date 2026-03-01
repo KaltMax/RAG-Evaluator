@@ -757,6 +757,7 @@ course: "Software Engineering I"
 - **Routing**: React Router DOM 7
 - **UI Library**: Tailwind CSS 4
 - **HTTP Client**: Axios
+- **Charting**: Recharts (bar charts, error bars, stacked bars)
 - **UI Libraries**: React Dropzone, React Toastify, Heroicons
 
 ### DevOps
@@ -826,10 +827,6 @@ Containers communicate via Docker's internal network:
 - API connects to Ollama at `http://ollama:11434`
 - API connects to PostgreSQL at `postgres:5432`
 - External access via port mappings (5000, 3000, etc.)
-
-## In Progress / Planned
-
-- [ ] Analytics and metrics Dashboard
 
 ## Resources
 

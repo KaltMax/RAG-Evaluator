@@ -10,7 +10,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Ask questions in natural language
   - Get AI-generated answers with source citations
   - View similarity scores for retrieved chunks
-  - Adjustable top-K results (1, 3, 5, 10)
+  - Adjustable top-K results
   - Language selection (English/German)
 
 - **Relevance Annotation** - Evaluate retrieval quality with graded relevance labels
@@ -68,9 +68,13 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Partial update API (only changed fields sent)
   - Automatic document reprocessing when embedding/chunking settings change
 
-### Placeholder Pages
-
-- **Statistics** - To be implemented
+- **Statistics** - Compare experiment results across RAG configurations
+  - Select experiments for side-by-side comparison (up to 12)
+  - Overall comparison table with best-value highlighting per metric
+  - Retrieval metrics bar chart with standard deviation error bars (MRR, Precision@K, Recall@K, NDCG@K)
+  - Response quality distribution chart (stacked horizontal bars)
+  - Language comparison: side-by-side retrieval metrics for English vs German queries
+  - Per-query breakdown: expandable accordion with per-experiment metric comparison
 
 ## Tech Stack
 
@@ -81,6 +85,8 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 - **Axios** - HTTP client for API calls
 - **React Dropzone** - Drag-and-drop file uploads
 - **React Toastify** - Toast notifications
+- **Recharts** - Charting library (bar charts, error bars, stacked bars)
+- **PropTypes** - Runtime type checking for React props
 - **Heroicons** - Icon library
 - **Vitest** - Unit testing with coverage
 
@@ -180,7 +186,7 @@ src/
 │   ├── axiosConfig.js                  # Axios instance configuration with shared error handling
 │   ├── documentService.js              # Document API (CRUD, upload, download, reprocess)
 │   ├── queryService.js                 # Query API (post, history, get by ID, delete, annotate)
-│   ├── experimentService.js            # Experiment API (create)
+│   ├── experimentService.js            # Experiment API (create, list, get by ID)
 │   └── settingsService.js              # Settings API (get, update)
 ├── utils/                              # Utility functions
 │   ├── formatDate.js                   # Date formatting utility
@@ -190,7 +196,10 @@ src/
 │   ├── relevanceGrades.js              # Relevance grade definitions and helpers
 │   ├── formatFileSize.js               # File size formatting utility (B/KB/MB)
 │   ├── responseQualityOptions.js       # Response quality options, helpers, and colors
-│   └── sortByKey.js                    # Shared sorting utility for tables and lists
+│   ├── sortByKey.js                    # Shared sorting utility for tables and lists
+│   ├── metricHelpers.js                # Shared metric definitions, formatting, and best-value logic
+│   ├── statisticsPropTypes.js          # Shared PropTypes shapes for statistics components
+│   └── experimentColors.js            # 12-color palette for experiment charts and tables
 ├── components/                         # React components
 │   ├── DocumentList.jsx                # Document list page
 │   ├── Header.jsx                      # Top navigation bar
@@ -201,7 +210,14 @@ src/
 │   ├── SearchResults.jsx               # Search results display with annotation UI
 │   ├── UploadDocuments.jsx             # Document upload page
 │   ├── Experiments.jsx                 # Experiment creation page (JSON upload)
-│   ├── Statistics.jsx                  # Statistics page (placeholder)
+│   ├── Statistics.jsx                  # Statistics page (experiment comparison orchestrator)
+│   ├── statistics/                     # Statistics sub-components
+│   │   ├── ExperimentSelector.jsx      # Pill-style experiment toggle grid
+│   │   ├── OverallComparisonTable.jsx  # Metric comparison table with best-value highlighting
+│   │   ├── RetrievalMetricsChart.jsx   # Grouped bar chart with error bars
+│   │   ├── ResponseQualityChart.jsx    # Stacked horizontal bar chart
+│   │   ├── LanguageComparison.jsx      # Side-by-side EN/DE retrieval charts
+│   │   └── PerQueryBreakdown.jsx       # Expandable per-question comparison accordion
 │   └── Settings.jsx                    # Settings page (embedding model, chunking, prompts)
 ├── assets/                             # Static assets
 │   └── rag-evaluator.svg               # Application logo
@@ -250,6 +266,8 @@ Brief summary of implemented API services (see `src/api`):
 | `POST /api/documents/reprocess` | Reprocess all documents with current chunking/embedding config |
 | `GET /api/settings` | Get current RAG configuration and available options |
 | `PATCH /api/settings` | Update RAG configuration (partial update, only changed fields) |
+| `GET /api/experiments` | List all experiments with progress and config |
+| `GET /api/experiments/{id}` | Get experiment with query groups and aggregated metrics |
 | `POST /api/experiments` | Create experiment with `{ Name, RepeatCount, Queries[] }` |
 
 Axios base URL is controlled by `VITE_API_BASE_URL` (default `/api`). Timeout is 300000 ms (5 min).
