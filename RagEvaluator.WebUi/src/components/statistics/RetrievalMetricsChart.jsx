@@ -128,6 +128,27 @@ function RetrievalMetricsChart({
   );
 }
 
+const metricAggregateShape = PropTypes.shape({
+  mean: PropTypes.number.isRequired,
+  stdDev: PropTypes.number,
+});
+
+const colorEntryShape = PropTypes.shape({
+  hex: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+});
+
+const experimentDetailShape = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  overallMetrics: PropTypes.shape({
+    mrr: metricAggregateShape,
+    precisionAtK: metricAggregateShape,
+    recallAtK: metricAggregateShape,
+    ndcgAtK: metricAggregateShape,
+  }),
+});
+
 RetrievalMetricsChart.propTypes = {
   selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,
   colorMap: PropTypes.objectOf(colorEntryShape).isRequired,

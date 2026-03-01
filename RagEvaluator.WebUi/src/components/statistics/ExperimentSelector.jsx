@@ -91,6 +91,25 @@ function ExperimentSelector({ experiments, selectedIds, onToggle, colorMap }) {
   );
 }
 
+const colorEntryShape = PropTypes.shape({
+  hex: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+});
+
+const experimentSummaryShape = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  status: PropTypes.string.isRequired,
+  embeddingModel: PropTypes.string,
+  chunkingStrategy: PropTypes.string,
+  promptTemplate: PropTypes.string,
+  progress: PropTypes.shape({
+    total: PropTypes.number.isRequired,
+    completed: PropTypes.number.isRequired,
+    annotated: PropTypes.number.isRequired,
+  }).isRequired,
+});
+
 ExperimentSelector.propTypes = {
   experiments: PropTypes.arrayOf(experimentSummaryShape).isRequired,
   selectedIds: PropTypes.instanceOf(Set).isRequired,

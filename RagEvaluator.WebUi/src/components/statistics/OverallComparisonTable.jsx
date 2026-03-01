@@ -127,6 +127,31 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
   );
 }
 
+const metricAggregateShape = PropTypes.shape({
+  mean: PropTypes.number.isRequired,
+  stdDev: PropTypes.number,
+});
+
+const colorEntryShape = PropTypes.shape({
+  hex: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+});
+
+const experimentDetailShape = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  embeddingModel: PropTypes.string,
+  chunkingStrategy: PropTypes.string,
+  overallMetrics: PropTypes.shape({
+    mrr: metricAggregateShape,
+    precisionAtK: metricAggregateShape,
+    recallAtK: metricAggregateShape,
+    ndcgAtK: metricAggregateShape,
+    responseTimeMs: metricAggregateShape,
+    languageSwitchingRate: PropTypes.number,
+  }),
+});
+
 OverallComparisonTable.propTypes = {
   selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,
   colorMap: PropTypes.objectOf(colorEntryShape).isRequired,

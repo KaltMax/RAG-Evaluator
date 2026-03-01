@@ -220,6 +220,35 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
   );
 }
 
+const metricAggregateShape = PropTypes.shape({
+  mean: PropTypes.number.isRequired,
+  stdDev: PropTypes.number,
+});
+
+const colorEntryShape = PropTypes.shape({
+  hex: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+});
+
+const queryGroupShape = PropTypes.shape({
+  question: PropTypes.string.isRequired,
+  language: PropTypes.string.isRequired,
+  metrics: PropTypes.shape({
+    mrr: metricAggregateShape,
+    precisionAtK: metricAggregateShape,
+    recallAtK: metricAggregateShape,
+    ndcgAtK: metricAggregateShape,
+    responseTimeMs: metricAggregateShape,
+    languageSwitchingRate: PropTypes.number,
+  }),
+});
+
+const experimentDetailShape = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  queryGroups: PropTypes.arrayOf(queryGroupShape),
+});
+
 PerQueryBreakdown.propTypes = {
   selectedExperiments: PropTypes.arrayOf(experimentDetailShape).isRequired,
   colorMap: PropTypes.objectOf(colorEntryShape).isRequired,
