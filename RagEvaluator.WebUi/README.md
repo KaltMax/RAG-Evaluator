@@ -186,7 +186,7 @@ src/
 │   ├── axiosConfig.js                  # Axios instance configuration with shared error handling
 │   ├── documentService.js              # Document API (CRUD, upload, download, reprocess)
 │   ├── queryService.js                 # Query API (post, history, get by ID, delete, annotate)
-│   ├── experimentService.js            # Experiment API (create, list, get by ID)
+│   ├── experimentService.js            # Experiment API (create, list, get by ID, delete)
 │   └── settingsService.js              # Settings API (get, update)
 ├── utils/                              # Utility functions
 │   ├── formatDate.js                   # Date formatting utility
@@ -269,5 +269,6 @@ Brief summary of implemented API services (see `src/api`):
 | `GET /api/experiments` | List all experiments with progress and config |
 | `GET /api/experiments/{id}` | Get experiment with query groups and aggregated metrics |
 | `POST /api/experiments` | Create experiment with `{ Name, RepeatCount, Queries[] }` |
+| `DELETE /api/experiments/{id}` | Delete an experiment |
 
 Axios base URL is controlled by `VITE_API_BASE_URL` (default `/api`). Timeout is 300000 ms (5 min).
