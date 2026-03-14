@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Pgvector;
 using RagEvaluator.Domain.Entities;
@@ -50,10 +51,16 @@ namespace RagEvaluator.Infrastructure.Data.Configurations
             builder.Property(q => q.Answer)
                 .IsRequired();
 
+            var floatArrayComparer = new ValueComparer<float[]>(
+                (a, b) => a != null && b != null && a.SequenceEqual(b),
+                v => v.Aggregate(0, (hash, el) => HashCode.Combine(hash, el.GetHashCode())),
+                v => v.ToArray());
+
             builder.Property(q => q.QueryEmbedding)
                 .HasConversion(
                     v => new Vector(v),
-                    v => v.ToArray())
+                    v => v.ToArray(),
+                    floatArrayComparer)
                 .IsRequired();
 
             builder.Property(q => q.ResponseTimeMs)
