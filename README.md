@@ -12,7 +12,7 @@ A full-stack application using C#/.NET and React to evaluate RAG-based search wi
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Node.js 20+](https://nodejs.org/)
+- [Node.js 24+](https://nodejs.org/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) with WSL2 backend (Windows)
 - [Visual Studio 2026](https://visualstudio.microsoft.com/) (recommended) or VS Code
 - **NVIDIA GPU** with CUDA support (12GB+ VRAM recommended for Qwen2.5-14b)

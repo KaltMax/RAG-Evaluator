@@ -94,7 +94,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 
 ### Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 24+ and npm
 - Backend API running on `http://localhost:5000` (or configure `VITE_API_BASE_URL`)
 
 ### Installation
