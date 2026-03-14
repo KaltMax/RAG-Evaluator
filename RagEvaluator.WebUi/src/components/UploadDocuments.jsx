@@ -230,7 +230,7 @@ function UploadDocuments() {
                         value={course}
                         onChange={(e) => handleCourseChange(id, e.target.value)}
                         disabled={isUploading}
-                        className={`px-3 py-1.5 bg-[#2D2D2D] border rounded-lg text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${!course ? "border-red-500" : "border-gray-600"}`}
+                        className={`px-3 py-1.5 bg-[#2D2D2D] border rounded-lg text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${course ? "border-gray-600" : "border-red-500"}`}
                       >
                         <option value="">Select course...</option>
                         {availableCourses.map((c) => (
