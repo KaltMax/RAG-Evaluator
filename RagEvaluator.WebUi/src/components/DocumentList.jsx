@@ -165,13 +165,13 @@ function DocumentList() {
                     <th
                       key={key}
                       onClick={() => handleSort(key)}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-200 transition-colors"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-200 transition-colors"
                     >
                       {label}
                       {renderSortIcon(key)}
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -183,7 +183,7 @@ function DocumentList() {
                     key={doc.id}
                     className="hover:bg-[#252525] transition-colors"
                   >
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-4">
                       <div
                         className="text-sm text-white font-medium break-words max-w-xs"
                         title={doc.fileName}
@@ -197,28 +197,28 @@ function DocumentList() {
                         {doc.id}
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-300">
                       {formatFileSize(doc.fileSize)}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-300">
                       {doc.pageCount}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-300">
                       {doc.chunkCount}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-300">
                       {formatLanguage(doc.language)}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-300">
+                    <td className="px-3 py-4 text-sm text-gray-300">
                       {doc.course}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-3 py-4 whitespace-nowrap">
                       {getStatusBadge(doc.status)}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-300">
+                    <td className="px-3 py-4 text-sm text-gray-300">
                       {formatDate(doc.uploadedAt)}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right">
+                    <td className="px-3 py-4 whitespace-nowrap text-right">
                       <button
                         onClick={() => handleDownload(doc.id, doc.fileName)}
                         className="text-gray-400 hover:text-blue-400 transition-colors p-1 mr-2"
