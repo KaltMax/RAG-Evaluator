@@ -28,6 +28,7 @@ export const experimentDetailShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
   embeddingModel: PropTypes.string,
   chunkingStrategy: PropTypes.string,
+  promptTemplate: PropTypes.string,
   queryGroups: PropTypes.arrayOf(queryGroupShape),
   overallMetrics: PropTypes.shape({
     mrr: metricAggregateShape,

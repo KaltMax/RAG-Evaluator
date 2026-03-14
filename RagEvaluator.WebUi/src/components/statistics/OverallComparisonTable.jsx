@@ -39,7 +39,8 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
                     </span>
                   </div>
                   <p className="text-[10px] text-gray-500 truncate mt-0.5">
-                    {exp.embeddingModel} | {exp.chunkingStrategy}
+                    {exp.embeddingModel} | {exp.chunkingStrategy} |{" "}
+                    {exp.promptTemplate}
                   </p>
                 </th>
               ))}
