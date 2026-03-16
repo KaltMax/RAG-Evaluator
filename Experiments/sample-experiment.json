@@ -6,13 +6,13 @@
       "Question": "Was ist SQL?",
       "Language": "de",
       "TopK": 3,
-      "RelevantDocumentIds": ["cecad052-1982-48cf-b319-5b5dd31e6566"]
+      "RelevantDocumentIds": ["d0df0d8b-b972-4725-a183-5e962b1f0a4b"]
     },
     {
       "Question": "What is SQL?",
       "Language": "en",
       "TopK": 3,
-      "RelevantDocumentIds": ["cecad052-1982-48cf-b319-5b5dd31e6566"]
+      "RelevantDocumentIds": ["d0df0d8b-b972-4725-a183-5e962b1f0a4b"]
     }
   ]
 }
