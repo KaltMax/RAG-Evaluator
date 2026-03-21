@@ -45,17 +45,21 @@ namespace RagEvaluator.Application.Services
         public async Task<ExperimentSummaryResponse> CreateExperimentAsync(
             CreateExperimentRequest request, CancellationToken cancellationToken = default)
         {
-            var allRelevantDocumentIds = request.Queries
-                .SelectMany(q => q.RelevantDocumentIds)
+            // Resolve document names to IDs
+            var resolvedDocumentIds = new Dictionary<string, Guid>();
+            var allDocumentNames = request.Queries
+                .SelectMany(q => q.RelevantDocumentNames)
                 .Distinct()
                 .ToList();
 
-            if (allRelevantDocumentIds.Count > 0)
+            foreach (var name in allDocumentNames)
             {
-                var existingIds = await _documentRepository.GetExistingIdsAsync(allRelevantDocumentIds, cancellationToken);
-                var missingIds = allRelevantDocumentIds.Except(existingIds).ToList();
-                if (missingIds.Count > 0)
-                    throw new ArgumentException($"Unknown document IDs in RelevantDocumentIds: {string.Join(", ", missingIds)}");
+                var document = await _documentRepository.GetByNameAsync(name, cancellationToken);
+                if (document is null)
+                {
+                    throw new ArgumentException($"Unknown document name in RelevantDocumentNames: {name}");
+                }
+                resolvedDocumentIds[name] = document.Id;
             }
 
             var experiment = new Experiment
@@ -76,12 +80,12 @@ namespace RagEvaluator.Application.Services
             };
 
             await _experimentRepository.AddAsync(experiment, cancellationToken);
-            await _experimentQueue.EnqueueAsync(experiment.Id, request.Queries, cancellationToken);
+            await _experimentQueue.EnqueueAsync(experiment.Id, request.Queries, resolvedDocumentIds, cancellationToken);
 
             return experiment.ToSummary();
         }
 
-        public async Task ProcessExperimentAsync(Guid experimentId, List<ExperimentQueryItem> queries, CancellationToken cancellationToken)
+        public async Task ProcessExperimentAsync(Guid experimentId, List<ExperimentQueryItem> queries, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken)
         {
             var experiment = await _experimentRepository.GetByIdAsync(experimentId, cancellationToken);
             if (experiment is null)
@@ -99,7 +103,7 @@ namespace RagEvaluator.Application.Services
 
                     try
                     {
-                        await ProcessSingleQueryAsync(experiment, queryItem, cancellationToken);
+                        await ProcessSingleQueryAsync(experiment, queryItem, resolvedDocumentIds, cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -115,7 +119,7 @@ namespace RagEvaluator.Application.Services
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
         }
 
-        private async Task ProcessSingleQueryAsync(Experiment experiment, ExperimentQueryItem queryItem, CancellationToken cancellationToken)
+        private async Task ProcessSingleQueryAsync(Experiment experiment, ExperimentQueryItem queryItem, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken)
         {
             var askRequest = new AskQuestionRequest
             {
@@ -131,13 +135,16 @@ namespace RagEvaluator.Application.Services
             {
                 query.ExperimentId = experiment.Id;
 
-                foreach (var documentId in queryItem.RelevantDocumentIds)
+                foreach (var name in queryItem.RelevantDocumentNames)
                 {
-                    query.RelevantDocuments.Add(new QueryRelevantDocument
+                    if (resolvedDocumentIds.TryGetValue(name, out var documentId))
                     {
-                        QueryId = query.Id,
-                        DocumentId = documentId
-                    });
+                        query.RelevantDocuments.Add(new QueryRelevantDocument
+                        {
+                            QueryId = query.Id,
+                            DocumentId = documentId
+                        });
+                    }
                 }
 
                 await _queryRepository.UpdateAsync(query, cancellationToken);

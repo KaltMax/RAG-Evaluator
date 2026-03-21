@@ -32,12 +32,12 @@ namespace RagEvaluator.Application.Workers
             {
                 try
                 {
-                    var (experimentId, queries) = await _queue.DequeueAsync(stoppingToken);
+                    var (experimentId, queries, resolvedDocumentIds) = await _queue.DequeueAsync(stoppingToken);
                     _logger.LogInformation("Processing experiment {ExperimentId}", experimentId);
 
                     using var scope = _scopeFactory.CreateScope();
                     var experimentService = scope.ServiceProvider.GetRequiredService<IExperimentService>();
-                    await experimentService.ProcessExperimentAsync(experimentId, queries, stoppingToken);
+                    await experimentService.ProcessExperimentAsync(experimentId, queries, resolvedDocumentIds, stoppingToken);
 
                     _logger.LogInformation("Experiment {ExperimentId} completed", experimentId);
                 }

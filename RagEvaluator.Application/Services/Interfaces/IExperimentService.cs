@@ -16,7 +16,7 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// <summary>
         /// Processes an experiment by executing its queries sequentially and linking the results to the experiment.
         /// </summary>
-        Task ProcessExperimentAsync(Guid experimentId, List<ExperimentQueryItem> queries, CancellationToken cancellationToken);
+        Task ProcessExperimentAsync(Guid experimentId, List<ExperimentQueryItem> queries, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken);
 
         /// <summary>
         /// Gets an experiment by its unique identifier, including aggregated metrics computed from its linked queries.

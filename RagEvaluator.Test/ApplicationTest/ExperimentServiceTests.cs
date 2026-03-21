@@ -72,39 +72,38 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task CreateExperimentAsync_WithUnknownRelevantDocumentId_ShouldThrow()
+        public async Task CreateExperimentAsync_WithUnknownRelevantDocumentName_ShouldThrow()
         {
             // Arrange
-            var knownId = Guid.NewGuid();
-            var unknownId = Guid.NewGuid();
             var request = new CreateExperimentRequest
             {
                 Name = "Test",
                 RepeatCount = 1,
-                Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentIds = [knownId, unknownId] }]
+                Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentNames = ["known.pdf", "unknown.pdf"] }]
             };
-            _documentRepository.GetExistingIdsAsync(Arg.Any<IEnumerable<Guid>>(), TestContext.Current.CancellationToken)
-                .Returns([knownId]);
+            _documentRepository.GetByNameAsync("known.pdf", Arg.Any<CancellationToken>())
+                .Returns(new Document { Id = Guid.NewGuid(), FileName = "known.pdf" });
+            _documentRepository.GetByNameAsync("unknown.pdf", Arg.Any<CancellationToken>())
+                .Returns((Document?)null);
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
                 _service.CreateExperimentAsync(request, TestContext.Current.CancellationToken));
-            Assert.Contains(unknownId.ToString(), ex.Message);
+            Assert.Contains("unknown.pdf", ex.Message);
         }
 
         [Fact]
-        public async Task CreateExperimentAsync_WithAllValidRelevantDocumentIds_ShouldCreateExperiment()
+        public async Task CreateExperimentAsync_WithAllValidRelevantDocumentNames_ShouldCreateExperiment()
         {
             // Arrange
-            var docId = Guid.NewGuid();
             var request = new CreateExperimentRequest
             {
                 Name = "Test",
                 RepeatCount = 1,
-                Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentIds = [docId] }]
+                Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentNames = ["test.pdf"] }]
             };
-            _documentRepository.GetExistingIdsAsync(Arg.Any<IEnumerable<Guid>>(), TestContext.Current.CancellationToken)
-                .Returns([docId]);
+            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>())
+                .Returns(new Document { Id = Guid.NewGuid(), FileName = "test.pdf" });
 
             // Act
             var response = await _service.CreateExperimentAsync(request, TestContext.Current.CancellationToken);
@@ -128,7 +127,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _experimentRepository.GetByIdAsync(experimentId, TestContext.Current.CancellationToken).Returns((Experiment?)null);
 
             // Act
-            await _service.ProcessExperimentAsync(experimentId, queries, TestContext.Current.CancellationToken);
+            await _service.ProcessExperimentAsync(experimentId, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert
             await _ragService.DidNotReceive().AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
@@ -149,7 +148,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(new Query { Id = queryId });
 
             // Act
-            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+            await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert — 1 repeat * 2 queries = 2 calls
             await _ragService.Received(2).AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
@@ -174,7 +173,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(new Query { Id = queryId });
 
             // Act
-            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+            await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert — 3 repeats * 2 queries = 6 calls
             await _ragService.Received(6).AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
@@ -198,7 +197,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(new Query { Id = queryId });
 
             // Act
-            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+            await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert — first query failed, second succeeded, still completes
             Assert.Equal(ExperimentStatus.Completed, experiment.Status);
@@ -221,7 +220,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(query);
 
             // Act
-            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+            await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(experiment.Id, query.ExperimentId);
@@ -229,12 +228,17 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task ProcessExperimentAsync_WithRelevantDocumentIds_ShouldPopulateGroundTruth()
+        public async Task ProcessExperimentAsync_WithRelevantDocumentNames_ShouldPopulateGroundTruth()
         {
             // Arrange
             var experiment = CreateSampleExperiment();
             var docId1 = Guid.NewGuid();
             var docId2 = Guid.NewGuid();
+            var resolvedDocumentIds = new Dictionary<string, Guid>
+            {
+                { "doc1.pdf", docId1 },
+                { "doc2.pdf", docId2 }
+            };
             var queries = new List<ExperimentQueryItem>
             {
                 new ExperimentQueryItem
@@ -242,7 +246,7 @@ namespace RagEvaluator.Test.ApplicationTest
                     Question = "What is Serverless Computing?",
                     Language = "en",
                     TopK = 5,
-                    RelevantDocumentIds = [docId1, docId2]
+                    RelevantDocumentNames = ["doc1.pdf", "doc2.pdf"]
                 }
             };
             var queryId = Guid.NewGuid();
@@ -255,7 +259,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(query);
 
             // Act
-            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+            await _service.ProcessExperimentAsync(experiment.Id, queries, resolvedDocumentIds, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(2, query.RelevantDocuments.Count);
@@ -264,7 +268,7 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task ProcessExperimentAsync_WithEmptyRelevantDocumentIds_ShouldNotPopulateGroundTruth()
+        public async Task ProcessExperimentAsync_WithEmptyRelevantDocumentNames_ShouldNotPopulateGroundTruth()
         {
             // Arrange
             var experiment = CreateSampleExperiment();
@@ -282,7 +286,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(query);
 
             // Act
-            await _service.ProcessExperimentAsync(experiment.Id, queries, TestContext.Current.CancellationToken);
+            await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Empty(query.RelevantDocuments);

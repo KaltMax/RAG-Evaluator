@@ -37,6 +37,6 @@ namespace RagEvaluator.Contract.Dtos.Requests
         [Range(1, 100)]
         public int TopK { get; set; } = 3;
 
-        public List<Guid> RelevantDocumentIds { get; set; } = [];
+        public List<string> RelevantDocumentNames { get; set; } = [];
     }
 }

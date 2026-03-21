@@ -6,13 +6,13 @@
       "Question": "Was ist SQL?",
       "Language": "de",
       "TopK": 3,
-      "RelevantDocumentIds": ["d0df0d8b-b972-4725-a183-5e962b1f0a4b"]
+      "RelevantDocumentNames": ["DM_08_SQL_Grundlagen.pdf"]
     },
     {
       "Question": "What is SQL?",
       "Language": "en",
       "TopK": 3,
-      "RelevantDocumentIds": ["d0df0d8b-b972-4725-a183-5e962b1f0a4b"]
+      "RelevantDocumentNames": ["DM_08_SQL_Grundlagen.pdf"]
     }
   ]
 }

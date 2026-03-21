@@ -9,15 +9,15 @@ namespace RagEvaluator.Application.Workers
     /// </summary>
     public class ExperimentQueue
     {
-        private readonly Channel<(Guid ExperimentId, List<ExperimentQueryItem> Queries)> _channel =
-            Channel.CreateUnbounded<(Guid, List<ExperimentQueryItem>)>();
+        private readonly Channel<(Guid ExperimentId, List<ExperimentQueryItem> Queries, Dictionary<string, Guid> ResolvedDocumentIds)> _channel =
+            Channel.CreateUnbounded<(Guid, List<ExperimentQueryItem>, Dictionary<string, Guid>)>();
 
-        public async ValueTask EnqueueAsync(Guid experimentId, List<ExperimentQueryItem> queries, CancellationToken cancellationToken = default)
+        public async ValueTask EnqueueAsync(Guid experimentId, List<ExperimentQueryItem> queries, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken = default)
         {
-            await _channel.Writer.WriteAsync((experimentId, queries), cancellationToken);
+            await _channel.Writer.WriteAsync((experimentId, queries, resolvedDocumentIds), cancellationToken);
         }
 
-        public async ValueTask<(Guid ExperimentId, List<ExperimentQueryItem> Queries)> DequeueAsync(CancellationToken cancellationToken)
+        public async ValueTask<(Guid ExperimentId, List<ExperimentQueryItem> Queries, Dictionary<string, Guid> ResolvedDocumentIds)> DequeueAsync(CancellationToken cancellationToken)
         {
             return await _channel.Reader.ReadAsync(cancellationToken);
         }

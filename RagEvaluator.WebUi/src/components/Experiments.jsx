@@ -184,8 +184,8 @@ function Experiments() {
                         {query.TopK ?? "-"}
                       </td>
                       <td className="px-4 py-3 text-gray-200">
-                        {query.RelevantDocumentIds?.length > 0
-                          ? `${query.RelevantDocumentIds.length} doc(s)`
+                        {query.RelevantDocumentNames?.length > 0
+                          ? `${query.RelevantDocumentNames.length} doc(s)`
                           : "-"}
                       </td>
                     </tr>

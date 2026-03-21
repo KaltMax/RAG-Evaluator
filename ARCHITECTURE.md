@@ -314,7 +314,7 @@ RAG-Evaluator/
   - `GetSettings()` - returns current configuration with available options
   - `UpdateSettingsAsync()` - validates and applies partial config updates; triggers embedding service reinitialization when the model changes
 - `ExperimentService` - Experiment batch processing and aggregation
-  - `CreateExperimentAsync()` - validates that all RelevantDocumentIds exist (400 if unknown), creates experiment with config snapshot, enqueues for background processing
+  - `CreateExperimentAsync()` - resolves RelevantDocumentNames to IDs via DocumentRepository.GetByNameAsync() (400 if unknown), creates experiment with config snapshot, enqueues for background processing
   - `ProcessExperimentAsync()` - runs all queries × repeatCount, links results to experiment, updates progress
   - `GetByIdAsync()` - returns experiment with query groups and aggregated metrics
   - `GetAllAsync()` / `DeleteAsync()` - list and delete operations
@@ -481,10 +481,10 @@ RAG-Evaluator/
 ```
 1. Experiment Submission (Controller)
    → 2. ExperimentService.CreateExperimentAsync() (Application Layer)
-      → 3. Validate all RelevantDocumentIds exist via DocumentRepository.GetExistingIdsAsync() — 400 if any unknown
+      → 3. Resolve all RelevantDocumentNames to IDs via DocumentRepository.GetByNameAsync() — 400 if any unknown
       → 4. Create Experiment entity with config snapshot from current RagConfiguration
       → 5. Persist to database (status: Running)
-      → 6. Enqueue (experimentId, queries) to ExperimentQueue (Channel<T>)
+      → 6. Enqueue (experimentId, queries, resolvedDocumentIds) to ExperimentQueue (Channel<T>)
    → 7. Return 202 Accepted with ExperimentSummaryResponse
 
 7. ExperimentWorker picks up work item from queue
@@ -492,7 +492,7 @@ RAG-Evaluator/
       → 9. For each repeat (1..repeatCount):
          → For each query in queries:
             → 10. RagService.AskQuestionAsync() - Runs full RAG pipeline
-            → 11. Load resulting Query, set ExperimentId, populate ground truth from RelevantDocumentIds, save
+            → 11. Load resulting Query, set ExperimentId, populate ground truth from resolved document IDs, save
             → 12. Increment CompletedQueryCount, update experiment
       → 13. Set status to Completed, set CompletedAt
 
