@@ -64,47 +64,45 @@ function ExperimentSelector({
           const color = colorMap[exp.id] || getExperimentColor(0);
 
           return (
-            <button
-              key={exp.id}
-              onClick={() => isSelectable && onToggle(exp.id)}
-              disabled={!isSelectable}
-              className={`text-left p-3 rounded-lg border transition-all ${
-                isSelected
-                  ? "border-2 bg-[#1F1F1F]"
-                  : isSelectable
-                    ? "border border-gray-700 hover:border-gray-500 bg-[#1F1F1F]"
-                    : "border border-gray-800 bg-[#1A1A1A] opacity-50 cursor-not-allowed"
-              }`}
-              style={isSelected ? { borderColor: color.hex } : undefined}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: color.hex }}
-                />
-                <span className="text-sm font-medium text-white truncate flex-1">
-                  {exp.name}
-                </span>
-                {/* Delete button */}
-                <TrashIcon
-                  className="w-4 h-4 text-gray-500 hover:text-red-400 shrink-0 transition-colors cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(exp.id);
-                  }}
-                />
-              </div>
-              <p className="text-xs text-gray-400 truncate">
-                {exp.embeddingModel} | {exp.chunkingStrategy} |{" "}
-                {exp.promptTemplate}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {exp.progress.annotated}/{exp.progress.total} annotated
-                {!isSelectable &&
-                  exp.status !== "Completed" &&
-                  ` \u2022 ${exp.status}`}
-              </p>
-            </button>
+            <div key={exp.id} className="relative">
+              <button
+                onClick={() => isSelectable && onToggle(exp.id)}
+                disabled={!isSelectable}
+                className={`w-full text-left p-3 rounded-lg border transition-all ${
+                  isSelected
+                    ? "border-2 bg-[#1F1F1F]"
+                    : isSelectable
+                      ? "border border-gray-700 hover:border-gray-500 bg-[#1F1F1F]"
+                      : "border border-gray-800 bg-[#1A1A1A] opacity-50 cursor-not-allowed"
+                }`}
+                style={isSelected ? { borderColor: color.hex } : undefined}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: color.hex }}
+                  />
+                  <span className="text-sm font-medium text-white truncate flex-1">
+                    {exp.name}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 truncate">
+                  {exp.embeddingModel} | {exp.chunkingStrategy} |{" "}
+                  {exp.promptTemplate}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {exp.progress.annotated}/{exp.progress.total} annotated
+                  {!isSelectable &&
+                    exp.status !== "Completed" &&
+                    ` · ${exp.status}`}
+                </p>
+              </button>
+              {/* Delete button — outside the disabled button so it's always clickable */}
+              <TrashIcon
+                className="absolute top-3 right-3 w-4 h-4 text-gray-500 hover:text-red-400 shrink-0 transition-colors cursor-pointer"
+                onClick={() => onDelete(exp.id)}
+              />
+            </div>
           );
         })}
       </div>
