@@ -186,6 +186,41 @@ namespace RagEvaluator.Test.ApiTest
 
         #endregion
 
+        #region GetDocumentByNameAsync Tests
+
+        [Fact]
+        public async Task GetDocumentByNameAsync_WithValidName_ReturnsOkWithDocument()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateDocumentResponse(documentId);
+            _documentService.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns(document);
+
+            // Act
+            var result = await _controller.GetDocumentByNameAsync("test.pdf", TestContext.Current.CancellationToken);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var response = Assert.IsType<DocumentResponse>(okResult.Value);
+            Assert.Equal(documentId, response.Id);
+        }
+
+        [Fact]
+        public async Task GetDocumentByNameAsync_WithInvalidName_ReturnsNotFound()
+        {
+            // Arrange
+            _documentService.GetByNameAsync("nonexistent.pdf", Arg.Any<CancellationToken>())
+                .Returns((DocumentResponse?)null);
+
+            // Act
+            var result = await _controller.GetDocumentByNameAsync("nonexistent.pdf", TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.IsType<NotFoundResult>(result.Result);
+        }
+
+        #endregion
+
         #region DeleteDocumentAsync Tests
 
         [Fact]

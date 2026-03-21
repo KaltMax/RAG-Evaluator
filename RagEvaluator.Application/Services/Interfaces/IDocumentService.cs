@@ -20,6 +20,11 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task<DocumentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Gets a document by its name.
+        /// </summary>
+        Task<DocumentResponse?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Gets all document summaries optimized for list views.
         /// </summary>
         Task<IReadOnlyList<DocumentResponse>> GetAllAsync(CancellationToken cancellationToken = default);

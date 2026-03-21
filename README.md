@@ -130,6 +130,7 @@ Once running, the API is available at `http://localhost:5000`:
 - `POST /api/documents/upload` - Upload PDF document with language and course for RAG processing
 - `GET /api/documents` - List all documents
 - `GET /api/documents/{id}` - Get document details
+- `GET /api/documents/by-name/{name}` - Get document by filename
 - `GET /api/documents/{id}/chunks` - Get document chunks with embeddings
 - `GET /api/documents/{id}/download` - Download a previously uploaded document
 - `DELETE /api/documents/{id}` - Delete a document

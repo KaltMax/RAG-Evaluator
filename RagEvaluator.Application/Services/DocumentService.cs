@@ -59,6 +59,12 @@ namespace RagEvaluator.Application.Services
             return document?.ToResponse();
         }
 
+        public async Task<DocumentResponse?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+        {
+            var document = await _documentRepository.GetByNameAsync(name, cancellationToken);
+            return document?.ToResponse();
+        }
+
         public async Task<IReadOnlyList<DocumentResponse>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var summaries = await _documentRepository.GetAllSummariesAsync(cancellationToken);

@@ -100,6 +100,28 @@ namespace RagEvaluator.API.Controllers
         }
 
         /// <summary>
+        /// Retrieves a specific document by its name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [HttpGet("by-name/{name}")]
+        [ProducesResponseType(typeof(DocumentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<DocumentResponse>> GetDocumentByNameAsync(string name, CancellationToken cancellationToken)
+        {
+            var document = await _documentService.GetByNameAsync(name, cancellationToken);
+            if (document is null)
+            {
+                _logger.LogWarning("Document not found: {DocumentName}", name);
+                return NotFound();
+            }
+
+            return Ok(document);
+        }
+
+        /// <summary>
         /// Deletes a document and its associated chunks
         /// </summary>
         /// <param name="id">The unique identifier of the document</param>

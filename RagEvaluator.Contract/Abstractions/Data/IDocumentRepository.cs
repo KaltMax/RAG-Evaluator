@@ -14,6 +14,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task<Document?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Gets a document by its name.
+        /// </summary>
+        Task<Document?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Gets all documents from the repository.
         /// </summary>
         Task<IReadOnlyList<Document>> GetAllAsync(CancellationToken cancellationToken = default);

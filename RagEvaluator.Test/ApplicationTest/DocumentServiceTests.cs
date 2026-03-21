@@ -101,6 +101,41 @@ namespace RagEvaluator.Test.ApplicationTest
 
         #endregion
 
+        #region GetByNameAsync Tests
+
+        [Fact]
+        public async Task GetByNameAsync_WithExistingDocument_ReturnsDocumentResponse()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns(document);
+
+            // Act
+            var result = await _service.GetByNameAsync("test.pdf", TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(documentId, result.Id);
+            Assert.Equal("test.pdf", result.FileName);
+            Assert.Equal("Completed", result.Status);
+        }
+
+        [Fact]
+        public async Task GetByNameAsync_WithNonExistentDocument_ReturnsNull()
+        {
+            // Arrange
+            _documentRepository.GetByNameAsync("nonexistent.pdf", Arg.Any<CancellationToken>()).Returns((Document?)null);
+
+            // Act
+            var result = await _service.GetByNameAsync("nonexistent.pdf", TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        #endregion
+
         #region GetAllAsync Tests
 
         [Fact]

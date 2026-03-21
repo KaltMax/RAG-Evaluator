@@ -288,7 +288,7 @@ RAG-Evaluator/
   - `IsInitializedAsync()` - checks if Ollama services are available (used by health endpoint)
 - `DocumentService` - Document CRUD operations
   - `CreateDocumentAsync()` - creates document entity and saves file to storage
-  - `GetByIdAsync()` / `GetAllAsync()` - document retrieval
+  - `GetByIdAsync()` / `GetByNameAsync()` / `GetAllAsync()` - document retrieval
   - `GetDocumentFileInfoAsync()` - file info for downloads
   - `UpdateStatusAsync()` - updates document processing status
   - `DeleteAsync()` - deletes document, file, and associated chunks
@@ -629,45 +629,46 @@ CREATE INDEX IX_QueryRelevantDocuments_DocumentId ON QueryRelevantDocuments(Docu
 #### Documents API
 
 ```
-POST   /api/documents/upload        # Upload PDF document
-GET    /api/documents               # List all documents
-GET    /api/documents/{id}          # Get document details
-GET    /api/documents/{id}/download # Download document file
-DELETE /api/documents/{id}          # Delete document
-GET    /api/documents/{id}/chunks   # Get document chunks
-POST   /api/documents/reprocess     # Reprocess all documents with current config
+POST   /api/documents/upload          # Upload PDF document
+GET    /api/documents                 # List all documents
+GET    /api/documents/{id}            # Get document details
+GET    /api/documents/by-name/{name}  # Get document by filename
+GET    /api/documents/{id}/download   # Download document file
+DELETE /api/documents/{id}            # Delete document
+GET    /api/documents/{id}/chunks     # Get document chunks
+POST   /api/documents/reprocess       # Reprocess all documents with current config
 ```
 
 #### Query API
 
 ```
-POST   /api/query                   # Ask question using RAG
-GET    /api/query/history           # Get query history
-GET    /api/query/{id}              # Get specific query
-PATCH  /api/query/{id}/results      # Annotate results with relevance, response quality, and ground truth documents
-DELETE /api/query/{id}              # Delete a query
+POST   /api/query                     # Ask question using RAG
+GET    /api/query/history             # Get query history
+GET    /api/query/{id}                # Get specific query
+PATCH  /api/query/{id}/results        # Annotate results with relevance, response quality, and ground truth documents
+DELETE /api/query/{id}                # Delete a query
 ```
 
 #### Experiments API
 
 ```
-POST   /api/experiments             # Create experiment (batch queries x repeatCount, background processing)
-GET    /api/experiments             # List all experiments with progress and config
-GET    /api/experiments/{id}        # Get experiment with query groups and aggregated metrics
-DELETE /api/experiments/{id}        # Delete experiment (queries preserved via SET NULL)
+POST   /api/experiments               # Create experiment (batch queries x repeatCount, background processing)
+GET    /api/experiments               # List all experiments with progress and config
+GET    /api/experiments/{id}          # Get experiment with query groups and aggregated metrics
+DELETE /api/experiments/{id}          # Delete experiment (queries preserved via SET NULL)
 ```
 
 #### Settings API
 
 ```
-GET    /api/settings                # Get current runtime RAG configuration and available options
-PATCH  /api/settings                # Update runtime RAG configuration (partial update)
+GET    /api/settings                  # Get current runtime RAG configuration and available options
+PATCH  /api/settings                  # Update runtime RAG configuration (partial update)
 ```
 
 #### Health API
 
 ```
-GET    /api/health                  # Check if RAG services are ready
+GET    /api/health                    # Check if RAG services are ready
 ```
 
 ### Request/Response Examples
