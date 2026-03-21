@@ -19,6 +19,8 @@ namespace RagEvaluator.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(255);
 
+            builder.HasIndex(d => d.FileName).IsUnique();
+
             builder.Property(d => d.FilePath)
                 .HasMaxLength(500);
 

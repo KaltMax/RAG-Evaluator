@@ -31,6 +31,12 @@ namespace RagEvaluator.Application.Services
         {
             fileName = Path.GetFileName(fileName);
 
+            var existing = await _documentRepository.GetByNameAsync(fileName, cancellationToken);
+            if (existing is not null)
+            {
+                throw new ArgumentException($"A document with the name '{fileName}' already exists.");
+            }
+
             var document = new Document
             {
                 Id = Guid.NewGuid(),

@@ -287,7 +287,7 @@ RAG-Evaluator/
   - `AskQuestionAsync()` - orchestrates RAG query (embed question, search chunks, generate answer)
   - `IsInitializedAsync()` - checks if Ollama services are available (used by health endpoint)
 - `DocumentService` - Document CRUD operations
-  - `CreateDocumentAsync()` - creates document entity and saves file to storage
+  - `CreateDocumentAsync()` - rejects duplicate filenames (400), creates document entity and saves file to storage
   - `GetByIdAsync()` / `GetByNameAsync()` / `GetAllAsync()` - document retrieval
   - `GetDocumentFileInfoAsync()` - file info for downloads
   - `UpdateStatusAsync()` - updates document processing status
@@ -517,7 +517,7 @@ Used for structured data and metadata:
 -- Documents table
 CREATE TABLE Documents (
     Id UUID PRIMARY KEY,
-    FileName VARCHAR(255) NOT NULL,
+    FileName VARCHAR(255) NOT NULL UNIQUE,
     FilePath VARCHAR(500),
     FileSize BIGINT,
     MimeType VARCHAR(100),
