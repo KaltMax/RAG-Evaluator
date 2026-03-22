@@ -247,7 +247,7 @@ function QueryHistory() {
                       {query.experimentName ? (
                         <p
                           className="text-sm text-purple-400 font-medium truncate"
-                          title={query.experimentId}
+                          title={query.experimentName}
                         >
                           {query.experimentName}
                         </p>
