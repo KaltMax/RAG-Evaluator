@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { downloadDocument, getAllDocuments } from "../api/documentService";
 import { annotateResults } from "../api/queryService";
 import { relevanceGrades, getRelevanceGrade } from "../utils/relevanceGrades";
+import { sortByKey } from "../utils/sortByKey";
 import {
   responseQualityOptions,
   getResponseQualityOption,
@@ -88,11 +89,7 @@ function SearchResults({ results, onAnnotated }) {
   };
 
   const canSubmitAnnotations = () => {
-    return (
-      allSourcesAnnotated() &&
-      responseQuality !== null &&
-      relevantDocuments.length > 0
-    );
+    return allSourcesAnnotated() && responseQuality !== null;
   };
 
   const handleRelevantDocumentToggle = (documentId) => {
@@ -353,7 +350,7 @@ function SearchResults({ results, onAnnotated }) {
             (used for Recall@K calculation).
           </p>
           <div className="space-y-2 max-h-100 overflow-y-auto">
-            {availableDocuments.map((doc) => (
+            {sortByKey(availableDocuments, "fileName").map((doc) => (
               <label
                 key={doc.id}
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1F1F1F] cursor-pointer transition-colors"

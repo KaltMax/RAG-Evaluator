@@ -19,9 +19,7 @@ namespace RagEvaluator.Contract.Dtos.Requests
         [Required]
         public required bool HasLanguageSwitching { get; set; }
 
-        [Required]
-        [MinLength(1, ErrorMessage = "At least one relevant document must be specified for Recall@K calculation.")]
-        public required List<Guid> RelevantDocumentIds { get; set; }
+        public List<Guid> RelevantDocumentIds { get; set; } = [];
     }
 
     /// <summary>

@@ -625,8 +625,5 @@ Simple-RAG
 # Environment variables file
 .env
 
-# Proposal
-proposal.md
-
 # Thesis
-bachelor_thesis.md
+Thesis/
