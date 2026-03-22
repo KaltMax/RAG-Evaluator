@@ -73,8 +73,10 @@ function RetrievalMetricsChart({
     const row = { name: metric.label };
     selectedExperiments.forEach((exp) => {
       const val = accessor(exp)?.[metric.key];
-      row[exp.id] = val?.mean ?? 0;
-      row[`${exp.id}_err`] = val?.stdDev ?? 0;
+      const mean = val?.mean ?? 0;
+      const stdDev = val?.stdDev ?? 0;
+      row[exp.id] = mean;
+      row[`${exp.id}_err`] = Math.min(stdDev, 1 - mean);
     });
     return row;
   });
@@ -92,7 +94,11 @@ function RetrievalMetricsChart({
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="name" tick={{ fill: "#9ca3af", fontSize: 12 }} />
-          <YAxis domain={[0, 1]} tick={{ fill: "#9ca3af", fontSize: 12 }} />
+          <YAxis
+            domain={[0, 1]}
+            allowDataOverflow={true}
+            tick={{ fill: "#9ca3af", fontSize: 12 }}
+          />
           <Tooltip content={<CustomTooltip />} />
           <Legend
             wrapperStyle={{ color: "#d1d5db", fontSize: 12 }}
@@ -111,7 +117,8 @@ function RetrievalMetricsChart({
               <ErrorBar
                 dataKey={`${exp.id}_err`}
                 width={4}
-                stroke={colorMap[exp.id]?.hex}
+                stroke="#ffffff"
+                strokeWidth={2}
               />
             </Bar>
           ))}

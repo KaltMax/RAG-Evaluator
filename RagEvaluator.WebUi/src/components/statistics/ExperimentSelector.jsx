@@ -86,10 +86,24 @@ function ExperimentSelector({
                     {exp.name}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 truncate"><span className="font-semibold text-gray-300">Embedding:</span> {exp.embeddingModel}</p>
-                <p className="text-xs text-gray-400 truncate"><span className="font-semibold text-gray-300">Chunking:</span> {exp.chunkingStrategy}</p>
-                <p className="text-xs text-gray-400 truncate"><span className="font-semibold text-gray-300">Prompt:</span> {exp.promptTemplate}</p>
-                <p className="text-xs text-gray-400 truncate"><span className="font-semibold text-gray-300">Repeat:</span> {exp.repeatCount}</p>
+                <p className="text-xs text-gray-400 truncate">
+                  <span className="font-semibold text-gray-300">
+                    Embedding:
+                  </span>{" "}
+                  {exp.embeddingModel}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  <span className="font-semibold text-gray-300">Chunking:</span>{" "}
+                  {exp.chunkingStrategy}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  <span className="font-semibold text-gray-300">Prompt:</span>{" "}
+                  {exp.promptTemplate}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  <span className="font-semibold text-gray-300">Repeat:</span>{" "}
+                  {exp.repeatCount}
+                </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {exp.progress.annotated}/{exp.progress.total} annotated
                   {!isSelectable &&
