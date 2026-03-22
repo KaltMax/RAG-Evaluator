@@ -29,6 +29,7 @@ function SearchResults({ results, onAnnotated }) {
   const [relevantDocuments, setRelevantDocuments] = useState(
     results?.relevantDocumentIds ?? [],
   );
+  const [noRelevantDocuments, setNoRelevantDocuments] = useState(false);
   const [availableDocuments, setAvailableDocuments] = useState([]);
 
   useEffect(() => {
@@ -72,16 +73,20 @@ function SearchResults({ results, onAnnotated }) {
     return Object.keys(annotations).length;
   };
 
+  const groundTruthDecisionMade = () => {
+    return noRelevantDocuments || relevantDocuments.length > 0;
+  };
+
   const getTotalAnnotationsCount = () => {
     return (
       getAnnotatedCount() +
       (responseQuality === null ? 0 : 1) +
-      (relevantDocuments.length > 0 ? 1 : 0)
+      (groundTruthDecisionMade() ? 1 : 0)
     );
   };
 
   const getTotalAnnotationsNeeded = () => {
-    return (results.sources?.length || 0) + 2; // sources + response quality + at least 1 relevant document
+    return (results.sources?.length || 0) + 2; // sources + response quality + ground truth
   };
 
   const allSourcesAnnotated = () => {
@@ -89,10 +94,15 @@ function SearchResults({ results, onAnnotated }) {
   };
 
   const canSubmitAnnotations = () => {
-    return allSourcesAnnotated() && responseQuality !== null;
+    return (
+      allSourcesAnnotated() &&
+      responseQuality !== null &&
+      groundTruthDecisionMade()
+    );
   };
 
   const handleRelevantDocumentToggle = (documentId) => {
+    setNoRelevantDocuments(false);
     setRelevantDocuments((prev) => {
       if (prev.includes(documentId)) {
         return prev.filter((id) => id !== documentId);
@@ -100,6 +110,11 @@ function SearchResults({ results, onAnnotated }) {
         return [...prev, documentId];
       }
     });
+  };
+
+  const handleNoRelevantDocuments = () => {
+    setNoRelevantDocuments((prev) => !prev);
+    setRelevantDocuments([]);
   };
 
   const handleSubmitAnnotations = async () => {
@@ -110,7 +125,7 @@ function SearchResults({ results, onAnnotated }) {
         toast.warning("Please evaluate the response quality before submitting");
       } else {
         toast.warning(
-          "Please select at least one relevant document for Recall@K calculation",
+          "Please select relevant documents or mark as 'None relevant'",
         );
       }
       return;
@@ -349,7 +364,9 @@ function SearchResults({ results, onAnnotated }) {
             Select which documents contain relevant information for this query
             (used for Recall@K calculation).
           </p>
-          <div className="space-y-2 max-h-100 overflow-y-auto">
+          <div
+            className={`space-y-2 max-h-100 overflow-y-auto ${noRelevantDocuments ? "opacity-50 pointer-events-none" : ""}`}
+          >
             {sortByKey(availableDocuments, "fileName").map((doc) => (
               <label
                 key={doc.id}
@@ -359,7 +376,7 @@ function SearchResults({ results, onAnnotated }) {
                   type="checkbox"
                   checked={relevantDocuments.includes(doc.id)}
                   onChange={() => handleRelevantDocumentToggle(doc.id)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || noRelevantDocuments}
                   className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-gray-300 text-sm">{doc.fileName}</span>
@@ -382,6 +399,18 @@ function SearchResults({ results, onAnnotated }) {
               {relevantDocuments.length === 1 ? "" : "s"} selected as relevant
             </p>
           )}
+          <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1F1F1F] cursor-pointer transition-colors mt-3 border-t border-gray-700 pt-3">
+            <input
+              type="checkbox"
+              checked={noRelevantDocuments}
+              onChange={handleNoRelevantDocuments}
+              disabled={isSubmitting}
+              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <span className="text-gray-400 text-sm italic">
+              None of the documents are relevant
+            </span>
+          </label>
         </div>
       )}
 
