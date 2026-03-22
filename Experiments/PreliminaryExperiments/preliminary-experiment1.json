@@ -6,61 +6,92 @@
       "Question": "Was ist Normalisierung in Datenbanken?",
       "Language": "de",
       "TopK": 10,
-      "RelevantDocumentNames": ["DM_07_Relationenalgebra_Normalformen.pdf"]
+      "RelevantDocumentNames": [
+        "DM_07_Relationenalgebra_Normalformen.pdf"
+      ]
     },
     {
       "Question": "What is normalization in databases?",
       "Language": "en",
       "TopK": 10,
-      "RelevantDocumentNames": ["DM_07_Relationenalgebra_Normalformen.pdf"]
+      "RelevantDocumentNames": [
+        "DM_07_Relationenalgebra_Normalformen.pdf"
+      ]
     },
     {
       "Question": "What is the difference between Docker containers and virtual machines?",
       "Language": "en",
       "TopK": 10,
-      "RelevantDocumentNames": ["SWEN3_11_Docker_Docker-Compose.pdf", "IAC_05_Docker_Swarm.pdf"]
+      "RelevantDocumentNames": [
+        "SWEN3_11_Docker_Docker-Compose.pdf",
+        "IAC_05_Docker_Swarm.pdf",
+        "IAC_01_Cloud_Computing_Recap.pdf"
+      ]
     },
     {
       "Question": "Was ist der Unterschied zwischen Docker Containern und virtuellen Maschinen?",
       "Language": "de",
       "TopK": 10,
-      "RelevantDocumentNames": ["SWEN3_11_Docker_Docker-Compose.pdf", "IAC_05_Docker_Swarm.pdf"]
+      "RelevantDocumentNames": [
+        "SWEN3_11_Docker_Docker-Compose.pdf",
+        "IAC_05_Docker_Swarm.pdf",
+        "IAC_01_Cloud_Computing_Recap.pdf"
+      ]
     },
     {
       "Question": "Explain the OSI model and its layers.",
       "Language": "en",
       "TopK": 10,
-      "RelevantDocumentNames": ["INFRA_01_Nettzwerke_OSI_Ethernet_Protokoll.pdf"]
+      "RelevantDocumentNames": [
+        "INFRA_01_Nettzwerke_OSI_Ethernet_Protokoll.pdf"
+      ]
     },
     {
       "Question": "Erkläre das OSI-Modell und seine Schichten.",
       "Language": "de",
       "TopK": 10,
-      "RelevantDocumentNames": ["INFRA_01_Nettzwerke_OSI_Ethernet_Protokoll.pdf"]
+      "RelevantDocumentNames": [
+        "INFRA_01_Nettzwerke_OSI_Ethernet_Protokoll.pdf"
+      ]
     },
     {
       "Question": "How does Ansible work for infrastructure automation?",
       "Language": "en",
       "TopK": 10,
-      "RelevantDocumentNames": ["IAC_10_Ansible.pdf", "IAC_11_Ansible_Testing.pdf"]
+      "RelevantDocumentNames": [
+        "IAC_10_Ansible.pdf",
+        "IAC_11_Ansible_Testing.pdf",
+        "IAC_06_Self_StudyE_IaC_Overview.pdf"]
     },
     {
       "Question": "Wie funktioniert Ansible für Infrastruktur-Automatisierung?",
       "Language": "de",
       "TopK": 10,
-      "RelevantDocumentNames": ["IAC_10_Ansible.pdf", "IAC_11_Ansible_Testing.pdf"]
+      "RelevantDocumentNames": [
+        "IAC_10_Ansible.pdf",
+        "IAC_11_Ansible_Testing.pdf",
+        "IAC_06_Self_StudyE_IaC_Overview.pdf"
+      ]
     },
     {
       "Question": "What are the ACID properties in database transactions?",
       "Language": "en",
       "TopK": 10,
-      "RelevantDocumentNames": ["DM_12_DBS_Transactions.pdf", "DM_19_DBS_Transactions_Examples.pdf"]
+      "RelevantDocumentNames": [
+        "DM_12_DBS_Transactions.pdf", 
+        "DM_19_DBS_Transactions_Examples.pdf", 
+        "SWEN3_17_Distributed_Transactions_Replication.pdf"
+      ]
     },
     {
       "Question": "Was sind die ACID-Eigenschaften bei Datenbanktransaktionen?",
       "Language": "de",
       "TopK": 10,
-      "RelevantDocumentNames": ["DM_12_DBS_Transactions.pdf", "DM_19_DBS_Transactions_Examples.pdf"]
+      "RelevantDocumentNames": [
+        "DM_12_DBS_Transactions.pdf", 
+        "DM_19_DBS_Transactions_Examples.pdf", 
+        "SWEN3_17_Distributed_Transactions_Replication.pdf"
+      ]
     },
     {
       "Question": "What is the meaning of life?",

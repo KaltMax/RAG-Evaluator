@@ -141,7 +141,10 @@ function QueryHistory() {
   };
 
   const sortedQueries = sortByKey(
-    queries.map((q) => ({ ...q, status: isPending(q) ? "Pending" : "Evaluated" })),
+    queries.map((q) => ({
+      ...q,
+      status: isPending(q) ? "Pending" : "Evaluated",
+    })),
     sortKey,
     sortDirection,
   );

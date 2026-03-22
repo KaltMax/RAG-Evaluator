@@ -380,6 +380,9 @@ function SearchResults({ results, onAnnotated }) {
                   className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-gray-300 text-sm">{doc.fileName}</span>
+                <span className="text-gray-400 text-xs">
+                  ({doc.language.toUpperCase()})
+                </span>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
