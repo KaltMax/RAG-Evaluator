@@ -128,7 +128,7 @@ function QueryHistory() {
     { key: "language", label: "Language" },
     { key: "createdAt", label: "Created At" },
     { key: "experimentName", label: "Experiment" },
-    { key: "responseQuality", label: "Status" },
+    { key: "status", label: "Status" },
   ];
 
   const handleSort = (key) => {
@@ -140,7 +140,11 @@ function QueryHistory() {
     }
   };
 
-  const sortedQueries = sortByKey(queries, sortKey, sortDirection);
+  const sortedQueries = sortByKey(
+    queries.map((q) => ({ ...q, status: isPending(q) ? "Pending" : "Evaluated" })),
+    sortKey,
+    sortDirection,
+  );
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
