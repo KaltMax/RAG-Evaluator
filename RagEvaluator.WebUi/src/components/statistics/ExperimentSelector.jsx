@@ -76,6 +76,7 @@ function ExperimentSelector({
                       : "border border-gray-800 bg-[#1A1A1A] opacity-50 cursor-not-allowed"
                 }`}
                 style={isSelected ? { borderColor: color.hex } : undefined}
+                title={exp.name}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span
