@@ -76,7 +76,10 @@ function RetrievalMetricsChart({
       const mean = val?.mean ?? 0;
       const stdDev = val?.stdDev ?? 0;
       row[exp.id] = mean;
-      row[`${exp.id}_err`] = Math.min(stdDev, 1 - mean);
+      row[`${exp.id}_err`] = [
+        Math.min(stdDev, mean),
+        Math.min(stdDev, 1 - mean),
+      ];
     });
     return row;
   });
