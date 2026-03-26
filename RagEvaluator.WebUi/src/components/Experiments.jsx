@@ -87,7 +87,7 @@ function Experiments() {
           }`}
         >
           <input {...getInputProps()} />
-          <DocumentArrowUpIcon
+          <BeakerIcon
             className={`w-16 h-16 mx-auto mb-4 transition-colors ${isDragActive ? "text-blue-400" : "text-gray-400"}`}
           />
           <div className="min-h-[56px] flex flex-col justify-center">
