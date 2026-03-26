@@ -227,7 +227,7 @@ namespace RagEvaluator.Test.ApplicationTest
 
             var annotations = new List<QueryResultAnnotation>
             {
-                new QueryResultAnnotation { ResultId = resultId1, RelevanceGrade = RelevanceGrade.HighlyRelevant },
+                new QueryResultAnnotation { ResultId = resultId1, RelevanceGrade = RelevanceGrade.Relevant },
                 new QueryResultAnnotation { ResultId = resultId2, RelevanceGrade = RelevanceGrade.NotRelevant }
             };
 
@@ -237,7 +237,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 new List<Guid> { docId1 }, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(RelevanceGrade.HighlyRelevant, query.Results.First(r => r.Id == resultId1).RelevanceGrade);
+            Assert.Equal(RelevanceGrade.Relevant, query.Results.First(r => r.Id == resultId1).RelevanceGrade);
             Assert.True(query.Results.First(r => r.Id == resultId1).IsRelevant);
             Assert.Equal(RelevanceGrade.NotRelevant, query.Results.First(r => r.Id == resultId2).RelevanceGrade);
             Assert.False(query.Results.First(r => r.Id == resultId2).IsRelevant);
@@ -286,7 +286,7 @@ namespace RagEvaluator.Test.ApplicationTest
 
             var annotations = new List<QueryResultAnnotation>
             {
-                new QueryResultAnnotation { ResultId = resultId1, RelevanceGrade = RelevanceGrade.HighlyRelevant }
+                new QueryResultAnnotation { ResultId = resultId1, RelevanceGrade = RelevanceGrade.Relevant }
             };
 
             // Act

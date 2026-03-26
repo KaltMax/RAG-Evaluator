@@ -336,7 +336,7 @@ namespace RagEvaluator.Test.ApiTest
                     new QueryResultAnnotation
                     {
                         ResultId = Guid.NewGuid(),
-                        RelevanceGrade = Domain.Enums.RelevanceGrade.HighlyRelevant
+                        RelevanceGrade = Domain.Enums.RelevanceGrade.Relevant
                     },
                     new QueryResultAnnotation
                     {

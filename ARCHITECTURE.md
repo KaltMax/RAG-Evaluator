@@ -187,7 +187,7 @@ RAG-Evaluator/
 │   │   ├── ExperimentStatus.cs                 # Experiment status (Running, Completed)
 │   │   ├── ChunkingStrategy.cs                 # Chunking strategy selection (FixedSize, Semantic)
 │   │   ├── PromptTemplate.cs                   # Prompt template types (Basic, Instructed, LanguageAware)
-│   │   ├── RelevanceGrade.cs                   # Graded relevance scale (0-2) for NDCG
+│   │   ├── RelevanceGrade.cs                   # Binary relevance scale (0-1)
 │   │   └── ResponseQuality.cs                  # LLM response quality evaluation (0-3)
 │   └── ValueObjects/
 │       ├── SearchResult.cs                     # Search result with similarity score
@@ -308,7 +308,7 @@ RAG-Evaluator/
   - `MeanReciprocalRank()` - MRR for retrieval evaluation (chunk-level: rank of first relevant chunk)
   - `PrecisionAtK()` - precision metric (chunk-level: proportion of relevant chunks in top K)
   - `RecallAtK()` - recall metric (document-level: proportion of ground truth documents found in top K)
-  - `NormalizedDiscountedCumulativeGainAtK()` - NDCG for ranking quality (chunk-level: uses relevance grades 0-2)
+  - `NormalizedDiscountedCumulativeGainAtK()` - NDCG for ranking quality (chunk-level: uses binary relevance 0-1)
   - `CalculateQueryMetrics()` - calculates all metrics for a query from its results
 - `SettingsService` - Runtime RAG configuration management
   - `GetSettings()` - returns current configuration with available options
@@ -598,7 +598,7 @@ CREATE TABLE QueryResults (
     Rank INT NOT NULL,
     SimilarityScore DOUBLE PRECISION NOT NULL,
     IsRelevant BOOLEAN,                  -- Nullable (for relevance labeling)
-    RelevanceGrade INT                   -- Nullable (RelevanceGrade enum: 0=NotRelevant, 1=Related, 2=HighlyRelevant)
+    RelevanceGrade INT                   -- Nullable (RelevanceGrade enum: 0=NotRelevant, 1=Relevant)
 );
 CREATE INDEX IX_QueryResults_QueryId ON QueryResults(QueryId);
 CREATE INDEX IX_QueryResults_DocumentId ON QueryResults(DocumentId);

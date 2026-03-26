@@ -1,6 +1,6 @@
 /**
  * Relevance grade options for annotation UI
- * Maps to backend RelevanceGrade enum (0-2)
+ * Maps to backend RelevanceGrade enum (0-1)
  */
 export const relevanceGrades = [
   {
@@ -12,15 +12,8 @@ export const relevanceGrades = [
   },
   {
     value: 1,
-    label: "Related",
-    shortLabel: "Related",
-    color: "bg-yellow-600 hover:bg-yellow-500",
-    selectedColor: "bg-yellow-500 ring-3 ring-yellow-400",
-  },
-  {
-    value: 2,
-    label: "Highly Relevant",
-    shortLabel: "High",
+    label: "Relevant",
+    shortLabel: "Rel",
     color: "bg-green-600 hover:bg-green-500",
     selectedColor: "bg-green-500 ring-3 ring-green-400",
   },
@@ -28,7 +21,7 @@ export const relevanceGrades = [
 
 /**
  * Get relevance grade config by value
- * @param {number} value - The relevance grade value (0-2)
+ * @param {number} value - The relevance grade value (0-1)
  * @returns {Object|undefined} The relevance grade config
  */
 export const getRelevanceGrade = (value) => {
