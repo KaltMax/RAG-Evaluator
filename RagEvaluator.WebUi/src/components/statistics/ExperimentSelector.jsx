@@ -78,7 +78,7 @@ function ExperimentSelector({
                 style={isSelected ? { borderColor: color.hex } : undefined}
                 title={exp.name}
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 pr-6">
                   <span
                     className="w-3 h-3 rounded-full shrink-0"
                     style={{ backgroundColor: color.hex }}

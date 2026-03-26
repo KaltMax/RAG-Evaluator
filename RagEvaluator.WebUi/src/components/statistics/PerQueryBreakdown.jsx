@@ -142,6 +142,13 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
                                       ? "text-white font-bold"
                                       : "text-gray-400"
                                   }`}
+                                  style={
+                                    isBest
+                                      ? {
+                                          borderLeft: `3px solid ${colorMap[exp.id]?.hex}`,
+                                        }
+                                      : undefined
+                                  }
                                 >
                                   {qg?.metrics
                                     ? formatCell(metric, val)
