@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-toastify";
-import {
-  DocumentArrowUpIcon,
-  XMarkIcon,
-  BeakerIcon,
-} from "@heroicons/react/24/outline";
+import { XMarkIcon, BeakerIcon } from "@heroicons/react/24/outline";
 import { createExperiment } from "../api/experimentService";
 import { formatLanguage } from "../utils/formatLanguage";
 

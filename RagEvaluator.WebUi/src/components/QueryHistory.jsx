@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import {
   ArrowPathIcon,
@@ -101,7 +101,10 @@ function QueryHistory() {
     });
     fetchQueries();
     setTimeout(() => {
-      queryRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      queryRefs.current[id]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     }, 0);
   };
 
