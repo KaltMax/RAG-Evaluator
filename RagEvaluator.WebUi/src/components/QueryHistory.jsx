@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import {
   ArrowPathIcon,
@@ -28,6 +28,7 @@ function QueryHistory() {
   const [queryDetails, setQueryDetails] = useState({});
   const [loadingDetails, setLoadingDetails] = useState(new Set());
   const [annotatingIds, setAnnotatingIds] = useState(new Set());
+  const queryRefs = useRef({});
   const [sortKey, setSortKey] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
 
@@ -99,6 +100,9 @@ function QueryHistory() {
       return newDetails;
     });
     fetchQueries();
+    setTimeout(() => {
+      queryRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
   };
 
   const getMetricsStatus = (query) => {
@@ -226,6 +230,7 @@ function QueryHistory() {
             return (
               <div
                 key={query.id}
+                ref={(el) => (queryRefs.current[query.id] = el)}
                 className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden"
               >
                 {/* Collapsed card header with question, status badge, and delete */}
