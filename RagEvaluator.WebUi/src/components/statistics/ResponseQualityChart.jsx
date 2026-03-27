@@ -17,6 +17,10 @@ const QUALITY_SEGMENTS = [
   { key: "Hallucinated", label: "Hallucinated", color: "#ef4444" },
 ];
 
+const legendFormatter = (value) => (
+  <span className="text-gray-300 text-xs">{value}</span>
+);
+
 function buildChartData(selectedExperiments) {
   return selectedExperiments.map((exp) => {
     const dist = exp.overallMetrics?.responseQualityDistribution;
@@ -108,9 +112,7 @@ function ResponseQualityChart({ selectedExperiments }) {
           <Tooltip content={<CustomTooltip />} />
           <Legend
             wrapperStyle={{ fontSize: 12 }}
-            formatter={(value) => (
-              <span className="text-gray-300 text-xs">{value}</span>
-            )}
+            formatter={legendFormatter}
           />
           {QUALITY_SEGMENTS.map((seg) => (
             <Bar

@@ -6,7 +6,7 @@ namespace RagEvaluator.Test.ApplicationTest
 {
     public class MetricsServiceTests
     {
-        private IMetricsService _service;
+        private readonly IMetricsService _service;
 
         public MetricsServiceTests()
         {

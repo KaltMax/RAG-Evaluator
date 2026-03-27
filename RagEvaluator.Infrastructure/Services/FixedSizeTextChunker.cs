@@ -19,9 +19,6 @@ namespace RagEvaluator.Infrastructure.Services
             _config = config;
         }
 
-        /// <summary>
-        /// Splits a single text into chunks
-        /// </summary>
         public Task<List<string>> CreateDocumentChunksAsync(string documentContent, CancellationToken cancellationToken = default)
         {
             var chunkSize = _config.ChunkSize;

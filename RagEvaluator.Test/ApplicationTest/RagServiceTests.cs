@@ -130,7 +130,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(new List<ChunkSearchMatch>());
 
             // Act
-            var result = await _service.AskQuestionAsync(request, TestContext.Current.CancellationToken);
+            await _service.AskQuestionAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
             await _chatService.DidNotReceive().GenerateResponseAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());

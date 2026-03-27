@@ -25,6 +25,10 @@ const RETRIEVAL_METRICS = [
 
 const defaultAccessor = (exp) => exp.overallMetrics;
 
+const legendFormatter = (value) => (
+  <span className="text-gray-300 text-xs">{value}</span>
+);
+
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
@@ -105,9 +109,7 @@ function RetrievalMetricsChart({
           <Tooltip content={<CustomTooltip />} />
           <Legend
             wrapperStyle={{ color: "#d1d5db", fontSize: 12 }}
-            formatter={(value) => (
-              <span className="text-gray-300 text-xs">{value}</span>
-            )}
+            formatter={legendFormatter}
           />
           {selectedExperiments.map((exp) => (
             <Bar

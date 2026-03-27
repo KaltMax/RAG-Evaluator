@@ -132,10 +132,10 @@ namespace RagEvaluator.Application.Services
 
             if (document?.FilePath != null)
             {
-                await _fileStorageService.DeleteFileAsync(document.FilePath);
+                await _fileStorageService.DeleteFileAsync(document.FilePath, CancellationToken.None);
             }
-            await _documentChunkRepository.DeleteByDocumentIdAsync(id);
-            await _documentRepository.DeleteAsync(id);
+            await _documentChunkRepository.DeleteByDocumentIdAsync(id, CancellationToken.None);
+            await _documentRepository.DeleteAsync(id, CancellationToken.None);
         }
     }
 }
