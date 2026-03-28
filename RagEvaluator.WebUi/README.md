@@ -14,7 +14,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Language selection (English/German)
 
 - **Relevance Annotation** - Evaluate retrieval quality with graded relevance labels
-  - Annotate each retrieved chunk with relevance grades (Not Relevant, Marginally Relevant, Fairly Relevant, Highly Relevant)
+  - Annotate each retrieved chunk with binary relevance grades (Not Relevant, Relevant)
   - Color-coded relevance badges for quick selection
   - Automatic metrics calculation after annotation submission
   - Metrics display panel showing MRR, Precision@K, Recall@k, NDCG@K, and Response Time
@@ -33,6 +33,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Evaluation metrics display (MRR, Precision@K, Recall@K, NDCG@K, Response Time, Response Quality, Language Switching)
   - Status badges (Evaluated/Pending)
   - Inline annotation for pending queries via "Annotate" button (renders SearchResults evaluation UI)
+  - Re-annotation of evaluated queries with pre-populated existing grades and ground truth
 
 - **Document Upload** - Upload PDF documents for processing
   - Drag-and-drop interface powered by react-dropzone

@@ -59,5 +59,18 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                 await _context.SaveChangesAsync(cancellationToken);
             }
         }
+
+        public async Task<IReadOnlyList<Query>> GetUnannotatedSiblingsAsync(Guid queryId, Guid experimentId, string question, string language, int topK, CancellationToken cancellationToken = default)
+        {
+            return await _context.Queries
+                .Include(q => q.Results)
+                .Where(q => q.Id != queryId
+                    && q.ExperimentId == experimentId
+                    && q.Question == question
+                    && q.Language == language
+                    && q.TopK == topK
+                    && !q.ResponseQuality.HasValue)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

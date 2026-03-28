@@ -301,7 +301,7 @@ RAG-Evaluator/
   - `CreateQueryAsync()` - creates and persists a query with configuration snapshot
   - `CompleteQueryAsync()` - populates query with answer, embedding, response time, and retrieved chunks
   - `GetByIdAsync()` / `GetAllAsync()` - query retrieval and history
-  - `AnnotateResultsAsync()` - updates query results with relevance grades, response quality, and ground truth documents; calculates metrics
+  - `AnnotateResultsAsync()` - updates query results with relevance grades, response quality, and ground truth documents; calculates metrics; propagates chunk annotations to unannotated sibling queries within the same experiment since they share the same retrieved chunks
   - `DeleteAsync()` - deletes a query
 - `MetricsService` - Similarity and retrieval evaluation metrics
   - `CosineSimilarity()` / `CosineDistance()` - vector similarity calculations
@@ -392,7 +392,7 @@ RAG-Evaluator/
 
 - `DocumentRepository` - Document CRUD with status filtering
 - `DocumentChunkRepository` - Chunk persistence with pgvector similarity search (raw SQL with `<=>` operator)
-- `QueryRepository` - Query persistence with eager loading of results, relevant documents, and experiment association
+- `QueryRepository` - Query persistence with eager loading of results, relevant documents, and experiment association; unannotated sibling lookup for annotation propagation
 - `ExperimentRepository` - Experiment persistence with eager loading of queries
 
 **Vector Storage Architecture**:

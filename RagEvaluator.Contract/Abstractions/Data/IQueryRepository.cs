@@ -36,5 +36,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         /// Deletes a query by its unique identifier.
         /// </summary>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Finds unannotated sibling queries (same experiment, question, language, topK)
+        /// for the given query, excluding the query itself.
+        /// </summary>
+        Task<IReadOnlyList<Query>> GetUnannotatedSiblingsAsync(Guid queryId, Guid experimentId, string question, string language, int topK, CancellationToken cancellationToken = default);
     }
 }

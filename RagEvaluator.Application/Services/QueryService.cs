@@ -114,6 +114,7 @@ namespace RagEvaluator.Application.Services
 
             CalculateMetrics(query);
             await _queryRepository.UpdateAsync(query, cancellationToken);
+            await PropagateChunkAnnotationsToSiblings(query, cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -137,6 +138,33 @@ namespace RagEvaluator.Application.Services
             query.PrecisionAtK = metrics.PrecisionAtK;
             query.RecallAtK = metrics.RecallAtK;
             query.NDCGAtK = metrics.NDCGAtK;
+        }
+
+        private async Task PropagateChunkAnnotationsToSiblings(Query query, CancellationToken cancellationToken)
+        {
+            if (query.ExperimentId.HasValue)
+            {
+                var siblingGrades = query.Results
+                    .Where(r => r.RelevanceGrade.HasValue)
+                    .ToDictionary(r => r.ChunkText, r => r.RelevanceGrade!.Value);
+
+                var siblings = await _queryRepository.GetUnannotatedSiblingsAsync(
+                    query.Id, query.ExperimentId.Value, query.Question, query.Language, query.TopK, cancellationToken);
+
+                foreach (var sibling in siblings)
+                {
+                    foreach (var result in sibling.Results)
+                    {
+                        if (!result.RelevanceGrade.HasValue && siblingGrades.TryGetValue(result.ChunkText, out var grade))
+                        {
+                            result.RelevanceGrade = grade;
+                            result.IsRelevant = grade != RelevanceGrade.NotRelevant;
+                        }
+                    }
+
+                    await _queryRepository.UpdateAsync(sibling, cancellationToken);
+                }
+            }
         }
     }
 }

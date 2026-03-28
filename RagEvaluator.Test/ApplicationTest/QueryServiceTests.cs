@@ -338,6 +338,169 @@ namespace RagEvaluator.Test.ApplicationTest
             Assert.Single(query.RelevantDocuments);
         }
 
+        [Fact]
+        public async Task AnnotateResultsAsync_ShouldPropagateGradesToUnannotatedSiblings()
+        {
+            // Arrange
+            var experimentId = Guid.NewGuid();
+            var queryId = Guid.NewGuid();
+            var resultId = Guid.NewGuid();
+            var docId = Guid.NewGuid();
+
+            var query = CreateSampleQuery();
+            query.ExperimentId = experimentId;
+            query.Results = new List<QueryResult>
+            {
+                new QueryResult { Id = resultId, QueryId = queryId, DocumentId = docId, Rank = 1, ChunkText = "Chunk A" }
+            };
+
+            var siblingResultId = Guid.NewGuid();
+            var sibling = CreateSampleQuery();
+            sibling.ExperimentId = experimentId;
+            sibling.Results = new List<QueryResult>
+            {
+                new QueryResult { Id = siblingResultId, QueryId = sibling.Id, DocumentId = docId, Rank = 1, ChunkText = "Chunk A" }
+            };
+
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken).Returns(query);
+            _queryRepository.GetUnannotatedSiblingsAsync(
+                query.Id, experimentId, query.Question, query.Language, query.TopK, Arg.Any<CancellationToken>())
+                .Returns(new List<Query> { sibling });
+            _metricsService.CalculateQueryMetrics(Arg.Any<IReadOnlyList<QueryResult>>(), Arg.Any<int>(), Arg.Any<IReadOnlyList<Guid>>())
+                .Returns(new QueryMetrics { MRR = 1.0, PrecisionAtK = 1.0, RecallAtK = 1.0, NDCGAtK = 1.0 });
+
+            var annotations = new List<QueryResultAnnotation>
+            {
+                new QueryResultAnnotation { ResultId = resultId, RelevanceGrade = RelevanceGrade.Relevant }
+            };
+
+            // Act
+            await _service.AnnotateResultsAsync(
+                queryId, annotations, ResponseQuality.CorrectAndComplete, false,
+                new List<Guid> { docId }, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(RelevanceGrade.Relevant, sibling.Results.First().RelevanceGrade);
+            Assert.True(sibling.Results.First().IsRelevant);
+            await _queryRepository.Received(1).UpdateAsync(sibling, Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task AnnotateResultsAsync_ShouldNotPropagateForNonExperimentQueries()
+        {
+            // Arrange
+            var (query, queryId, resultId1, _, docId1, _) = ArrangeAnnotation();
+            query.ExperimentId = null;
+
+            var annotations = new List<QueryResultAnnotation>
+            {
+                new QueryResultAnnotation { ResultId = resultId1, RelevanceGrade = RelevanceGrade.Relevant }
+            };
+
+            // Act
+            await _service.AnnotateResultsAsync(
+                queryId, annotations, ResponseQuality.CorrectAndComplete, false,
+                new List<Guid> { docId1 }, TestContext.Current.CancellationToken);
+
+            // Assert
+            await _queryRepository.DidNotReceive().GetUnannotatedSiblingsAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task AnnotateResultsAsync_ShouldNotOverwriteExistingSiblingGrades()
+        {
+            // Arrange
+            var experimentId = Guid.NewGuid();
+            var queryId = Guid.NewGuid();
+            var resultId = Guid.NewGuid();
+            var docId = Guid.NewGuid();
+
+            var query = CreateSampleQuery();
+            query.ExperimentId = experimentId;
+            query.Results = new List<QueryResult>
+            {
+                new QueryResult { Id = resultId, QueryId = queryId, DocumentId = docId, Rank = 1, ChunkText = "Chunk A" }
+            };
+
+            var sibling = CreateSampleQuery();
+            sibling.ExperimentId = experimentId;
+            sibling.Results = new List<QueryResult>
+            {
+                new QueryResult
+                {
+                    Id = Guid.NewGuid(), QueryId = sibling.Id, DocumentId = docId, Rank = 1,
+                    ChunkText = "Chunk A", RelevanceGrade = RelevanceGrade.NotRelevant, IsRelevant = false
+                }
+            };
+
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken).Returns(query);
+            _queryRepository.GetUnannotatedSiblingsAsync(
+                query.Id, experimentId, query.Question, query.Language, query.TopK, Arg.Any<CancellationToken>())
+                .Returns(new List<Query> { sibling });
+            _metricsService.CalculateQueryMetrics(Arg.Any<IReadOnlyList<QueryResult>>(), Arg.Any<int>(), Arg.Any<IReadOnlyList<Guid>>())
+                .Returns(new QueryMetrics { MRR = 1.0, PrecisionAtK = 1.0, RecallAtK = 1.0, NDCGAtK = 1.0 });
+
+            var annotations = new List<QueryResultAnnotation>
+            {
+                new QueryResultAnnotation { ResultId = resultId, RelevanceGrade = RelevanceGrade.Relevant }
+            };
+
+            // Act
+            await _service.AnnotateResultsAsync(
+                queryId, annotations, ResponseQuality.CorrectAndComplete, false,
+                new List<Guid> { docId }, TestContext.Current.CancellationToken);
+
+            // Assert — sibling's existing grade should NOT be overwritten
+            Assert.Equal(RelevanceGrade.NotRelevant, sibling.Results.First().RelevanceGrade);
+            Assert.False(sibling.Results.First().IsRelevant);
+        }
+
+        [Fact]
+        public async Task AnnotateResultsAsync_ShouldLeaveNonMatchingChunksUnannotated()
+        {
+            // Arrange
+            var experimentId = Guid.NewGuid();
+            var queryId = Guid.NewGuid();
+            var resultId = Guid.NewGuid();
+            var docId = Guid.NewGuid();
+
+            var query = CreateSampleQuery();
+            query.ExperimentId = experimentId;
+            query.Results = new List<QueryResult>
+            {
+                new QueryResult { Id = resultId, QueryId = queryId, DocumentId = docId, Rank = 1, ChunkText = "Chunk A" }
+            };
+
+            var sibling = CreateSampleQuery();
+            sibling.ExperimentId = experimentId;
+            sibling.Results = new List<QueryResult>
+            {
+                new QueryResult { Id = Guid.NewGuid(), QueryId = sibling.Id, DocumentId = docId, Rank = 1, ChunkText = "Chunk B" }
+            };
+
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken).Returns(query);
+            _queryRepository.GetUnannotatedSiblingsAsync(
+                query.Id, experimentId, query.Question, query.Language, query.TopK, Arg.Any<CancellationToken>())
+                .Returns(new List<Query> { sibling });
+            _metricsService.CalculateQueryMetrics(Arg.Any<IReadOnlyList<QueryResult>>(), Arg.Any<int>(), Arg.Any<IReadOnlyList<Guid>>())
+                .Returns(new QueryMetrics { MRR = 1.0, PrecisionAtK = 1.0, RecallAtK = 1.0, NDCGAtK = 1.0 });
+
+            var annotations = new List<QueryResultAnnotation>
+            {
+                new QueryResultAnnotation { ResultId = resultId, RelevanceGrade = RelevanceGrade.Relevant }
+            };
+
+            // Act
+            await _service.AnnotateResultsAsync(
+                queryId, annotations, ResponseQuality.CorrectAndComplete, false,
+                new List<Guid> { docId }, TestContext.Current.CancellationToken);
+
+            // Assert — non-matching chunk stays unannotated
+            Assert.Null(sibling.Results.First().RelevanceGrade);
+            Assert.Null(sibling.Results.First().IsRelevant);
+        }
+
         #endregion
 
         #region DeleteAsync Tests

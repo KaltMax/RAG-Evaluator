@@ -1,6 +1,6 @@
 {
   "Name": "Sample Experiment",
-  "RepeatCount": 1,
+  "RepeatCount": 3,
   "Queries": [
     {
       "Question": "Was ist SQL?",
