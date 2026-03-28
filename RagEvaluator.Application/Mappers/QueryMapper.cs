@@ -105,7 +105,8 @@ namespace RagEvaluator.Application.Mappers
                 DocumentId = result.DocumentId,
                 FileName = result.FileName,
                 ChunkingStrategy = result.ChunkingStrategy,
-                EmbeddingModel = result.EmbeddingModel
+                EmbeddingModel = result.EmbeddingModel,
+                RelevanceGrade = result.RelevanceGrade.HasValue ? (int)result.RelevanceGrade.Value : null
             };
         }
 

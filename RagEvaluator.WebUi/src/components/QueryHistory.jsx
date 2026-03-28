@@ -66,7 +66,7 @@ function QueryHistory() {
   };
 
   const handleStartAnnotation = async (id) => {
-    if (queryDetails[id]) {
+    if (queryDetails[id] && isPending(queries.find((q) => q.id === id))) {
       setAnnotatingIds((prev) => new Set([...prev, id]));
       return;
     }
@@ -167,7 +167,7 @@ function QueryHistory() {
         <button
           onClick={fetchQueries}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50 border border-gray-700"
         >
           <ArrowPathIcon
             className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
@@ -234,7 +234,7 @@ function QueryHistory() {
               <div
                 key={query.id}
                 ref={(el) => (queryRefs.current[query.id] = el)}
-                className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden"
+                className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden border border-gray-700"
               >
                 {/* Collapsed card header with question, status badge, and delete */}
                 <button
@@ -368,12 +368,14 @@ function QueryHistory() {
                       </div>
                     </div>
 
-                    {/* Pending: annotate button or SearchResults for evaluation */}
-                    {isPending(query) && (
+                    {/* Annotate / Re-annotate: button or SearchResults for evaluation */}
+                    {(isPending(query) || annotatingIds.has(query.id)) && (
                       <div className="mt-4">
-                        <h3 className="text-sm font-bold text-gray-200 mb-2">
-                          Evaluation Metrics
-                        </h3>
+                        {annotatingIds.has(query.id) && (
+                          <h3 className="text-sm font-bold text-gray-200 mb-2">
+                            Annotations
+                          </h3>
+                        )}
                         {annotatingIds.has(query.id) ? (
                           queryDetails[query.id] ? (
                             <SearchResults
@@ -389,7 +391,7 @@ function QueryHistory() {
                           <button
                             onClick={() => handleStartAnnotation(query.id)}
                             disabled={loadingDetails.has(query.id)}
-                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2 border border-gray-700"
                           >
                             {loadingDetails.has(query.id) ? (
                               <>
@@ -405,7 +407,7 @@ function QueryHistory() {
                     )}
 
                     {/* Evaluated: retrieval metrics (MRR, Precision, Recall, NDCG) */}
-                    {!isPending(query) && (
+                    {!isPending(query) && !annotatingIds.has(query.id) && (
                       <div className="mt-4">
                         <h3 className="text-sm font-bold text-gray-200 mb-2">
                           Evaluation Metrics
@@ -473,6 +475,20 @@ function QueryHistory() {
                             </p>
                           </div>
                         </div>
+                        <button
+                          onClick={() => handleStartAnnotation(query.id)}
+                          disabled={loadingDetails.has(query.id)}
+                          className="mt-4 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                        >
+                          {loadingDetails.has(query.id) ? (
+                            <>
+                              <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                              <span>Loading...</span>
+                            </>
+                          ) : (
+                            <span>Re-annotate</span>
+                          )}
+                        </button>
                       </div>
                     )}
                   </div>

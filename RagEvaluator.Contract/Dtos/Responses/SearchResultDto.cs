@@ -13,5 +13,6 @@
         public string FileName { get; set; } = string.Empty;
         public string ChunkingStrategy { get; set; } = string.Empty;
         public string EmbeddingModel { get; set; } = string.Empty;
+        public int? RelevanceGrade { get; set; }
     }
 }

@@ -21,15 +21,31 @@ import { formatResponseTime } from "../utils/formatResponseTime";
 import { formatDate } from "../utils/formatDate";
 
 function SearchResults({ results, onAnnotated }) {
-  const [annotations, setAnnotations] = useState({});
-  const [responseQuality, setResponseQuality] = useState(null);
-  const [hasLanguageSwitching, setHasLanguageSwitching] = useState(false);
+  const [annotations, setAnnotations] = useState(() => {
+    const initial = {};
+    results?.sources?.forEach((source) => {
+      if (source.relevanceGrade != null) {
+        initial[source.id] = source.relevanceGrade;
+      }
+    });
+    return initial;
+  });
+  const [responseQuality, setResponseQuality] = useState(
+    results?.responseQuality ?? null,
+  );
+  const [hasLanguageSwitching, setHasLanguageSwitching] = useState(
+    results?.hasLanguageSwitching ?? false,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [relevantDocuments, setRelevantDocuments] = useState(
     results?.relevantDocumentIds ?? [],
   );
-  const [noRelevantDocuments, setNoRelevantDocuments] = useState(false);
+  const [noRelevantDocuments, setNoRelevantDocuments] = useState(
+    results?.responseQuality != null &&
+      (!results?.relevantDocumentIds ||
+        results.relevantDocumentIds.length === 0),
+  );
   const [availableDocuments, setAvailableDocuments] = useState([]);
 
   useEffect(() => {
@@ -171,7 +187,7 @@ function SearchResults({ results, onAnnotated }) {
   return (
     <div className="w-full space-y-6">
       {/* Answer with timestamp and response quality evaluation */}
-      <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
         <div className="flex items-center gap-2 mb-4">
           <DocumentTextIcon className="w-6 h-6 text-blue-400" />
           <h2 className="text-xl font-semibold text-white">Answer</h2>
@@ -239,7 +255,7 @@ function SearchResults({ results, onAnnotated }) {
 
       {/* Retrieved sources with similarity scores and relevance annotation */}
       {results.sources && results.sources.length > 0 && (
-        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
           <h2 className="text-xl font-semibold text-white mb-4">
             Sources ({results.sources.length})
           </h2>
@@ -356,7 +372,7 @@ function SearchResults({ results, onAnnotated }) {
 
       {/* Ground truth document selection for Recall@K */}
       {!metrics && availableDocuments.length > 0 && (
-        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
           <h2 className="text-xl font-semibold text-white mb-2">
             Ground Truth Documents
           </h2>
@@ -419,7 +435,7 @@ function SearchResults({ results, onAnnotated }) {
 
       {/* Annotation progress and submit button */}
       {!metrics && (
-        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+        <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-400">
               {getTotalAnnotationsCount()} of {getTotalAnnotationsNeeded()}{" "}
@@ -428,7 +444,7 @@ function SearchResults({ results, onAnnotated }) {
             <button
               onClick={handleSubmitAnnotations}
               disabled={isSubmitting || !canSubmitAnnotations()}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2 border border-gray-700"
             >
               {isSubmitting ? (
                 <>
@@ -521,10 +537,13 @@ SearchResults.propTypes = {
         fileName: PropTypes.string,
         chunkingStrategy: PropTypes.string,
         embeddingModel: PropTypes.string,
+        relevanceGrade: PropTypes.number,
       }),
     ),
     timestamp: PropTypes.string.isRequired,
     relevantDocumentIds: PropTypes.arrayOf(PropTypes.string),
+    responseQuality: PropTypes.number,
+    hasLanguageSwitching: PropTypes.bool,
   }),
   onAnnotated: PropTypes.func,
 };
