@@ -83,7 +83,7 @@ function ResponseQualityChart({ selectedExperiments }) {
   const data = buildChartData(selectedExperiments);
 
   return (
-    <div className="bg-[#2D2D2D] rounded-lg p-6">
+    <div className="bg-[#2D2D2D] rounded-lg p-6 border border-gray-700">
       <h2 className="text-lg font-semibold text-white mb-4">
         Response Quality Distribution
       </h2>
@@ -110,10 +110,7 @@ function ResponseQualityChart({ selectedExperiments }) {
             width={150}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend
-            wrapperStyle={{ fontSize: 12 }}
-            formatter={legendFormatter}
-          />
+          <Legend wrapperStyle={{ fontSize: 12 }} formatter={legendFormatter} />
           {QUALITY_SEGMENTS.map((seg) => (
             <Bar
               key={seg.key}

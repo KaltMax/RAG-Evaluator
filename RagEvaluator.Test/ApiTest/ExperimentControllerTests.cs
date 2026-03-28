@@ -212,6 +212,7 @@ namespace RagEvaluator.Test.ApiTest
                 CreatedAt = DateTime.UtcNow.AddDays(-1),
                 CompletedAt = DateTime.UtcNow,
                 Progress = new ExperimentProgress { Total = 2, Completed = 2, Annotated = 0 },
+                ChatModel = "TestChatModel",
                 EmbeddingModel = "TestEmbeddingModel",
                 ChunkingStrategy = "TestChunkingStrategy",
                 PromptTemplate = "TestPromptTemplate"

@@ -117,7 +117,7 @@ function DocumentList() {
         <button
           onClick={fetchDocuments}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50 border border-gray-700"
         >
           <ArrowPathIcon
             className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
@@ -127,7 +127,7 @@ function DocumentList() {
       </div>
 
       {/* Document table with loading, error, and empty states */}
-      <div className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-[#2D2D2D] rounded-lg shadow-lg overflow-hidden border border-gray-700">
         {isLoading && documents.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin" />

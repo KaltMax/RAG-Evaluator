@@ -89,7 +89,7 @@ function RetrievalMetricsChart({
   });
 
   return (
-    <div className="bg-[#2D2D2D] rounded-lg p-6">
+    <div className="bg-[#2D2D2D] rounded-lg p-6 border border-gray-700">
       <h2 className="text-lg font-semibold text-white mb-4">
         {title || "Retrieval Metrics"}
       </h2>

@@ -48,7 +48,7 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
   if (questions.length === 0) return null;
 
   return (
-    <div className="bg-[#2D2D2D] rounded-lg p-6">
+    <div className="bg-[#2D2D2D] rounded-lg p-6 border border-gray-700">
       <h2 className="text-lg font-semibold text-white mb-4">
         Per-Query Breakdown
       </h2>

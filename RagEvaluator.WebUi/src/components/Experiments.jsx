@@ -73,7 +73,7 @@ function Experiments() {
       </div>
 
       {/* Drag-and-drop zone */}
-      <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
         <div
           {...getRootProps()}
           className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all min-h-[240px] flex flex-col items-center justify-center ${

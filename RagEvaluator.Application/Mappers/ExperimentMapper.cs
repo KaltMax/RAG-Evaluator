@@ -26,6 +26,7 @@ namespace RagEvaluator.Application.Mappers
                     Completed = experiment.CompletedQueryCount,
                     Annotated = annotatedCount
                 },
+                ChatModel = experiment.ChatModel,
                 EmbeddingModel = experiment.EmbeddingModel,
                 ChunkingStrategy = experiment.ChunkingStrategy,
                 PromptTemplate = experiment.PromptTemplate

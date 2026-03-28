@@ -119,7 +119,7 @@ function Statistics() {
         <button
           onClick={fetchExperiments}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50 border border-gray-700"
         >
           <ArrowPathIcon
             className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
@@ -189,7 +189,7 @@ function Statistics() {
               />
             </div>
           ) : (
-            <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-12 text-center">
+            <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-12 text-center border border-gray-700">
               <p className="text-gray-400">
                 Select at least 2 experiments to compare
               </p>

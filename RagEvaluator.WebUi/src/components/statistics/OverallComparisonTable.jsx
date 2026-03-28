@@ -12,7 +12,7 @@ import {
 
 function OverallComparisonTable({ selectedExperiments, colorMap }) {
   return (
-    <div className="bg-[#2D2D2D] rounded-lg p-6">
+    <div className="bg-[#2D2D2D] rounded-lg p-6 border border-gray-700">
       <h2 className="text-lg font-semibold text-white mb-4">
         Overall Comparison
       </h2>
@@ -38,7 +38,7 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
                       {exp.name}
                     </span>
                   </div>
-                  <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                  <p className="text-[10px] text-gray-300 truncate mt-0.5">
                     {exp.embeddingModel} | {exp.chunkingStrategy} |{" "}
                     {exp.promptTemplate}
                   </p>

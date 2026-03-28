@@ -142,7 +142,7 @@ function Settings() {
         <button
           onClick={fetchSettings}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] text-gray-300 rounded-lg transition-colors disabled:opacity-50 border border-gray-700"
         >
           <ArrowPathIcon
             className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
@@ -154,7 +154,7 @@ function Settings() {
       {draft && settings && (
         <>
           {/* Embedding model selector */}
-          <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+          <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
             <h2 className="text-sm font-bold text-gray-200 mb-2">
               Embedding Model
             </h2>
@@ -175,7 +175,7 @@ function Settings() {
           </div>
 
           {/* Chunking strategy selector with FixedSize/Semantic parameters */}
-          <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+          <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
             <h2 className="text-sm font-bold text-gray-200 mb-2">
               Chunking Strategy
             </h2>
@@ -277,7 +277,7 @@ function Settings() {
           </div>
 
           {/* Prompt template selector: Basic, Instructed, LanguageAware */}
-          <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6">
+          <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 border border-gray-700">
             <h2 className="text-sm font-bold text-gray-200 mb-2">
               Prompt Template
             </h2>
@@ -363,14 +363,14 @@ function Settings() {
               <button
                 onClick={handleDiscard}
                 disabled={isSaving}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg transition-colors disabled:opacity-50 border border-gray-700"
               >
                 Discard
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 border border-gray-700"
               >
                 {isSaving ? "Saving..." : "Save Changes"}
               </button>

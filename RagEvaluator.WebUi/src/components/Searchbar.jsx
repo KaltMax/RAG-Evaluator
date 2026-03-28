@@ -16,9 +16,9 @@ function Searchbar({ onSearch, isLoading }) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 space-y-4">
+      <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-6 space-y-4 border border-gray-700">
         {/* Question input, top-k selector, language selector, and search button */}
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="flex-1">
             <label
               htmlFor="question"
@@ -79,7 +79,7 @@ function Searchbar({ onSearch, isLoading }) {
             </select>
           </div>
 
-          <div className="flex items-end">
+          <div>
             <button
               type="submit"
               disabled={isLoading || question.trim().length < 3}

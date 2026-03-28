@@ -14,6 +14,7 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public required ExperimentProgress Progress { get; set; }
 
         // Configuration snapshot
+        public required string ChatModel { get; set; }
         public required string EmbeddingModel { get; set; }
         public required string ChunkingStrategy { get; set; }
         public required string PromptTemplate { get; set; }

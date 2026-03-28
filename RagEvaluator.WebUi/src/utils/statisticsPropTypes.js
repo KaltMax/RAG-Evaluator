@@ -45,6 +45,7 @@ export const experimentSummaryShape = PropTypes.shape({
   id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   status: PropTypes.string.isRequired,
+  chatModel: PropTypes.string,
   embeddingModel: PropTypes.string,
   chunkingStrategy: PropTypes.string,
   promptTemplate: PropTypes.string,

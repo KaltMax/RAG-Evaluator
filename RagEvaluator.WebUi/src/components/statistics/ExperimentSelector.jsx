@@ -33,7 +33,7 @@ function ExperimentSelector({
   };
 
   return (
-    <div className="bg-[#2D2D2D] rounded-lg p-6">
+    <div className="bg-[#2D2D2D] rounded-lg p-6 border border-gray-700">
       {/* Header with Select All / Clear controls */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-white">Select Experiments</h2>
@@ -89,20 +89,32 @@ function ExperimentSelector({
                 </div>
                 <p className="text-xs text-gray-400 truncate">
                   <span className="font-semibold text-gray-300">
-                    Embedding:
+                    Chat Model:
+                  </span>{" "}
+                  {exp.chatModel}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  <span className="font-semibold text-gray-300">
+                    Embedding Model:
                   </span>{" "}
                   {exp.embeddingModel}
                 </p>
                 <p className="text-xs text-gray-400 truncate">
-                  <span className="font-semibold text-gray-300">Chunking:</span>{" "}
+                  <span className="font-semibold text-gray-300">
+                    Chunking Strategy:
+                  </span>{" "}
                   {exp.chunkingStrategy}
                 </p>
                 <p className="text-xs text-gray-400 truncate">
-                  <span className="font-semibold text-gray-300">Prompt:</span>{" "}
+                  <span className="font-semibold text-gray-300">
+                    Prompt Template:
+                  </span>{" "}
                   {exp.promptTemplate}
                 </p>
                 <p className="text-xs text-gray-400 truncate">
-                  <span className="font-semibold text-gray-300">Repeat:</span>{" "}
+                  <span className="font-semibold text-gray-300">
+                    Repeat Count:
+                  </span>{" "}
                   {exp.repeatCount}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
