@@ -157,7 +157,7 @@ function QueryHistory() {
   );
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       {/* Page header with title and refresh button */}
       <div className="flex justify-between items-center mb-8">
         <div>

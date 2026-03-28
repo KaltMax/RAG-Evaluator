@@ -107,7 +107,7 @@ function Settings() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-6xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto">
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-12 flex justify-center">
           <ArrowPathIcon className="w-8 h-8 text-gray-400 animate-spin" />
         </div>
@@ -117,7 +117,7 @@ function Settings() {
 
   if (error) {
     return (
-      <div className="w-full max-w-6xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto">
         <div className="bg-[#2D2D2D] rounded-lg shadow-lg p-12 text-center">
           <p className="text-red-400 mb-4">{error}</p>
           <button
@@ -132,7 +132,7 @@ function Settings() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       {/* Page header with title and refresh button */}
       <div className="flex justify-between items-center mb-8">
         <div>

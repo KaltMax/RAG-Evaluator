@@ -123,8 +123,8 @@ function UploadDocuments() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      <div className="text-center mb-8">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Upload Documents</h1>
         <p className="text-gray-400">
           Upload PDF documents for RAG processing (max 20 files)
