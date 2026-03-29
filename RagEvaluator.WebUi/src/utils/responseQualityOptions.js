@@ -44,6 +44,17 @@ export const getResponseQualityOption = (value) => {
 };
 
 /**
+ * Quality segments for charts and statistics displays.
+ * Maps to backend ResponseQuality enum keys with hex colors.
+ */
+export const QUALITY_SEGMENTS = [
+  { key: "CorrectAndComplete", label: "Correct", color: "#22c55e" },
+  { key: "VagueOrIncomplete", label: "Vague", color: "#eab308" },
+  { key: "Incorrect", label: "Incorrect", color: "#f97316" },
+  { key: "Hallucinated", label: "Hallucinated", color: "#ef4444" },
+];
+
+/**
  * Get text color class for response quality value
  * @param {number|null|undefined} value - The response quality value (0-3)
  * @returns {string} Tailwind text color class

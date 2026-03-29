@@ -9,13 +9,7 @@ import {
 } from "recharts";
 import { PropTypes } from "prop-types";
 import { experimentDetailShape } from "../../utils/statisticsPropTypes";
-
-const QUALITY_SEGMENTS = [
-  { key: "CorrectAndComplete", label: "Correct", color: "#22c55e" },
-  { key: "VagueOrIncomplete", label: "Vague", color: "#eab308" },
-  { key: "Incorrect", label: "Incorrect", color: "#f97316" },
-  { key: "Hallucinated", label: "Hallucinated", color: "#ef4444" },
-];
+import { QUALITY_SEGMENTS } from "../../utils/responseQualityOptions";
 
 const legendFormatter = (value) => (
   <span className="text-gray-300 text-xs">{value}</span>

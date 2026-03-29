@@ -12,6 +12,28 @@ import {
   experimentDetailShape,
   colorEntryShape,
 } from "../../utils/statisticsPropTypes";
+import { QUALITY_SEGMENTS } from "../../utils/responseQualityOptions";
+
+function formatQualityDistribution(dist) {
+  if (!dist) return <span className="text-gray-500">N/A</span>;
+  const parts = QUALITY_SEGMENTS.filter((seg) => (dist[seg.key] ?? 0) > 0);
+  if (parts.length === 0) return <span className="text-gray-500">N/A</span>;
+  return (
+    <span className="flex flex-wrap justify-center gap-x-2 gap-y-0.5">
+      {parts.map((seg) => (
+        <span key={seg.key} className="flex items-center gap-0.5">
+          <span
+            className="w-1.5 h-1.5 rounded-full inline-block"
+            style={{ backgroundColor: seg.color }}
+          />
+          <span style={{ color: seg.color }}>
+            {dist[seg.key]}× {seg.label}
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 function getUniqueQuestions(selectedExperiments) {
   const questionMap = new Map();
@@ -159,6 +181,51 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
                           </tr>
                         );
                       })}
+                      {(() => {
+                        const correctCounts = selectedExperiments.map((exp) => {
+                          const qg = getQueryGroupForQuestion(exp, question);
+                          const dist = qg?.metrics?.responseQualityDistribution;
+                          return dist?.CorrectAndComplete ?? null;
+                        });
+                        const bestQualityIdx = findBestIndex(
+                          correctCounts,
+                          true,
+                        );
+
+                        return (
+                          <tr className="border-b border-gray-800">
+                            <td className="text-gray-300 font-medium py-1.5 pr-3">
+                              Response Quality
+                            </td>
+                            {selectedExperiments.map((exp, i) => {
+                              const qg = getQueryGroupForQuestion(
+                                exp,
+                                question,
+                              );
+                              const isBest = i === bestQualityIdx;
+                              return (
+                                <td
+                                  key={exp.id}
+                                  className={`text-center py-1.5 px-2 text-[10px] ${
+                                    isBest ? "font-bold" : ""
+                                  }`}
+                                  style={
+                                    isBest
+                                      ? {
+                                          borderLeft: `3px solid ${colorMap[exp.id]?.hex}`,
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  {formatQualityDistribution(
+                                    qg?.metrics?.responseQualityDistribution,
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })()}
                     </tbody>
                   </table>
                 </div>
