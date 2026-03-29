@@ -1,7 +1,7 @@
 import { PropTypes } from "prop-types";
 import {
   METRICS,
-  findBestIndex,
+  findBestIndices,
   formatCell,
   getMeanValue,
 } from "../../utils/metricHelpers";
@@ -52,7 +52,7 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
               const means = selectedExperiments.map((exp) =>
                 getMeanValue(metric, exp.overallMetrics),
               );
-              const bestIdx = findBestIndex(means, metric.higher);
+              const bestIdx = findBestIndices(means, metric.higher);
 
               return (
                 <tr key={metric.key} className="border-b border-gray-800">
@@ -64,7 +64,7 @@ function OverallComparisonTable({ selectedExperiments, colorMap }) {
                       metric.key === "languageSwitchingRate"
                         ? exp.overallMetrics?.languageSwitchingRate
                         : exp.overallMetrics?.[metric.key];
-                    const isBest = i === bestIdx;
+                    const isBest = bestIdx.has(i);
                     return (
                       <td
                         key={exp.id}

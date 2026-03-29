@@ -10,17 +10,23 @@ export const METRICS = [
   { key: "languageSwitchingRate", label: "Lang. Switching", higher: false },
 ];
 
-export function findBestIndex(values, higher) {
-  let bestIdx = -1;
+export function findBestIndices(values, higher) {
   let bestVal = higher ? -Infinity : Infinity;
+  const indices = new Set();
+  const round = (v) => Math.round(v * 1e6);
   values.forEach((v, i) => {
     if (v == null) return;
-    if (higher ? v > bestVal : v < bestVal) {
+    const rv = round(v);
+    const rb = round(bestVal);
+    if (higher ? rv > rb : rv < rb) {
       bestVal = v;
-      bestIdx = i;
+      indices.clear();
+      indices.add(i);
+    } else if (rv === rb) {
+      indices.add(i);
     }
   });
-  return bestIdx;
+  return indices;
 }
 
 export function formatCell(metric, value) {

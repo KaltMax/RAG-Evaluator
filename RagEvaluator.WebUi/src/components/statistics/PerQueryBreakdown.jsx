@@ -4,7 +4,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { formatLanguage } from "../../utils/formatLanguage";
 import {
   METRICS,
-  findBestIndex,
+  findBestIndices,
   formatCell,
   getMeanValue,
 } from "../../utils/metricHelpers";
@@ -136,7 +136,7 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
                           const qg = getQueryGroupForQuestion(exp, question);
                           return getMeanValue(metric, qg?.metrics);
                         });
-                        const bestIdx = findBestIndex(means, metric.higher);
+                        const bestIdx = findBestIndices(means, metric.higher);
 
                         return (
                           <tr
@@ -155,7 +155,7 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
                                 metric.key === "languageSwitchingRate"
                                   ? qg?.metrics?.languageSwitchingRate
                                   : qg?.metrics?.[metric.key];
-                              const isBest = i === bestIdx;
+                              const isBest = bestIdx.has(i);
                               return (
                                 <td
                                   key={exp.id}
@@ -187,7 +187,7 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
                           const dist = qg?.metrics?.responseQualityDistribution;
                           return dist?.CorrectAndComplete ?? null;
                         });
-                        const bestQualityIdx = findBestIndex(
+                        const bestQualityIdx = findBestIndices(
                           correctCounts,
                           true,
                         );
@@ -202,7 +202,7 @@ function PerQueryBreakdown({ selectedExperiments, colorMap }) {
                                 exp,
                                 question,
                               );
-                              const isBest = i === bestQualityIdx;
+                              const isBest = bestQualityIdx.has(i);
                               return (
                                 <td
                                   key={exp.id}

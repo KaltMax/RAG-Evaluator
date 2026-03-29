@@ -1,34 +1,38 @@
 import { describe, it, expect } from "vitest";
 import {
-  findBestIndex,
+  findBestIndices,
   formatCell,
   getMeanValue,
   METRICS,
 } from "../../src/utils/metricHelpers";
 
-describe("findBestIndex", () => {
+describe("findBestIndices", () => {
   it("finds the highest value index when higher is true", () => {
-    expect(findBestIndex([0.5, 0.9, 0.7], true)).toBe(1);
+    expect(findBestIndices([0.5, 0.9, 0.7], true)).toEqual(new Set([1]));
   });
 
   it("finds the lowest value index when higher is false", () => {
-    expect(findBestIndex([300, 100, 200], false)).toBe(1);
+    expect(findBestIndices([300, 100, 200], false)).toEqual(new Set([1]));
   });
 
-  it("returns -1 for all null values", () => {
-    expect(findBestIndex([null, null, null], true)).toBe(-1);
+  it("returns empty set for all null values", () => {
+    expect(findBestIndices([null, null, null], true)).toEqual(new Set());
   });
 
   it("skips null values", () => {
-    expect(findBestIndex([null, 0.5, null], true)).toBe(1);
+    expect(findBestIndices([null, 0.5, null], true)).toEqual(new Set([1]));
   });
 
   it("handles single element", () => {
-    expect(findBestIndex([0.8], true)).toBe(0);
+    expect(findBestIndices([0.8], true)).toEqual(new Set([0]));
   });
 
   it("handles empty array", () => {
-    expect(findBestIndex([], true)).toBe(-1);
+    expect(findBestIndices([], true)).toEqual(new Set());
+  });
+
+  it("returns all indices for tied values", () => {
+    expect(findBestIndices([0.9, 0.9, 0.5], true)).toEqual(new Set([0, 1]));
   });
 });
 

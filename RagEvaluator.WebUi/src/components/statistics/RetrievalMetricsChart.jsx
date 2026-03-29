@@ -71,6 +71,7 @@ function RetrievalMetricsChart({
   colorMap,
   title,
   metricsAccessor,
+  showErrorBars = true,
 }) {
   const accessor = metricsAccessor || defaultAccessor;
   const data = RETRIEVAL_METRICS.map((metric) => {
@@ -81,7 +82,7 @@ function RetrievalMetricsChart({
       const stdDev = val?.stdDev ?? 0;
       row[exp.id] = mean;
       row[`${exp.id}_err`] =
-        stdDev > 0
+        showErrorBars && stdDev > 0
           ? [Math.min(stdDev, mean), Math.min(stdDev, 1 - mean)]
           : null;
     });
@@ -138,6 +139,7 @@ RetrievalMetricsChart.propTypes = {
   colorMap: PropTypes.objectOf(colorEntryShape).isRequired,
   title: PropTypes.string,
   metricsAccessor: PropTypes.func,
+  showErrorBars: PropTypes.bool,
 };
 
 export default RetrievalMetricsChart;

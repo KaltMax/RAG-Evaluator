@@ -50,6 +50,7 @@ function LanguageComparison({ selectedExperiments, colorMap }) {
           colorMap={colorMap}
           title="English Queries"
           metricsAccessor={enAccessor}
+          showErrorBars={false}
         />
       )}
       {hasDe && (
@@ -58,6 +59,7 @@ function LanguageComparison({ selectedExperiments, colorMap }) {
           colorMap={colorMap}
           title="German Queries"
           metricsAccessor={deAccessor}
+          showErrorBars={false}
         />
       )}
     </div>
