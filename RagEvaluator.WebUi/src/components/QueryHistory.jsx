@@ -31,6 +31,8 @@ function QueryHistory() {
   const queryRefs = useRef({});
   const [sortKey, setSortKey] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
+  const [filterExperiment, setFilterExperiment] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
 
   const fetchQueries = async () => {
     setIsLoading(true);
@@ -147,8 +149,20 @@ function QueryHistory() {
     }
   };
 
+  const experimentNames = [
+    ...new Set(queries.map((q) => q.experimentName).filter(Boolean)),
+  ].sort();
+
+  const filteredQueries = queries.filter((q) => {
+    if (filterExperiment !== "all" && q.experimentName !== filterExperiment)
+      return false;
+    if (filterStatus === "pending" && !isPending(q)) return false;
+    if (filterStatus === "evaluated" && isPending(q)) return false;
+    return true;
+  });
+
   const sortedQueries = sortByKey(
-    queries.map((q) => ({
+    filteredQueries.map((q) => ({
       ...q,
       status: isPending(q) ? "Pending" : "Evaluated",
     })),
@@ -197,33 +211,61 @@ function QueryHistory() {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Sort controls */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-300 uppercase tracking-wider">
-              Sort by
-            </span>
-            {sortOptions.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => handleSort(key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors select-none ${
-                  sortKey === key
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
-                    : "bg-[#2D2D2D] text-gray-400 border border-gray-700 hover:border-gray-500"
-                }`}
+          {/* Filter and sort controls */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-300 uppercase tracking-wider">
+                Filter
+              </span>
+              <select
+                value={filterExperiment}
+                onChange={(e) => setFilterExperiment(e.target.value)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2D2D2D] text-gray-300 border border-gray-700 hover:border-gray-500 transition-colors"
               >
-                {label}
-                {sortKey === key ? (
-                  sortDirection === "asc" ? (
-                    <ChevronUpIcon className="w-3 h-3 inline ml-1" />
+                <option value="all">All Experiments</option>
+                {experimentNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2D2D2D] text-gray-300 border border-gray-700 hover:border-gray-500 transition-colors"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="evaluated">Evaluated</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-300 uppercase tracking-wider">
+                Sort by
+              </span>
+              {sortOptions.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => handleSort(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors select-none ${
+                    sortKey === key
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/40"
+                      : "bg-[#2D2D2D] text-gray-400 border border-gray-700 hover:border-gray-500"
+                  }`}
+                >
+                  {label}
+                  {sortKey === key ? (
+                    sortDirection === "asc" ? (
+                      <ChevronUpIcon className="w-3 h-3 inline ml-1" />
+                    ) : (
+                      <ChevronDownIcon className="w-3 h-3 inline ml-1" />
+                    )
                   ) : (
-                    <ChevronDownIcon className="w-3 h-3 inline ml-1" />
-                  )
-                ) : (
-                  <ChevronUpDownIcon className="w-3 h-3 inline ml-1" />
-                )}
-              </button>
-            ))}
+                    <ChevronUpDownIcon className="w-3 h-3 inline ml-1" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {sortedQueries.map((query) => {
@@ -502,7 +544,8 @@ function QueryHistory() {
       {/* Query count footer */}
       {queries.length > 0 && (
         <div className="text-sm text-gray-500 text-center">
-          Showing {queries.length} quer{queries.length === 1 ? "y" : "ies"}
+          Showing {sortedQueries.length} of {queries.length} quer
+          {queries.length === 1 ? "y" : "ies"}
         </div>
       )}
     </div>
