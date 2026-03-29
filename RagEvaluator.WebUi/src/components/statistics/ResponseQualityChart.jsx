@@ -22,7 +22,7 @@ function buildChartData(selectedExperiments) {
     const row = { name: exp.name };
     QUALITY_SEGMENTS.forEach((seg) => {
       const count = dist?.[seg.key] ?? 0;
-      row[seg.key] = total > 0 ? (count / total) * 100 : 0;
+      row[seg.key] = total > 0 ? Math.round((count / total) * 100) : 0;
       row[`${seg.key}_count`] = count;
     });
     row._total = total;
