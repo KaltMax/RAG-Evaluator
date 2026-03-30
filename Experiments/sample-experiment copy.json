@@ -1,0 +1,16 @@
+{
+  "Name": "Sample Experiment",
+  "RepeatCount": 5,
+  "Queries": [
+    {
+      "Question": "Was ist der Unterschied zwischen Docker Containern und virtuellen Maschinen?",
+      "Language": "de",
+      "TopK": 10,
+      "RelevantDocumentNames": [
+        "SWEN3_11_Docker_Docker-Compose.pdf",
+        "IAC_05_Docker_Swarm.pdf",
+        "IAC_01_Cloud_Computing_Recap.pdf"
+      ]
+    }
+  ]
+}

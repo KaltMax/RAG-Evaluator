@@ -20,7 +20,7 @@ namespace RagEvaluator.Test.InfrastructureTest
         [Fact]
         public async Task CreateDocumentChunksAsync_WithSimilarLines_ShouldGroupIntoSingleChunk()
         {
-            // Arrange: all consecutive similarities above threshold
+            // Arrange: all similarities identical -> nothing falls below percentile cutoff
             var chunker = CreateChunker(similarityThreshold: 0.5);
             var text = "Line one\nLine two\nLine three";
 
@@ -39,7 +39,7 @@ namespace RagEvaluator.Test.InfrastructureTest
         [Fact]
         public async Task CreateDocumentChunksAsync_WithDissimilarLines_ShouldSplitAtBoundary()
         {
-            // Arrange: lines 1-2 similar, line 3 dissimilar
+            // Arrange: similarities [1.0, 0.0] → 0.0 falls below percentile cutoff → split
             var chunker = CreateChunker(similarityThreshold: 0.5);
             var text = "Topic A first\nTopic A second\nTopic B first";
 
@@ -177,8 +177,7 @@ namespace RagEvaluator.Test.InfrastructureTest
                 PromptInstructed = "",
                 PromptLanguageAwareEn = "",
                 PromptLanguageAwareDe = "",
-                ChunkSize = chunkSize,
-                ChunkOverlap = 200
+                ChunkSize = chunkSize
             };
             return new SemanticTextChunker(_embeddingService, config);
         }

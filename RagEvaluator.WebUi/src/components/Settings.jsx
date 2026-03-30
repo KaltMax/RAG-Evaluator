@@ -259,7 +259,7 @@ function Settings() {
                       type="number"
                       min="0"
                       max="1"
-                      step="0.05"
+                      step="0.01"
                       value={draft.similarityThreshold}
                       onChange={(e) =>
                         setDraft({

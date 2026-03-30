@@ -24,15 +24,17 @@ namespace RagEvaluator.Infrastructure.Services
                 .ToList();
 
             if (lines.Count == 0)
-            {
                 return new List<string>();
-            }
             if (lines.Count == 1)
-            {
                 return new List<string> { lines[0] };
-            }
-                
-            // Embed each line
+
+            var embeddings = await EmbedLinesAsync(lines, cancellationToken);
+            var similarities = CalculateConsecutiveSimilarities(embeddings);
+            return BuildChunks(lines, similarities);
+        }
+
+        private async Task<float[][]> EmbedLinesAsync(List<string> lines, CancellationToken cancellationToken)
+        {
             var embeddings = new float[lines.Count][];
             for (var i = 0; i < lines.Count; i++)
             {
@@ -40,24 +42,31 @@ namespace RagEvaluator.Infrastructure.Services
                 embeddings[i] = await _embeddingService.GenerateDocumentEmbeddingAsync(
                     lines[i], cancellationToken);
             }
+            return embeddings;
+        }
 
-            // Calculate cosine similarity between consecutive lines
-            var similarities = new double[lines.Count - 1];
-            for (var i = 0; i < lines.Count - 1; i++)
+        private double[] CalculateConsecutiveSimilarities(float[][] embeddings)
+        {
+            var similarities = new double[embeddings.Length - 1];
+            for (var i = 0; i < similarities.Length; i++)
             {
                 similarities[i] = CosineSimilarity(embeddings[i], embeddings[i + 1]);
             }
+            return similarities;
+        }
 
-            // Build chunks by splitting at low-similarity boundaries
+        private List<string> BuildChunks(List<string> lines, double[] similarities)
+        {
+            var cutoff = CalculatePercentileCutoff(similarities);
             var chunks = new List<string>();
-            var currentLines = new List<string> {lines[0]};
+            var currentLines = new List<string> { lines[0] };
             var currentLength = lines[0].Length;
 
             for (var i = 1; i < lines.Count; i++)
             {
                 var candidateLength = currentLength + 1 + lines[i].Length;
 
-                if (similarities[i - 1] < _config.SimilarityThreshold || candidateLength > _config.ChunkSize)
+                if (similarities[i - 1] < cutoff || candidateLength > _config.ChunkSize)
                 {
                     chunks.Add(string.Join("\n", currentLines));
                     currentLines = new List<string>();
@@ -65,24 +74,24 @@ namespace RagEvaluator.Infrastructure.Services
                 }
 
                 currentLines.Add(lines[i]);
-
-                if (currentLength > 0)
-                {
-                    currentLength += 1 + lines[i].Length; // +1 for '\n' separator
-                }
-                else
-                {
-                    currentLength = lines[i].Length;
-                }
+                currentLength = currentLength > 0
+                    ? currentLength + 1 + lines[i].Length
+                    : lines[i].Length;
             }
 
-            // Add the last chunk
             if (currentLines.Count > 0)
             {
                 chunks.Add(string.Join("\n", currentLines));
             }
 
             return chunks;
+        }
+
+        private double CalculatePercentileCutoff(double[] similarities)
+        {
+            var sorted = similarities.OrderBy(s => s).ToArray();
+            var index = (int)(sorted.Length * _config.SimilarityThreshold);
+            return sorted[Math.Min(index, sorted.Length - 1)];
         }
 
         private static double CosineSimilarity(float[] a, float[] b)
