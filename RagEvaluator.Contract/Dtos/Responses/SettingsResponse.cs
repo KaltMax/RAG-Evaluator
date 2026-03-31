@@ -14,6 +14,7 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public int ChunkSize { get; set; }
         public int ChunkOverlap { get; set; }
         public double SimilarityThreshold { get; set; }
+        public int MinChunkSize { get; set; }
 
         // Available options
         public required List<string> AvailableEmbeddingModels { get; set; }

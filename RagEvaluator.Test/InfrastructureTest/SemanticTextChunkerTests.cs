@@ -177,7 +177,8 @@ namespace RagEvaluator.Test.InfrastructureTest
                 PromptInstructed = "",
                 PromptLanguageAwareEn = "",
                 PromptLanguageAwareDe = "",
-                ChunkSize = chunkSize
+                ChunkSize = chunkSize,
+                MinChunkSize = 0
             };
             return new SemanticTextChunker(_embeddingService, config);
         }

@@ -20,6 +20,7 @@ namespace RagEvaluator.Contract.Dtos.Responses
         public int ChunkSize { get; set; }
         public int ChunkOverlap { get; set; }
         public double SimilarityThreshold { get; set; }
+        public int MinChunkSize { get; set; }
         public required string PromptTemplate { get; set; }
 
         // Progress

@@ -386,7 +386,7 @@ RAG-Evaluator/
 - `PdfPigLoader` - PDF text extraction with geometric filtering to remove headers/footers and adaptive gap detection (2.2x average word height threshold) to preserve paragraph structure, implements `IPdfLoader`
 - `LocalFileStorageService` - Local file system storage with configurable directory, implements `IFileStorageService`
 - `FixedSizeTextChunker` - Character-based text chunking with configurable size and overlap, implements `ITextChunker`
-- `SemanticTextChunker` - Embedding-based chunking that splits at topic boundaries using percentile-based breakpoint detection on consecutive line embedding similarities, implements `ITextChunker`
+- `SemanticTextChunker` - Embedding-based chunking that splits at topic boundaries using percentile-based breakpoint detection on consecutive line embedding similarities, with a MinChunkSize guardrail to prevent tiny fragments, implements `ITextChunker`
 
 **Repositories**:
 
@@ -428,7 +428,7 @@ RAG-Evaluator/
          → 7. Join pages into single content string
          → 8. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
                • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
-               • semantic: Percentile-based splitting at topic boundaries (SimilarityThreshold = breakpoint percentile, ChunkSize as max cap)
+               • semantic: Percentile-based splitting at topic boundaries (SimilarityThreshold = breakpoint percentile, MinChunkSize to prevent tiny fragments, ChunkSize as max cap)
          → 9. For each chunk:
             → 10. IEmbeddingService.GenerateDocumentEmbeddingAsync(chunk)
             → 11. Create DocumentChunk entity with embedding, strategy, model info

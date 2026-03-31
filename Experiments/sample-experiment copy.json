@@ -3,13 +3,13 @@
   "RepeatCount": 5,
   "Queries": [
     {
-      "Question": "Was ist der Unterschied zwischen Docker Containern und virtuellen Maschinen?",
-      "Language": "de",
+      "Question": "How do database transactions ensure consistency in distributed systems?",
+      "Language": "en",
       "TopK": 10,
       "RelevantDocumentNames": [
-        "SWEN3_11_Docker_Docker-Compose.pdf",
-        "IAC_05_Docker_Swarm.pdf",
-        "IAC_01_Cloud_Computing_Recap.pdf"
+        "DM_12_DBS_Transactions.pdf",
+        "SWEN3_17_Distributed_Transactions_Replication.pdf",
+        "SWEN3_23_Persistence_Technologies_NoSQL.pdf"
       ]
     }
   ]

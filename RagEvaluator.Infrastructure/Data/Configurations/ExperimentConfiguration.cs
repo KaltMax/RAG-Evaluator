@@ -56,6 +56,9 @@ namespace RagEvaluator.Infrastructure.Data.Configurations
             builder.Property(e => e.SimilarityThreshold)
                 .IsRequired();
 
+            builder.Property(e => e.MinChunkSize)
+                .IsRequired();
+
             builder.Property(e => e.PromptTemplate)
                 .IsRequired()
                 .HasMaxLength(100);

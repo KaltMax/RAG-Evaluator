@@ -22,6 +22,7 @@ namespace RagEvaluator.Domain.Entities
         public int ChunkSize { get; set; }
         public int ChunkOverlap { get; set; }
         public double SimilarityThreshold { get; set; }
+        public int MinChunkSize { get; set; }
         public string PromptTemplate { get; set; } = string.Empty;
 
         // Progress tracking

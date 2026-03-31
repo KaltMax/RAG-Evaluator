@@ -40,7 +40,8 @@ function Settings() {
       draft.promptTemplate !== settings.promptTemplate ||
       draft.chunkSize !== settings.chunkSize ||
       draft.chunkOverlap !== settings.chunkOverlap ||
-      draft.similarityThreshold !== settings.similarityThreshold
+      draft.similarityThreshold !== settings.similarityThreshold ||
+      draft.minChunkSize !== settings.minChunkSize
     );
   };
 
@@ -58,6 +59,8 @@ function Settings() {
       patch.chunkOverlap = draft.chunkOverlap;
     if (draft.similarityThreshold !== settings.similarityThreshold)
       patch.similarityThreshold = draft.similarityThreshold;
+    if (draft.minChunkSize !== settings.minChunkSize)
+      patch.minChunkSize = draft.minChunkSize;
     return patch;
   };
 
@@ -68,7 +71,8 @@ function Settings() {
       draft.chunkingStrategy !== settings.chunkingStrategy ||
       draft.chunkSize !== settings.chunkSize ||
       draft.chunkOverlap !== settings.chunkOverlap ||
-      draft.similarityThreshold !== settings.similarityThreshold
+      draft.similarityThreshold !== settings.similarityThreshold ||
+      draft.minChunkSize !== settings.minChunkSize
     );
   };
 
@@ -197,7 +201,7 @@ function Settings() {
             </div>
             {(draft.chunkingStrategy === "FixedSize" ||
               draft.chunkingStrategy === "Semantic") && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`grid gap-4 ${draft.chunkingStrategy === "Semantic" ? "grid-cols-3" : "grid-cols-2"}`}>
                 <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
                   <label
                     htmlFor="chunkSize"
@@ -266,6 +270,31 @@ function Settings() {
                           ...draft,
                           similarityThreshold:
                             Number.parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"
+                    />
+                  </div>
+                )}
+                {draft.chunkingStrategy === "Semantic" && (
+                  <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
+                    <label
+                      htmlFor="minChunkSize"
+                      className="text-gray-400 text-xs mb-1 block"
+                    >
+                      Min Chunk Size
+                    </label>
+                    <input
+                      id="minChunkSize"
+                      type="number"
+                      min="0"
+                      max="1000"
+                      value={draft.minChunkSize}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          minChunkSize:
+                            Number.parseInt(e.target.value) || 0,
                         })
                       }
                       className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"

@@ -59,6 +59,7 @@ namespace RagEvaluator.Application.Mappers
                 ChunkSize = experiment.ChunkSize,
                 ChunkOverlap = experiment.ChunkOverlap,
                 SimilarityThreshold = experiment.SimilarityThreshold,
+                MinChunkSize = experiment.MinChunkSize,
                 PromptTemplate = experiment.PromptTemplate,
                 Progress = new ExperimentProgress
                 {

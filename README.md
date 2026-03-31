@@ -150,7 +150,7 @@ Once running, the API is available at `http://localhost:5000`:
 
 ### Settings
 - `GET /api/settings` - Get current runtime RAG configuration and available options
-- `PATCH /api/settings` - Update runtime RAG configuration (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold)
+- `PATCH /api/settings` - Update runtime RAG configuration (embedding model, chunking strategy, prompt template, chunk size/overlap, similarity threshold, min chunk size)
 
 ### Health
 - `GET /api/health` - Check if RAG services (Ollama) are ready

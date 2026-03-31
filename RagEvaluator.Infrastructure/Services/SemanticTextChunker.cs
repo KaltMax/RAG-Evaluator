@@ -66,7 +66,7 @@ namespace RagEvaluator.Infrastructure.Services
             {
                 var candidateLength = currentLength + 1 + lines[i].Length;
 
-                if (similarities[i - 1] < cutoff || candidateLength > _config.ChunkSize)
+                if ((similarities[i - 1] < cutoff && currentLength >= _config.MinChunkSize) || candidateLength > _config.ChunkSize)
                 {
                     chunks.Add(string.Join("\n", currentLines));
                     currentLines = new List<string>();

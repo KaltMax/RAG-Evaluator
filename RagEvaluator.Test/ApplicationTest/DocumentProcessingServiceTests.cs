@@ -342,7 +342,8 @@ namespace RagEvaluator.Test.ApplicationTest
                 PromptLanguageAwareDe = "Du bist ein hilfreicher Assistent.",
                 ChunkSize = 1000,
                 ChunkOverlap = 200,
-                SimilarityThreshold = 0.5
+                SimilarityThreshold = 0.5,
+                MinChunkSize = 200
             };
         }
 

@@ -147,7 +147,8 @@ namespace RagEvaluator.Test.InfrastructureTest
                 PromptInstructed = "",
                 PromptLanguageAwareEn = "",
                 PromptLanguageAwareDe = "",
-                SimilarityThreshold = 0.5
+                SimilarityThreshold = 0.5,
+                MinChunkSize = 200
             };
             return new FixedSizeTextChunker(config);
         }

@@ -76,6 +76,7 @@ namespace RagEvaluator.Application.Services
                 ChunkSize = _config.ChunkSize,
                 ChunkOverlap = _config.ChunkOverlap,
                 SimilarityThreshold = _config.SimilarityThreshold,
+                MinChunkSize = _config.MinChunkSize,
                 PromptTemplate = _config.PromptTemplate.ToString()
             };
 

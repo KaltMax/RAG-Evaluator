@@ -63,7 +63,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 
 - **Settings** - Configure RAG system parameters at runtime
   - Embedding model selection from available models
-  - Chunking strategy selection (FixedSize with chunk size/overlap, Semantic with similarity threshold)
+  - Chunking strategy selection (FixedSize with chunk size/overlap, Semantic with similarity threshold and min chunk size)
   - Prompt template selection (Basic, Instructed, LanguageAware) with prompt text preview
   - Draft/save/discard workflow with dirty state detection
   - Partial update API (only changed fields sent)

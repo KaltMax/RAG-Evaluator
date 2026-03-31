@@ -67,7 +67,11 @@ namespace RagEvaluator.Application.Services
             }
             if (request.SimilarityThreshold is not null)
             {
-                _config.SimilarityThreshold = request.SimilarityThreshold.Value; 
+                _config.SimilarityThreshold = request.SimilarityThreshold.Value;
+            }
+            if (request.MinChunkSize is not null)
+            {
+                _config.MinChunkSize = request.MinChunkSize.Value;
             }
             if (embeddingModelChanged)
             { 
@@ -87,6 +91,7 @@ namespace RagEvaluator.Application.Services
                 ChunkSize = _config.ChunkSize,
                 ChunkOverlap = _config.ChunkOverlap,
                 SimilarityThreshold = _config.SimilarityThreshold,
+                MinChunkSize = _config.MinChunkSize,
                 PromptBasicText = _config.PromptBasic,
                 PromptInstructedText = _config.PromptInstructed,
                 PromptLanguageAwareEnText = _config.PromptLanguageAwareEn,

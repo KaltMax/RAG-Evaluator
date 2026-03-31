@@ -21,5 +21,8 @@ namespace RagEvaluator.Contract.Dtos.Requests
 
         [Range(0.0, 1.0)]
         public double? SimilarityThreshold { get; set; }
+
+        [Range(0, 1000)]
+        public int? MinChunkSize { get; set; }
     }
 }
