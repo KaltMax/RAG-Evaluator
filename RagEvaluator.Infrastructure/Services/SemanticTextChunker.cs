@@ -11,6 +11,11 @@ namespace RagEvaluator.Infrastructure.Services
         private readonly IEmbeddingService _embeddingService;
         private readonly RagConfiguration _config;
 
+        /// <summary>
+        /// Creates a new SemanticTextChunker with the specified embedding service and configuration.
+        /// </summary>
+        /// <param name="embeddingService"></param>
+        /// <param name="config"></param>
         public SemanticTextChunker(IEmbeddingService embeddingService, RagConfiguration config)
         {
             _embeddingService = embeddingService;
@@ -24,9 +29,13 @@ namespace RagEvaluator.Infrastructure.Services
                 .ToList();
 
             if (lines.Count == 0)
+            {
                 return new List<string>();
+            }
             if (lines.Count == 1)
+            {
                 return new List<string> { lines[0] };
+            }
 
             var embeddings = await EmbedLinesAsync(lines, cancellationToken);
             var similarities = CalculateConsecutiveSimilarities(embeddings);
@@ -74,9 +83,14 @@ namespace RagEvaluator.Infrastructure.Services
                 }
 
                 currentLines.Add(lines[i]);
-                currentLength = currentLength > 0
-                    ? currentLength + 1 + lines[i].Length
-                    : lines[i].Length;
+                if (currentLength > 0)
+                {
+                    currentLength = currentLength + 1 + lines[i].Length;
+                }
+                else
+                {
+                    currentLength = lines[i].Length;
+                }
             }
 
             if (currentLines.Count > 0)
