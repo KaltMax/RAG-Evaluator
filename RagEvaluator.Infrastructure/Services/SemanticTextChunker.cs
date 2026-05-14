@@ -73,23 +73,22 @@ namespace RagEvaluator.Infrastructure.Services
 
             for (var i = 1; i < lines.Count; i++)
             {
+                var isSemanticBreak = similarities[i - 1] < cutoff;
                 var candidateLength = currentLength + 1 + lines[i].Length;
 
-                if ((similarities[i - 1] < cutoff && currentLength >= _config.MinChunkSize) || candidateLength > _config.ChunkSize)
+                var shouldBreak = (isSemanticBreak && currentLength >= _config.MinChunkSize)
+                                  || candidateLength > _config.ChunkSize;
+
+                if (shouldBreak)
                 {
                     chunks.Add(string.Join("\n", currentLines));
-                    currentLines = new List<string>();
-                    currentLength = 0;
-                }
-
-                currentLines.Add(lines[i]);
-                if (currentLength > 0)
-                {
-                    currentLength = currentLength + 1 + lines[i].Length;
+                    currentLines = new List<string> { lines[i] };
+                    currentLength = lines[i].Length;
                 }
                 else
                 {
-                    currentLength = lines[i].Length;
+                    currentLines.Add(lines[i]);
+                    currentLength = candidateLength;
                 }
             }
 
