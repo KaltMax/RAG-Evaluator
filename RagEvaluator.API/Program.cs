@@ -1,11 +1,13 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using RagEvaluator.API.Middleware;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Application.Workers;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Infrastructure.Data;
 using RagEvaluator.Infrastructure.Data.Repositories;
 using RagEvaluator.Infrastructure.Services;
@@ -21,12 +23,12 @@ namespace RagEvaluator.API
             // Add services to the container.
 
             // FileStorage Configuration
-            var fileStorageConfig = new Contract.Configurations.FileStorageConfiguration();
+            var fileStorageConfig = new FileStorageConfiguration();
             builder.Configuration.GetSection("FileStorageConfiguration").Bind(fileStorageConfig);
             builder.Services.AddSingleton(fileStorageConfig);
 
             // RAG Configuration
-            var ragConfig = new Contract.Configurations.RagConfiguration();
+            var ragConfig = new RagConfiguration();
             builder.Configuration.GetSection("RagConfiguration").Bind(ragConfig);
 
             // Default active embedding model to first in the available list
@@ -34,6 +36,9 @@ namespace RagEvaluator.API
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (availableModels.Length > 0)
                 ragConfig.EmbeddingModel = availableModels[0];
+
+            // Fail fast on missing/invalid configuration
+            ragConfig.Validate();
 
             builder.Services.AddSingleton(ragConfig);
 
@@ -54,7 +59,7 @@ namespace RagEvaluator.API
             builder.Services.AddSingleton<FixedSizeTextChunker>();
             builder.Services.AddSingleton<SemanticTextChunker>();
             builder.Services.AddTransient<ITextChunker>(sp =>
-                sp.GetRequiredService<Contract.Configurations.RagConfiguration>().ChunkingStrategy == Domain.Enums.ChunkingStrategy.Semantic
+                sp.GetRequiredService<RagConfiguration>().ChunkingStrategy == Domain.Enums.ChunkingStrategy.Semantic
                     ? sp.GetRequiredService<SemanticTextChunker>()
                     : sp.GetRequiredService<FixedSizeTextChunker>());
             builder.Services.AddSingleton<IEmbeddingService, OllamaEmbeddingService>();
@@ -74,7 +79,7 @@ namespace RagEvaluator.API
             builder.Services.AddSingleton<ExperimentQueue>();
             builder.Services.AddHostedService<ExperimentWorker>();
 
-            // Add CORS for development
+            // Add CORS
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
@@ -86,7 +91,7 @@ namespace RagEvaluator.API
             });
 
             // Global exception handling (IExceptionHandler)
-            builder.Services.AddExceptionHandler<API.Middleware.ExceptionHandler>();
+            builder.Services.AddExceptionHandler<ExceptionHandler>();
             builder.Services.AddProblemDetails();
 
             builder.Services.AddControllers()

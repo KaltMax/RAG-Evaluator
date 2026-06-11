@@ -1,4 +1,4 @@
-﻿using RagEvaluator.Domain.Enums;
+using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Contract.Configurations
 {
@@ -8,20 +8,68 @@ namespace RagEvaluator.Contract.Configurations
     /// </summary>
     public class RagConfiguration
     {
-        public string OllamaEndpoint { get; set; } = "http://localhost:11434/v1";
-        public string EmbeddingModel { get; set; } = "nomic-embed-text-v2-moe";
-        public string AvailableEmbeddingModels { get; set; } = "nomic-embed-text-v2-moe,mxbai-embed-large:v1";
-        public string ChatModel { get; set; } = "qwen2.5:14b";
-        public ChunkingStrategy ChunkingStrategy { get; set; } = ChunkingStrategy.FixedSize;
-        public PromptTemplate PromptTemplate { get; set; } = PromptTemplate.Basic;
-        public string PromptBasic { get; set; } = "You are a helpful assistant. Answer the question based on the provided context only. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.'";
-        public string PromptInstructed { get; set; } = "You are a helpful assistant. Answer the question based on the provided context only. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.' Always respond in the query language.";
-        public string PromptLanguageAwareEn { get; set; } = "You are a helpful assistant. Answer the question based on the provided context only. Be concise and accurate. If the context does not contain the answer, respond with 'I don't know.' Always respond in English.";
-        public string PromptLanguageAwareDe { get; set; } = "Du bist ein hilfreicher Assistent. Beantworte die Frage basierend ausschließlich auf dem bereitgestellten Kontext. Sei präzise und genau. Wenn der Kontext die Antwort nicht enthält, antworte mit 'Ich weiß es nicht.' Antworte immer auf Deutsch.";
-        public int ChunkSize { get; set; } = 800;
-        public int ChunkOverlap { get; set; } = 100;
-        public double SimilarityThreshold { get; set; } = 0.05;
-        public int MinChunkSize { get; set; } = 200;
+        public string OllamaEndpoint { get; set; } = string.Empty;
+        public string EmbeddingModel { get; set; } = string.Empty;
+        public string AvailableEmbeddingModels { get; set; } = string.Empty;
+        public string ChatModel { get; set; } = string.Empty;
+        public ChunkingStrategy ChunkingStrategy { get; set; }
+        public PromptTemplate PromptTemplate { get; set; }
+        public string PromptBasic { get; set; } = string.Empty;
+        public string PromptInstructed { get; set; } = string.Empty;
+        public string PromptLanguageAwareEn { get; set; } = string.Empty;
+        public string PromptLanguageAwareDe { get; set; } = string.Empty;
+        public int ChunkSize { get; set; }
+        public int ChunkOverlap { get; set; }
+        public double SimilarityThreshold { get; set; }
+        public int MinChunkSize { get; set; }
         public string AvailableCourses { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Validates that required values are present and within range. Called once at startup so a
+        /// misconfiguration fails fast with a clear message instead of surfacing later at query time.
+        /// </summary>
+        public void Validate()
+        {
+            var errors = new List<string>();
+
+            // Required, environment-specific values — no safe default exists.
+            if (string.IsNullOrWhiteSpace(OllamaEndpoint))
+                errors.Add($"{nameof(OllamaEndpoint)} is required.");
+            if (string.IsNullOrWhiteSpace(AvailableEmbeddingModels))
+                errors.Add($"{nameof(AvailableEmbeddingModels)} is required.");
+            if (string.IsNullOrWhiteSpace(EmbeddingModel))
+                errors.Add($"{nameof(EmbeddingModel)} could not be resolved from {nameof(AvailableEmbeddingModels)}.");
+            if (string.IsNullOrWhiteSpace(ChatModel))
+                errors.Add($"{nameof(ChatModel)} is required.");
+
+            // Required prompt texts.
+            if (string.IsNullOrWhiteSpace(PromptBasic))
+                errors.Add($"{nameof(PromptBasic)} is required.");
+            if (string.IsNullOrWhiteSpace(PromptInstructed))
+                errors.Add($"{nameof(PromptInstructed)} is required.");
+            if (string.IsNullOrWhiteSpace(PromptLanguageAwareEn))
+                errors.Add($"{nameof(PromptLanguageAwareEn)} is required.");
+            if (string.IsNullOrWhiteSpace(PromptLanguageAwareDe))
+                errors.Add($"{nameof(PromptLanguageAwareDe)} is required.");
+
+            // Numeric ranges.
+            if (ChunkSize <= 0)
+                errors.Add($"{nameof(ChunkSize)} must be greater than 0.");
+            if (ChunkOverlap < 0)
+                errors.Add($"{nameof(ChunkOverlap)} must be 0 or greater.");
+            if (ChunkOverlap >= ChunkSize)
+                errors.Add($"{nameof(ChunkOverlap)} must be less than {nameof(ChunkSize)}.");
+            if (MinChunkSize < 0)
+                errors.Add($"{nameof(MinChunkSize)} must be 0 or greater.");
+            if (SimilarityThreshold is < 0.0 or > 1.0)
+                errors.Add($"{nameof(SimilarityThreshold)} must be between 0.0 and 1.0.");
+
+            if (errors.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Invalid RagConfiguration:" + Environment.NewLine +
+                    string.Join(Environment.NewLine, errors.Select(e => "  - " + e)));
+            }
+        }
     }
 }
