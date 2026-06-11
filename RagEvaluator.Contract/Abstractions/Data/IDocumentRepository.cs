@@ -34,6 +34,12 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task<IReadOnlyList<Document>> GetByStatusAsync(DocumentStatus status, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Gets all documents that have extracted content and can therefore be reprocessed, regardless of their
+        /// current status (e.g. Completed, Failed, or left Processing by an aborted run).
+        /// </summary>
+        Task<IReadOnlyList<Document>> GetReprocessableAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Adds a new document to the repository.
         /// </summary>
         Task AddAsync(Document document, CancellationToken cancellationToken = default);
@@ -42,6 +48,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         /// Updates an existing document in the repository.
         /// </summary>
         Task UpdateAsync(Document document, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Sets the status of the given documents.
+        /// </summary>
+        Task SetStatusAsync(IEnumerable<Guid> documentIds, DocumentStatus status, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes a document by its unique identifier.

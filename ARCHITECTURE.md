@@ -170,7 +170,7 @@ RAG-Evaluator/
 │   │       ├── DocumentFileInfo.cs             # File info for downloads
 │   │       ├── ExperimentResponse.cs           # Full experiment with query groups & aggregated metrics
 │   │       ├── ExperimentSummaryResponse.cs    # Experiment list item with progress & config
-│   │       ├── ReprocessResponse.cs            # Reprocess result (docs processed, chunks created)
+│   │       ├── ReprocessResponse.cs            # Reprocess result (docs processed, docs failed, chunks created)
 │   │       └── SettingsResponse.cs             # Current settings + available options
 │
 ├── RagEvaluator.Domain/                        # Domain Models & Business Rules
@@ -294,7 +294,7 @@ RAG-Evaluator/
   - `DeleteAsync()` - deletes document, file, and associated chunks
 - `DocumentProcessingService` - PDF processing, chunking, embedding, and chunk search
   - `ProcessDocumentContentAsync()` - extracts text, chunks, embeds, and stores chunks
-  - `ReprocessAllDocumentsAsync()` - re-chunks and re-embeds all documents using stored content and current config
+  - `ReprocessAllDocumentsAsync()` - re-chunks and re-embeds every document with stored content (any status) using the current config; per-document atomic chunk swap with isolated failures
   - `GetChunksByDocumentIdAsync()` - retrieves document chunks
   - `SearchChunksAsync()` - vector similarity search across all chunks
 - `QueryService` - Query handling, persistence, and annotation
@@ -440,20 +440,24 @@ RAG-Evaluator/
 
 ### Document Reprocessing Pipeline
 
+Reprocessing runs to completion **independently of the request** — the controller invokes it with `CancellationToken.None`, so a client disconnect never aborts an in-progress run.
+
 ```
 1. Settings Change or Manual Trigger
    → 2. DocumentProcessingService.ReprocessAllDocumentsAsync() (Application Layer)
-      → 3. DocumentChunkRepository.DeleteAllAsync() - Remove all existing chunks
-      → 4. Fetch all documents with Status == Completed
-      → 5. Set all documents to Status = Processing
-      → 6. For each document:
-         → 7. ITextChunker.CreateDocumentChunksAsync(document.Content) - Re-chunk stored content
-         → 8. For each chunk:
-            → 9. IEmbeddingService.GenerateDocumentEmbeddingAsync(chunk)
-            → 10. Create DocumentChunk entity with current config (strategy, model)
-         → 11. DocumentChunkRepository.AddRangeAsync() - Persist new chunks
-         → 12. Update document ChunkCount, ProcessedAt, Status = Completed
-   → 13. Return ReprocessResponse (documents processed, total chunks, config used)
+      → 3. DocumentRepository.GetReprocessableAsync() - Fetch all documents that have content,
+           regardless of status (recovers docs left Failed by a prior run or stuck Processing)
+      → 4. DocumentRepository.SetStatusAsync(..., Processing) - Mark all as Processing in one bulk update
+      → 5. For each document (independently — one failure does not abort the rest):
+         → 6. ITextChunker.CreateDocumentChunksAsync(document.Content) - Build new chunks first
+         → 7. For each chunk:
+            → 8. IEmbeddingService.GenerateDocumentEmbeddingAsync(chunk)
+            → 9. Create DocumentChunk entity with current config (strategy, model)
+         → 10. DocumentChunkRepository.ReplaceChunksAsync() - Atomically swap old chunks for new
+               (delete + insert in one transaction; old chunks stay queryable until the swap)
+         → 11. Update document ChunkCount, ProcessedAt, Status = Completed
+         → On failure: log, set Status = Failed, and continue with the next document
+   → 12. Return ReprocessResponse (documents processed, documents failed, total chunks, config used)
 ```
 
 ### Query Processing Pipeline

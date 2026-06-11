@@ -60,6 +60,13 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<Document>> GetReprocessableAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Documents
+                .Where(d => d.Content != null && d.Content != "")
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task AddAsync(Document document, CancellationToken cancellationToken = default)
         {
             await _context.Documents.AddAsync(document, cancellationToken);
@@ -70,6 +77,14 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
         {
             _context.Documents.Update(document);
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task SetStatusAsync(IEnumerable<Guid> documentIds, DocumentStatus status, CancellationToken cancellationToken = default)
+        {
+            var ids = documentIds.ToList();
+            await _context.Documents
+                .Where(d => ids.Contains(d.Id))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(d => d.Status, status), cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)

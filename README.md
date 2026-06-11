@@ -33,7 +33,7 @@ The fastest way to get started is using Docker Compose, which sets up all servic
 #### Option 2: Command Line
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 This will start:

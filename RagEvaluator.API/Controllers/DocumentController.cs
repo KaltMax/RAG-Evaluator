@@ -167,17 +167,18 @@ namespace RagEvaluator.API.Controllers
         }
 
         /// <summary>
-        /// Reprocesses all completed documents by deleting existing chunks and re-chunking + re-embedding with the current configuration.
+        /// Reprocesses all documents with content by re-chunking + re-embedding them with the current configuration.
+        /// Runs to completion independently of the request: it is intentionally not cancelled if the client disconnects.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost("reprocess")]
         [ProducesResponseType(typeof(ReprocessResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-        public async Task<ActionResult<ReprocessResponse>> ReprocessDocumentsAsync(CancellationToken cancellationToken)
+        public async Task<ActionResult<ReprocessResponse>> ReprocessDocumentsAsync()
         {
             _logger.LogInformation("Reprocessing all documents with current configuration");
-            var result = await _documentProcessingService.ReprocessAllDocumentsAsync(cancellationToken);
+            // Decoupled from the request lifetime: a client disconnect must not abort a long-running reprocess.
+            var result = await _documentProcessingService.ReprocessAllDocumentsAsync(CancellationToken.None);
             _logger.LogInformation("Reprocessing complete: {Documents} documents, {Chunks} chunks", result.DocumentsProcessed, result.TotalChunksCreated);
             return Ok(result);
         }

@@ -39,9 +39,10 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task DeleteByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Deletes all document chunks from the repository.
+        /// Atomically replaces a document's chunks: deletes its existing chunks and inserts the given ones
+        /// within a single transaction, so the document is never left without chunks on a partial failure.
         /// </summary>
-        Task DeleteAllAsync(CancellationToken cancellationToken = default);
+        Task ReplaceChunksAsync(Guid documentId, IEnumerable<DocumentChunk> chunks, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Searches for similar chunks using vector similarity.

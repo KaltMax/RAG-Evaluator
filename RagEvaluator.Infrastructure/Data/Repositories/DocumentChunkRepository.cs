@@ -54,9 +54,18 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                 .ExecuteDeleteAsync(cancellationToken);
         }
 
-        public async Task DeleteAllAsync(CancellationToken cancellationToken = default)
+        public async Task ReplaceChunksAsync(Guid documentId, IEnumerable<DocumentChunk> chunks, CancellationToken cancellationToken = default)
         {
-            await _context.DocumentChunks.ExecuteDeleteAsync(cancellationToken);
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            await _context.DocumentChunks
+                .Where(c => c.DocumentId == documentId)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await _context.DocumentChunks.AddRangeAsync(chunks, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
         }
 
         public async Task<IReadOnlyList<ChunkSearchMatch>> SearchAsync(float[] queryEmbedding, int topK = 3, CancellationToken cancellationToken = default)
