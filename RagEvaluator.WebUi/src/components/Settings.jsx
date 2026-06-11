@@ -89,9 +89,16 @@ function Settings() {
         setIsReprocessing(true);
         try {
           const result = await reprocessDocuments();
-          toast.success(
-            `Reprocessed ${result.documentsProcessed} documents (${result.totalChunksCreated} chunks)`,
-          );
+          if (result.documentsFailed > 0) {
+            const succeeded = result.documentsProcessed - result.documentsFailed;
+            toast.warning(
+              `Reprocessed ${succeeded}/${result.documentsProcessed} documents (${result.totalChunksCreated} chunks). ${result.documentsFailed} failed.`,
+            );
+          } else {
+            toast.success(
+              `Reprocessed ${result.documentsProcessed} documents (${result.totalChunksCreated} chunks)`,
+            );
+          }
         } catch (err) {
           toast.error(`Reprocessing failed: ${err.message}`);
         } finally {

@@ -44,6 +44,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task UpdateAsync(Document document, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Sets the status of the given documents.
+        /// </summary>
+        Task SetStatusAsync(IEnumerable<Guid> documentIds, DocumentStatus status, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Deletes a document by its unique identifier.
         /// </summary>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
