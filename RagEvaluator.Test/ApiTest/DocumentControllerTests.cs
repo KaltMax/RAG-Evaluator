@@ -294,7 +294,7 @@ namespace RagEvaluator.Test.ApiTest
                 .Returns(expectedResponse);
 
             // Act
-            var result = await _controller.ReprocessDocumentsAsync(TestContext.Current.CancellationToken);
+            var result = await _controller.ReprocessDocumentsAsync();
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);

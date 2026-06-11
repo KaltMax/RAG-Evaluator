@@ -60,6 +60,13 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<Document>> GetReprocessableAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Documents
+                .Where(d => d.Content != null && d.Content != "")
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task AddAsync(Document document, CancellationToken cancellationToken = default)
         {
             await _context.Documents.AddAsync(document, cancellationToken);

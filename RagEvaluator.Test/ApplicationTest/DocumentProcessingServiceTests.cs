@@ -172,7 +172,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var documents = new List<Document> { doc1, doc2 };
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(documents);
+            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>()).Returns(documents);
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk A", "Chunk B" });
             _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -187,9 +187,8 @@ namespace RagEvaluator.Test.ApplicationTest
             Assert.Equal(4, result.TotalChunksCreated);
             Assert.Equal("FixedSize", result.ChunkingStrategy);
             Assert.Equal("nomic-embed-text-v2-moe", result.EmbeddingModel);
-            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(doc1.Id, Arg.Any<CancellationToken>());
-            await _documentChunkRepository.Received(1).DeleteByDocumentIdAsync(doc2.Id, Arg.Any<CancellationToken>());
-            await _documentChunkRepository.DidNotReceive().DeleteAllAsync(Arg.Any<CancellationToken>());
+            await _documentChunkRepository.Received(1).ReplaceChunksAsync(doc1.Id, Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            await _documentChunkRepository.Received(1).ReplaceChunksAsync(doc2.Id, Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -201,7 +200,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var documents = new List<Document> { doc };
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(documents);
+            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>()).Returns(documents);
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk" });
             _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -232,7 +231,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var documents = new List<Document> { failingDoc, okDoc };
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(documents);
+            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>()).Returns(documents);
             _textChunker.CreateDocumentChunksAsync("fail", Arg.Any<CancellationToken>())
                 .ThrowsAsync(new InvalidOperationException("boom"));
             _textChunker.CreateDocumentChunksAsync("ok", Arg.Any<CancellationToken>())
@@ -252,19 +251,16 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task ReprocessAllDocumentsAsync_ReprocessesContentDocsRegardlessOfStatusAndSkipsContentless()
+        public async Task ReprocessAllDocumentsAsync_ReprocessesPreviouslyFailedDocuments()
         {
-            // Arrange — a previously Failed doc (with content) is recovered; a content-less doc is skipped
+            // Arrange — a document left in Failed state (but with content) is still reprocessed, not skipped
             var failedDoc = CreateSampleDocument();
             failedDoc.Content = "recoverable content";
             failedDoc.Status = DocumentStatus.Failed;
-            var pendingDoc = CreateSampleDocument();
-            pendingDoc.Content = null;
-            pendingDoc.Status = DocumentStatus.Pending;
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetAllAsync(Arg.Any<CancellationToken>())
-                .Returns(new List<Document> { failedDoc, pendingDoc });
+            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>())
+                .Returns(new List<Document> { failedDoc });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk" });
             _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -273,12 +269,10 @@ namespace RagEvaluator.Test.ApplicationTest
             // Act
             var result = await _service.ReprocessAllDocumentsAsync(TestContext.Current.CancellationToken);
 
-            // Assert — only the content-bearing doc is reprocessed; the content-less one is left alone
+            // Assert — the formerly Failed document is recovered to Completed
             Assert.Equal(1, result.DocumentsProcessed);
             Assert.Equal(0, result.DocumentsFailed);
             Assert.Equal(DocumentStatus.Completed, failedDoc.Status);
-            Assert.Equal(DocumentStatus.Pending, pendingDoc.Status);
-            await _documentChunkRepository.DidNotReceive().DeleteByDocumentIdAsync(pendingDoc.Id, Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -286,7 +280,7 @@ namespace RagEvaluator.Test.ApplicationTest
         {
             // Arrange
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetAllAsync(Arg.Any<CancellationToken>())
+            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>())
                 .Returns(new List<Document>());
 
             // Act
@@ -296,7 +290,7 @@ namespace RagEvaluator.Test.ApplicationTest
             Assert.Equal(0, result.DocumentsProcessed);
             Assert.Equal(0, result.DocumentsFailed);
             Assert.Equal(0, result.TotalChunksCreated);
-            await _documentChunkRepository.DidNotReceive().DeleteByDocumentIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+            await _documentChunkRepository.DidNotReceive().ReplaceChunksAsync(Arg.Any<Guid>(), Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]

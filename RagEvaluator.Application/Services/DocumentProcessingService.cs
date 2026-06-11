@@ -75,11 +75,8 @@ namespace RagEvaluator.Application.Services
         {
             await EnsureEmbeddingServiceAvailableAsync(cancellationToken);
 
-            // Reprocess any document that has extracted content, regardless of status — this also recovers
-            // documents left Failed by a previous run or stuck Processing by an aborted one.
-            var documents = (await _documentRepository.GetAllAsync(cancellationToken))
-                .Where(d => !string.IsNullOrEmpty(d.Content))
-                .ToList();
+            // Reprocess any document that has extracted content, regardless of status.
+            var documents = await _documentRepository.GetReprocessableAsync(cancellationToken);
             _logger.LogInformation("Reprocessing {DocumentCount} documents", documents.Count);
 
             // Mark all as Processing up front so a refresh reflects that reprocessing is ongoing.
@@ -122,11 +119,10 @@ namespace RagEvaluator.Application.Services
 
         private async Task<int> ReprocessDocumentAsync(Document document, CancellationToken cancellationToken)
         {
-            // Build new chunks first; the old chunks stay queryable until the swap below.
+            // Build new chunks first; the old chunks stay queryable until the atomic swap below.
             var documentChunks = await BuildChunksAsync(document.Id, document.Content!, cancellationToken);
 
-            await _documentChunkRepository.DeleteByDocumentIdAsync(document.Id, cancellationToken);
-            await _documentChunkRepository.AddRangeAsync(documentChunks, cancellationToken);
+            await _documentChunkRepository.ReplaceChunksAsync(document.Id, documentChunks, cancellationToken);
 
             document.Status = DocumentStatus.Completed;
             document.ChunkCount = documentChunks.Count;
