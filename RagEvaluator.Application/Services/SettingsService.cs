@@ -1,9 +1,9 @@
+using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Application.Services
 {
@@ -15,33 +15,17 @@ namespace RagEvaluator.Application.Services
         private readonly RagConfiguration _config;
         private readonly IEmbeddingService _embeddingService;
 
-        private static readonly List<ChunkingStrategy> AvailableChunkingStrategies =
-            [ChunkingStrategy.FixedSize, ChunkingStrategy.Semantic];
-
         public SettingsService(RagConfiguration config, IEmbeddingService embeddingService)
         {
             _config = config;
             _embeddingService = embeddingService;
         }
 
-        public SettingsResponse GetSettings() => BuildResponse();
+        public SettingsResponse GetSettings() => _config.ToResponse();
 
         public async Task<SettingsResponse> UpdateSettingsAsync(UpdateSettingsRequest request)
         {
-            // Validate embedding model against available models
-            var availableModels = ParseAvailableModels();
-            if (request.EmbeddingModel is not null && !availableModels.Contains(request.EmbeddingModel))
-            {
-                throw new ArgumentException($"Unknown embedding model '{request.EmbeddingModel}'. Available: {string.Join(", ", availableModels)}");
-            }
-                
-            // Validate chunk overlap against chunk size (using effective values for partial updates)
-            var effectiveChunkSize = request.ChunkSize ?? _config.ChunkSize;
-            var effectiveOverlap = request.ChunkOverlap ?? _config.ChunkOverlap;
-            if (effectiveOverlap >= effectiveChunkSize)
-            {
-                throw new ArgumentException("Chunk overlap must be less than chunk size.");
-            }
+            ValidateRequest(request);
 
             var embeddingModelChanged = request.EmbeddingModel is not null && request.EmbeddingModel != _config.EmbeddingModel;
 
@@ -74,44 +58,33 @@ namespace RagEvaluator.Application.Services
                 _config.MinChunkSize = request.MinChunkSize.Value;
             }
             if (embeddingModelChanged)
-            { 
-                await _embeddingService.ReinitializeAsync(); 
+            {
+                await _embeddingService.ReinitializeAsync();
             }
 
-            return BuildResponse();
+            return _config.ToResponse();
         }
 
-        private SettingsResponse BuildResponse()
+        private void ValidateRequest(UpdateSettingsRequest request)
         {
-            return new SettingsResponse
+            var availableModels = ParseAvailableModels();
+            if (request.EmbeddingModel is not null && !availableModels.Contains(request.EmbeddingModel))
             {
-                EmbeddingModel = _config.EmbeddingModel,
-                ChunkingStrategy = _config.ChunkingStrategy,
-                PromptTemplate = _config.PromptTemplate,
-                ChunkSize = _config.ChunkSize,
-                ChunkOverlap = _config.ChunkOverlap,
-                SimilarityThreshold = _config.SimilarityThreshold,
-                MinChunkSize = _config.MinChunkSize,
-                PromptBasicText = _config.PromptBasic,
-                PromptInstructedText = _config.PromptInstructed,
-                PromptLanguageAwareEnText = _config.PromptLanguageAwareEn,
-                PromptLanguageAwareDeText = _config.PromptLanguageAwareDe,
-                AvailableEmbeddingModels = ParseAvailableModels(),
-                AvailableChunkingStrategies = AvailableChunkingStrategies,
-                AvailableCourses = ParseAvailableCourses(),
-            };
+                throw new ArgumentException($"Unknown embedding model '{request.EmbeddingModel}'. Available: {string.Join(", ", availableModels)}");
+            }
+
+            // Use effective values so partial updates are validated against the resulting configuration.
+            var effectiveChunkSize = request.ChunkSize ?? _config.ChunkSize;
+            var effectiveOverlap = request.ChunkOverlap ?? _config.ChunkOverlap;
+            if (effectiveOverlap >= effectiveChunkSize)
+            {
+                throw new ArgumentException("Chunk overlap must be less than chunk size.");
+            }
         }
 
         private List<string> ParseAvailableModels()
         {
             return _config.AvailableEmbeddingModels
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .ToList();
-        }
-
-        private List<string> ParseAvailableCourses()
-        {
-            return _config.AvailableCourses
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToList();
         }
