@@ -296,43 +296,6 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task UpdateStatusAsync_WithOptionalFields_UpdatesThem()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            var document = CreateSampleDocument(documentId);
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-
-            // Act
-            await _service.UpdateStatusAsync(documentId, DocumentStatus.Completed, pageCount: 10, chunkCount: 25, content: "extracted text", cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(10, document.PageCount);
-            Assert.Equal(25, document.ChunkCount);
-            Assert.Equal("extracted text", document.Content);
-        }
-
-        [Fact]
-        public async Task UpdateStatusAsync_WithNullOptionalFields_DoesNotOverwrite()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            var document = CreateSampleDocument(documentId);
-            document.PageCount = 5;
-            document.ChunkCount = 15;
-            document.Content = "original content";
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-
-            // Act
-            await _service.UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(5, document.PageCount);
-            Assert.Equal(15, document.ChunkCount);
-            Assert.Equal("original content", document.Content);
-        }
-
-        [Fact]
         public async Task UpdateStatusAsync_WithNonExistentDocument_ThrowsArgumentException()
         {
             // Arrange

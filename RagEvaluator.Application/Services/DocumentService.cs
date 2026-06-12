@@ -93,7 +93,7 @@ namespace RagEvaluator.Application.Services
             };
         }
 
-        public async Task UpdateStatusAsync(Guid id, DocumentStatus status, int? pageCount = null, int? chunkCount = null, string? content = null, CancellationToken cancellationToken = default)
+        public async Task UpdateStatusAsync(Guid id, DocumentStatus status, CancellationToken cancellationToken = default)
         {
             var document = await _documentRepository.GetByIdAsync(id, cancellationToken);
             if (document is null)
@@ -102,21 +102,6 @@ namespace RagEvaluator.Application.Services
             }
 
             document.Status = status;
-
-            if (pageCount.HasValue)
-            {
-                document.PageCount = pageCount.Value;
-            }
-
-            if (chunkCount.HasValue)
-            {
-                document.ChunkCount = chunkCount.Value;
-            }
-
-            if (content is not null)
-            {
-                document.Content = content;
-            }
 
             if (status == DocumentStatus.Completed)
             {
