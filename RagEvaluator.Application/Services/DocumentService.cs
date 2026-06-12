@@ -54,8 +54,17 @@ namespace RagEvaluator.Application.Services
             var filePath = await _fileStorageService.SaveFileAsync(fileStream, document.Id, fileName, cancellationToken);
             document.FilePath = filePath;
 
-            // Save document metadata to repository
-            await _documentRepository.AddAsync(document, cancellationToken);
+            // Save document metadata to repository. If persistence fails remove the just-saved file so it is not left orphaned.
+            try
+            {
+                await _documentRepository.AddAsync(document, cancellationToken);
+            }
+            catch
+            {
+                await _fileStorageService.DeleteFileAsync(filePath, CancellationToken.None);
+                throw;
+            }
+
             return document;
         }
 
