@@ -28,6 +28,14 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
                 .FirstOrDefaultAsync(d => d.FileName == name, cancellationToken);
         }
 
+        public async Task<IReadOnlyList<Document>> GetByNamesAsync(IEnumerable<string> names, CancellationToken cancellationToken = default)
+        {
+            var nameList = names.ToList();
+            return await _context.Documents
+                .Where(d => nameList.Contains(d.FileName))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IReadOnlyList<Document>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Documents.ToListAsync(cancellationToken);

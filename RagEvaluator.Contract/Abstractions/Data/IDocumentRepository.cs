@@ -19,6 +19,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task<Document?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Gets all documents whose name is in the given set, in a single query.
+        /// </summary>
+        Task<IReadOnlyList<Document>> GetByNamesAsync(IEnumerable<string> names, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Gets all documents from the repository.
         /// </summary>
         Task<IReadOnlyList<Document>> GetAllAsync(CancellationToken cancellationToken = default);
