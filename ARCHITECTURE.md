@@ -314,7 +314,7 @@ RAG-Evaluator/
   - `GetSettings()` - returns current configuration with available options
   - `UpdateSettingsAsync()` - validates and applies partial config updates; triggers embedding service reinitialization when the model changes
 - `ExperimentService` - Experiment batch processing and aggregation
-  - `CreateExperimentAsync()` - resolves RelevantDocumentNames to IDs via DocumentRepository.GetByNameAsync() (400 if unknown), creates experiment with config snapshot, enqueues for background processing
+  - `CreateExperimentAsync()` - resolves RelevantDocumentNames to IDs via a single DocumentRepository.GetByNamesAsync() query (400 if any unknown), creates experiment with config snapshot, enqueues for background processing
   - `ProcessExperimentAsync()` - runs all queries × repeatCount, links results to experiment, updates progress
   - `GetByIdAsync()` - returns experiment with query groups and aggregated metrics
   - `GetAllAsync()` / `DeleteAsync()` - list and delete operations
@@ -485,7 +485,7 @@ Reprocessing runs to completion **independently of the request** — the control
 ```
 1. Experiment Submission (Controller)
    → 2. ExperimentService.CreateExperimentAsync() (Application Layer)
-      → 3. Resolve all RelevantDocumentNames to IDs via DocumentRepository.GetByNameAsync() — 400 if any unknown
+      → 3. Resolve all RelevantDocumentNames to IDs in a single DocumentRepository.GetByNamesAsync() query — 400 if any unknown
       → 4. Create Experiment entity with config snapshot from current RagConfiguration
       → 5. Persist to database (status: Running)
       → 6. Enqueue (experimentId, queries, resolvedDocumentIds) to ExperimentQueue (Channel<T>)
