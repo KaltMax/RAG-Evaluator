@@ -81,10 +81,8 @@ namespace RagEvaluator.Test.ApplicationTest
                 RepeatCount = 1,
                 Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentNames = ["known.pdf", "unknown.pdf"] }]
             };
-            _documentRepository.GetByNameAsync("known.pdf", Arg.Any<CancellationToken>())
-                .Returns(new Document { Id = Guid.NewGuid(), FileName = "known.pdf" });
-            _documentRepository.GetByNameAsync("unknown.pdf", Arg.Any<CancellationToken>())
-                .Returns((Document?)null);
+            _documentRepository.GetByNamesAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new List<Document> { new() { Id = Guid.NewGuid(), FileName = "known.pdf" } });
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -102,8 +100,8 @@ namespace RagEvaluator.Test.ApplicationTest
                 RepeatCount = 1,
                 Queries = [new ExperimentQueryItem { Question = "Q?", Language = "en", RelevantDocumentNames = ["test.pdf"] }]
             };
-            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>())
-                .Returns(new Document { Id = Guid.NewGuid(), FileName = "test.pdf" });
+            _documentRepository.GetByNamesAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new List<Document> { new() { Id = Guid.NewGuid(), FileName = "test.pdf" } });
 
             // Act
             var response = await _service.CreateExperimentAsync(request, TestContext.Current.CancellationToken);

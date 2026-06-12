@@ -45,21 +45,19 @@ namespace RagEvaluator.Application.Services
         public async Task<ExperimentSummaryResponse> CreateExperimentAsync(
             CreateExperimentRequest request, CancellationToken cancellationToken = default)
         {
-            // Resolve document names to IDs
-            var resolvedDocumentIds = new Dictionary<string, Guid>();
+            // Resolve all referenced document names to IDs in a single query
             var allDocumentNames = request.Queries
                 .SelectMany(q => q.RelevantDocumentNames)
                 .Distinct()
                 .ToList();
 
-            foreach (var name in allDocumentNames)
+            var documents = await _documentRepository.GetByNamesAsync(allDocumentNames, cancellationToken);
+            var resolvedDocumentIds = documents.ToDictionary(d => d.FileName, d => d.Id);
+
+            var unknownName = allDocumentNames.FirstOrDefault(name => !resolvedDocumentIds.ContainsKey(name));
+            if (unknownName is not null)
             {
-                var document = await _documentRepository.GetByNameAsync(name, cancellationToken);
-                if (document is null)
-                {
-                    throw new ArgumentException($"Unknown document name in RelevantDocumentNames: {name}");
-                }
-                resolvedDocumentIds[name] = document.Id;
+                throw new ArgumentException($"Unknown document name in RelevantDocumentNames: {unknownName}");
             }
 
             var experiment = new Experiment
