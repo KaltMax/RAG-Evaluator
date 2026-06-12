@@ -1,4 +1,5 @@
 ﻿using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
@@ -61,6 +62,24 @@ namespace RagEvaluator.Test.ApplicationTest
             // Assert
             Assert.Equal("evil.pdf", result.FileName);
             await _fileStorageService.Received(1).SaveFileAsync(Arg.Any<Stream>(), result.Id, "evil.pdf", TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
+        public async Task CreateDocumentAsync_WhenMetadataPersistFails_DeletesSavedFileAndRethrows()
+        {
+            // Arrange
+            var stream = new MemoryStream("PDF content"u8.ToArray());
+            const string filePath = "/storage/some-guid.pdf";
+            _fileStorageService.SaveFileAsync(Arg.Any<Stream>(), Arg.Any<Guid>(), "test.pdf", Arg.Any<CancellationToken>())
+                .Returns(filePath);
+            _documentRepository.AddAsync(Arg.Any<Document>(), Arg.Any<CancellationToken>())
+                .ThrowsAsync(new InvalidOperationException("persistence failed"));
+
+            // Act & Assert — the failure propagates and the orphaned file is cleaned up
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _service.CreateDocumentAsync(stream, "test.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken));
+
+            await _fileStorageService.Received(1).DeleteFileAsync(filePath, Arg.Any<CancellationToken>());
         }
 
         #endregion
@@ -293,43 +312,6 @@ namespace RagEvaluator.Test.ApplicationTest
 
             // Assert
             Assert.Null(document.ProcessedAt);
-        }
-
-        [Fact]
-        public async Task UpdateStatusAsync_WithOptionalFields_UpdatesThem()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            var document = CreateSampleDocument(documentId);
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-
-            // Act
-            await _service.UpdateStatusAsync(documentId, DocumentStatus.Completed, pageCount: 10, chunkCount: 25, content: "extracted text", cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(10, document.PageCount);
-            Assert.Equal(25, document.ChunkCount);
-            Assert.Equal("extracted text", document.Content);
-        }
-
-        [Fact]
-        public async Task UpdateStatusAsync_WithNullOptionalFields_DoesNotOverwrite()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            var document = CreateSampleDocument(documentId);
-            document.PageCount = 5;
-            document.ChunkCount = 15;
-            document.Content = "original content";
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-
-            // Act
-            await _service.UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(5, document.PageCount);
-            Assert.Equal(15, document.ChunkCount);
-            Assert.Equal("original content", document.Content);
         }
 
         [Fact]
