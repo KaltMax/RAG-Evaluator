@@ -68,33 +68,6 @@ namespace RagEvaluator.Application.Mappers
             };
         }
 
-        public static QueryResponse ToResponse(this Query query, string answer, IReadOnlyList<SearchResultDto> sources)
-        {
-            return new QueryResponse
-            {
-                QueryId = query.Id,
-                Question = query.Question,
-                Language = query.Language,
-                TopK = query.TopK,
-                SystemPrompt = query.SystemPrompt,
-                ChunkingStrategy = query.ChunkingStrategy,
-                EmbeddingModel = query.EmbeddingModel,
-                ChatModel = query.ChatModel,
-                Answer = answer,
-                Sources = sources.ToList(),
-                Timestamp = query.CreatedAt,
-                ResponseTimeMs = query.ResponseTimeMs,
-                Mrr = query.MRR,
-                PrecisionAtK = query.PrecisionAtK,
-                RecallAtK = query.RecallAtK,
-                NdcgAtK = query.NDCGAtK,
-                ResponseQuality = query.ResponseQuality.HasValue ? (int)query.ResponseQuality.Value : null,
-                HasLanguageSwitching = query.HasLanguageSwitching,
-                ExperimentId = query.ExperimentId,
-                ExperimentName = query.Experiment?.Name
-            };
-        }
-
         public static SearchResultDto ToSearchResultDto(this QueryResult result)
         {
             return new SearchResultDto
