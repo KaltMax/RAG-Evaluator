@@ -144,9 +144,12 @@ namespace RagEvaluator.Application.Services
         {
             if (query.ExperimentId.HasValue)
             {
+                // Group by chunk text: identical chunks can appear more than once in a result set,
+                // and siblings are matched by text (their result IDs differ across repeats).
                 var siblingGrades = query.Results
                     .Where(r => r.RelevanceGrade.HasValue)
-                    .ToDictionary(r => r.ChunkText, r => r.RelevanceGrade!.Value);
+                    .GroupBy(r => r.ChunkText)
+                    .ToDictionary(g => g.Key, g => g.First().RelevanceGrade!.Value);
 
                 var siblings = await _queryRepository.GetUnannotatedSiblingsAsync(
                     query.Id, query.ExperimentId.Value, query.Question, query.Language, query.TopK, cancellationToken);
