@@ -53,7 +53,15 @@ namespace RagEvaluator.Infrastructure.Services
             chatHistory.AddSystemMessage(systemPrompt);
             chatHistory.AddUserMessage(userMessage);
 
-            var response = await _chatService.GetChatMessageContentAsync(chatHistory, cancellationToken: cancellationToken);
+            var settings = new PromptExecutionSettings
+            {
+                ExtensionData = new Dictionary<string, object>
+                {
+                    ["think"] = _config.ChatModelThinking
+                }
+            };
+
+            var response = await _chatService.GetChatMessageContentAsync(chatHistory, settings, cancellationToken: cancellationToken);
             return response.Content ?? "No response generated.";
         }
 

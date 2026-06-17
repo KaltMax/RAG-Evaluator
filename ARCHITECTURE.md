@@ -808,6 +808,7 @@ environment:
   - ConnectionStrings__DefaultConnection=Host=postgres;Database=ragevaluator;...
   - RagConfiguration__OllamaEndpoint=http://ollama:11434/v1
   - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
+  - RagConfiguration__ChatModelThinking=${OLLAMA_CHAT_MODEL_THINKING}
   - RagConfiguration__AvailableEmbeddingModels=${OLLAMA_EMBEDDING_MODELS}
   - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
   - RagConfiguration__ChunkSize=${RAG_CHUNK_SIZE}

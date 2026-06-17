@@ -12,6 +12,7 @@ namespace RagEvaluator.Contract.Configurations
         public string EmbeddingModel { get; set; } = string.Empty;
         public string AvailableEmbeddingModels { get; set; } = string.Empty;
         public string ChatModel { get; set; } = string.Empty;
+        public bool ChatModelThinking { get; set; }
         public ChunkingStrategy ChunkingStrategy { get; set; }
         public PromptTemplate PromptTemplate { get; set; }
         public string PromptBasic { get; set; } = string.Empty;
