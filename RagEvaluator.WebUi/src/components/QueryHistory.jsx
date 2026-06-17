@@ -19,6 +19,7 @@ import { formatResponseTime } from "../utils/formatResponseTime";
 import { formatLanguage } from "../utils/formatLanguage";
 import { sortByKey } from "../utils/sortByKey";
 import SearchResults from "./SearchResults";
+import MarkdownAnswer from "./MarkdownAnswer";
 
 function QueryHistory() {
   const [queries, setQueries] = useState([]);
@@ -342,9 +343,7 @@ function QueryHistory() {
                         Answer
                       </h3>
                       <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700">
-                        <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
-                          {query.answer}
-                        </p>
+                        <MarkdownAnswer>{query.answer}</MarkdownAnswer>
                       </div>
                     </div>
 

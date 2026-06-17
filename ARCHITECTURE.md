@@ -381,7 +381,7 @@ RAG-Evaluator/
 
 **Implemented Services**:
 
-- `OllamaChatService` - Chat completion via Semantic Kernel, implements `IChatService`
+- `OllamaChatService` - Chat completion via Semantic Kernel, implements `IChatService`. Toggles the Ollama `think` request parameter via the `ChatModelThinking` configuration flag (`OLLAMA_CHAT_MODEL_THINKING`)
 - `OllamaEmbeddingService` - Embedding generation via Semantic Kernel, implements `IEmbeddingService`. Exposes `GenerateQueryEmbeddingAsync` and `GenerateDocumentEmbeddingAsync`; internally applies model-specific prefixes (e.g. `search_query:`/`search_document:` for nomic, `Represent this sentence for searching relevant passages:` for mxbai). Supports runtime reinitialization for model switching
 - `PdfPigLoader` - PDF text extraction with geometric filtering to remove headers/footers and adaptive gap detection (2.2x average word height threshold) to preserve paragraph structure, implements `IPdfLoader`
 - `LocalFileStorageService` - Local file system storage with configurable directory, implements `IFileStorageService`
@@ -749,7 +749,7 @@ course: "Software Engineering I"
 - **Vector Store**: PostgreSQL with pgvector extension
   - Persistent storage with cosine similarity search
   - EF Core integration via Pgvector.EntityFrameworkCore
-- **Database**: PostgreSQL 18 (pgvector/pgvector:0.8.1-pg18)
+- **Database**: PostgreSQL 18 (pgvector/pgvector:0.8.2-pg18)
 - **ORM**: Entity Framework Core 10.0 with Npgsql
 - **API Documentation**: Swagger/OpenAPI (Swashbuckle.AspNetCore 10.1.0)
 - **Testing**: xUnit 3, NSubstitute
@@ -763,6 +763,7 @@ course: "Software Engineering I"
 - **UI Library**: Tailwind CSS 4
 - **HTTP Client**: Axios
 - **Charting**: Recharts (bar charts, error bars, stacked bars)
+- **Markdown Rendering**: react-markdown + remark-gfm, styled with the Tailwind Typography plugin
 - **UI Libraries**: React Dropzone, React Toastify, Heroicons
 
 ### DevOps
@@ -826,6 +827,8 @@ environment:
 **Prompt Templates**: Three prompt strategies are available via `RAG_PROMPT_TEMPLATE` in `.env`: `Basic` (basic English prompt), `Instructed` (English prompt with explicit language instruction), and `LanguageAware` (prompt in the query's native language, selected automatically based on the query language). Each template's text is independently configurable via `RAG_PROMPT_BASIC`, `RAG_PROMPT_INSTRUCTED`, `RAG_PROMPT_LANGUAGE_AWARE_EN`, and `RAG_PROMPT_LANGUAGE_AWARE_DE`. All RAG parameters can also be changed at runtime via the Settings API without restarting the container.
 
 **Available Courses**: Course names for document categorization are configured via `AVAILABLE_COURSES` in `.env` as a comma-separated list (e.g., `Datenmanagement,Software Engineering I`). These appear in the upload UI dropdown and are returned by the Settings API.
+
+**Thinking Mode**: The Ollama `think` request parameter is toggled via `OLLAMA_CHAT_MODEL_THINKING` (`true`/`false`, default `false`). When disabled, reasoning-capable chat models skip their thinking phase and return answers directly. `OllamaChatService` reads this from the `ChatModelThinking` configuration flag and applies it per request.
 
 ### Docker Networking
 

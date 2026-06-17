@@ -9,6 +9,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 - **Document Search** - Query uploaded documents using AI-powered RAG (Retrieval-Augmented Generation)
   - Ask questions in natural language
   - Get AI-generated answers with source citations
+  - Answers rendered as Markdown (headings, lists, tables, code blocks, links)
   - View similarity scores for retrieved chunks
   - Adjustable top-K results
   - Language selection (English/German)
@@ -87,6 +88,8 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 - **React Dropzone** - Drag-and-drop file uploads
 - **React Toastify** - Toast notifications
 - **Recharts** - Charting library (bar charts, error bars, stacked bars)
+- **React Markdown + remark-gfm** - Renders LLM answers as GitHub-flavored Markdown
+- **Tailwind Typography** - Prose styling for rendered Markdown
 - **PropTypes** - Runtime type checking for React props
 - **Heroicons** - Icon library
 - **Vitest** - Unit testing with coverage
@@ -209,6 +212,7 @@ src/
 │   ├── SearchView.jsx                  # Main search page
 │   ├── Searchbar.jsx                   # Search input component
 │   ├── SearchResults.jsx               # Search results display with annotation UI
+│   ├── MarkdownAnswer.jsx              # Renders LLM answers as Markdown (react-markdown + remark-gfm)
 │   ├── UploadDocuments.jsx             # Document upload page
 │   ├── Experiments.jsx                 # Experiment creation page (JSON upload)
 │   ├── Statistics.jsx                  # Statistics page (experiment comparison orchestrator)
