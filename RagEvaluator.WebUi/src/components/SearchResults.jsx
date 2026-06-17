@@ -19,6 +19,7 @@ import {
 import { formatMetric } from "../utils/formatMetric";
 import { formatResponseTime } from "../utils/formatResponseTime";
 import { formatDate } from "../utils/formatDate";
+import MarkdownAnswer from "./MarkdownAnswer";
 
 function SearchResults({ results, onAnnotated }) {
   const [annotations, setAnnotations] = useState(() => {
@@ -193,9 +194,7 @@ function SearchResults({ results, onAnnotated }) {
           <h2 className="text-xl font-semibold text-white">Answer</h2>
         </div>
         <div className="bg-[#1F1F1F] rounded-lg p-4 border border-gray-700">
-          <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
-            {results.answer}
-          </p>
+          <MarkdownAnswer>{results.answer}</MarkdownAnswer>
         </div>
         <div className="flex items-center gap-2 mt-4 text-sm text-gray-400">
           <ClockIcon className="w-4 h-4" />
