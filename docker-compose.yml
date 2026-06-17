@@ -2,7 +2,7 @@ name: ragevaluator
 
 services:
   postgres:
-    image: pgvector/pgvector:0.8.1-pg18
+    image: pgvector/pgvector:0.8.2-pg18
     container_name: ragevaluator-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -19,7 +19,7 @@ services:
       retries: 5
 
   pgadmin:
-    image: dpage/pgadmin4:9.11
+    image: dpage/pgadmin4:9.15
     container_name: ragevaluator-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
@@ -34,7 +34,7 @@ services:
       - postgres
 
   ollama:
-    image: ollama/ollama:0.13.5
+    image: ollama/ollama:0.30.7
     container_name: ragevaluator-ollama
     environment:
       - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
@@ -72,6 +72,7 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - RagConfiguration__OllamaEndpoint=http://ollama:${OLLAMA_PORT}/v1
       - RagConfiguration__ChatModel=${OLLAMA_CHAT_MODEL}
+      - RagConfiguration__ChatModelThinking=${OLLAMA_CHAT_MODEL_THINKING}
       - RagConfiguration__ChunkingStrategy=${RAG_CHUNKING_STRATEGY}
       - RagConfiguration__ChunkSize=${RAG_CHUNK_SIZE}
       - RagConfiguration__ChunkOverlap=${RAG_CHUNK_OVERLAP}

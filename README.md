@@ -15,7 +15,7 @@ A full-stack application using C#/.NET and React to evaluate RAG-based search wi
 - [Node.js 24+](https://nodejs.org/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) with WSL2 backend (Windows)
 - [Visual Studio 2026](https://visualstudio.microsoft.com/) (recommended) or VS Code
-- **NVIDIA GPU** with CUDA support (12GB+ VRAM recommended for Qwen2.5-14b)
+- **NVIDIA GPU** with CUDA support (12GB+ VRAM recommended for Qwen3.5-9b)
   - RTX 3060 (12GB) or better
   - NVIDIA drivers installed
   - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) for Docker GPU access
@@ -80,14 +80,15 @@ RAG-Evaluator/
 
 ### Services
 
-The application uses 4 Docker containers:
+The application uses 5 Docker containers:
 
 | Service | Image | Port | Purpose |
 |---------|-------|------|---------|
 | **ragevaluator-api** | Custom (.NET 10) | 5000 | REST API backend |
 | **ragevaluator-web-ui** | Custom (Nginx + React) | 3000 | Frontend SPA |
-| **postgres** | pgvector/pgvector:0.8.1-pg18 | 5432 | Database with vector support |
-| **ollama** | ollama/ollama:0.13.5 | 11434 | Local LLM service |
+| **postgres** | pgvector/pgvector:0.8.2-pg18 | 5432 | Database with vector support |
+| **pgadmin** | dpage/pgadmin4:9.15 | 5050 | Database administration UI |
+| **ollama** | ollama/ollama:0.30.7 | 11434 | Local LLM service |
 
 ## Development
 
