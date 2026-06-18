@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Application.Workers;
+using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
@@ -21,7 +22,7 @@ namespace RagEvaluator.Application.Services
         private readonly IQueryRepository _queryRepository;
         private readonly IDocumentRepository _documentRepository;
         private readonly IRagService _ragService;
-        private readonly ExperimentQueue _experimentQueue;
+        private readonly IBackgroundTaskQueue<ExperimentJob> _experimentQueue;
         private readonly RagConfiguration _config;
 
         public ExperimentService(
@@ -30,7 +31,7 @@ namespace RagEvaluator.Application.Services
             IQueryRepository queryRepository,
             IDocumentRepository documentRepository,
             IRagService ragService,
-            ExperimentQueue experimentQueue,
+            IBackgroundTaskQueue<ExperimentJob> experimentQueue,
             RagConfiguration config)
         {
             _logger = logger;
@@ -79,7 +80,8 @@ namespace RagEvaluator.Application.Services
             };
 
             await _experimentRepository.AddAsync(experiment, cancellationToken);
-            await _experimentQueue.EnqueueAsync(experiment.Id, request.Queries, resolvedDocumentIds, cancellationToken);
+            await _experimentQueue.EnqueueAsync(
+                new ExperimentJob(experiment.Id, request.Queries, resolvedDocumentIds), cancellationToken);
 
             return experiment.ToSummary();
         }

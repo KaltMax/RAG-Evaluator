@@ -5,6 +5,7 @@ using RagEvaluator.API.Middleware;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Application.Workers;
+using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
@@ -76,8 +77,9 @@ namespace RagEvaluator.API
             builder.Services.AddScoped<IExperimentService, ExperimentService>();
 
             // Experiment background processing
-            builder.Services.AddSingleton<ExperimentQueue>();
-            builder.Services.AddHostedService<ExperimentWorker>();
+            builder.Services.AddSingleton<IBackgroundTaskQueue<ExperimentJob>, BackgroundTaskQueue<ExperimentJob>>();
+            builder.Services.AddScoped<IJobHandler<ExperimentJob>, ExperimentJobHandler>();
+            builder.Services.AddHostedService<QueuedHostedService<ExperimentJob>>();
 
             // Add CORS
             builder.Services.AddCors(options =>

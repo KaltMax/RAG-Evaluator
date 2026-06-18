@@ -134,12 +134,17 @@ RAG-Evaluator/
 │   │   ├── MetricsService.cs                   # Cosine similarity, MRR, Precision@K, etc.
 │   │   └── SettingsService.cs                  # Runtime RAG configuration management
 │   ├── Workers/
-│   │   ├── ExperimentWorker.cs                 # BackgroundService for async experiment processing
-│   │   └── ExperimentQueue.cs                  # Channel<T>-based in-memory queue
+│   │   ├── QueuedHostedService.cs              # Generic BackgroundService draining a queue into an IJobHandler<TJob>
+│   │   ├── BackgroundTaskQueue.cs              # Generic Channel<T>-based in-memory IBackgroundTaskQueue<TJob>
+│   │   ├── ExperimentJob.cs                    # Experiment job payload (record)
+│   │   └── ExperimentJobHandler.cs             # IJobHandler<ExperimentJob> → ExperimentService.ProcessExperimentAsync()
 │   └── Validators/
 │
 ├── RagEvaluator.Contract/                      # DTOs, Abstractions & Shared Contracts
 │   ├── Abstractions/
+│   │   ├── BackgroundProcessing/
+│   │   │   ├── IBackgroundTaskQueue.cs         # Generic background job queue interface
+│   │   │   └── IJobHandler.cs                  # Generic per-job handler interface
 │   │   ├── Services/
 │   │   │   ├── IChatService.cs                 # Chat/LLM service interface
 │   │   │   ├── IEmbeddingService.cs            # Embedding generation interface
@@ -278,7 +283,7 @@ RAG-Evaluator/
 
 - Service interfaces and implementations (`Services/`)
 - Mappers for entity-to-DTO conversion (`Mappers/`)
-- `ExperimentWorker` + `ExperimentQueue` for background processing (`Workers/`)
+- Generic background processing infrastructure (`Workers/`): `QueuedHostedService<TJob>` + `BackgroundTaskQueue<TJob>`, with `ExperimentJob`/`ExperimentJobHandler` as the first consumer
 
 **Implemented Services**:
 
@@ -318,8 +323,9 @@ RAG-Evaluator/
   - `ProcessExperimentAsync()` - runs all queries × repeatCount, links results to experiment, updates progress
   - `GetByIdAsync()` - returns experiment with query groups and aggregated metrics
   - `GetAllAsync()` / `DeleteAsync()` - list and delete operations
-- `ExperimentWorker` - `BackgroundService` that reads from `ExperimentQueue` and delegates to `ExperimentService.ProcessExperimentAsync()`. Processes one experiment at a time.
-- `ExperimentQueue` - In-memory `Channel<T>`-based queue for passing experiment work items from the API to the background worker.
+- `QueuedHostedService<TJob>` - Generic `BackgroundService` that drains an `IBackgroundTaskQueue<TJob>` and dispatches each job to a scoped `IJobHandler<TJob>` (fresh DI scope per job; failures are logged without stopping the worker). Processes one job at a time per job type.
+- `BackgroundTaskQueue<TJob>` - Generic in-memory `Channel<T>`-based `IBackgroundTaskQueue<TJob>` implementation (registered as a singleton; jobs are lost on restart).
+- `ExperimentJob` / `ExperimentJobHandler` - Experiment job payload and its handler, which delegates to `ExperimentService.ProcessExperimentAsync()`. The generic queue/worker are reusable for other long-running job types.
 
 **Dependencies**: → Domain, Contract
 
@@ -488,11 +494,11 @@ Reprocessing runs to completion **independently of the request** — the control
       → 3. Resolve all RelevantDocumentNames to IDs in a single DocumentRepository.GetByNamesAsync() query — 400 if any unknown
       → 4. Create Experiment entity with config snapshot from current RagConfiguration
       → 5. Persist to database (status: Running)
-      → 6. Enqueue (experimentId, queries, resolvedDocumentIds) to ExperimentQueue (Channel<T>)
+      → 6. Enqueue ExperimentJob to IBackgroundTaskQueue<ExperimentJob> (Channel<T>)
    → 7. Return 202 Accepted with ExperimentSummaryResponse
 
-7. ExperimentWorker picks up work item from queue
-   → 8. ExperimentService.ProcessExperimentAsync()
+7. QueuedHostedService<ExperimentJob> dequeues the job and resolves IJobHandler<ExperimentJob> in a fresh scope
+   → 8. ExperimentJobHandler → ExperimentService.ProcessExperimentAsync()
       → 9. For each repeat (1..repeatCount):
          → For each query in queries:
             → 10. RagService.AskQuestionAsync() - Runs full RAG pipeline

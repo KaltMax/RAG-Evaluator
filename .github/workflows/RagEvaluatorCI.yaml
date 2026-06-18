@@ -2,9 +2,9 @@ name: Rag Evaluator CI
 
 on:
   push: 
-    branches: [ main, development, 'feature/**' ]
+    branches: [ main, development ]
   pull_request:
-    branches: [ main, development, 'feature/**' ]
+    branches: [ main, development ]
 
 jobs:
   backend-build:
