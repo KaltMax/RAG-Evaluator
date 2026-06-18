@@ -3,6 +3,7 @@ using NSubstitute;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Application.Workers;
+using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
@@ -19,7 +20,7 @@ namespace RagEvaluator.Test.ApplicationTest
         private readonly IQueryRepository _queryRepository;
         private readonly IDocumentRepository _documentRepository;
         private readonly IRagService _ragService;
-        private readonly ExperimentQueue _experimentQueue;
+        private readonly IBackgroundTaskQueue<ExperimentJob> _experimentQueue;
         private readonly RagConfiguration _config;
         private readonly ExperimentService _service;
 
@@ -30,7 +31,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _queryRepository = Substitute.For<IQueryRepository>();
             _documentRepository = Substitute.For<IDocumentRepository>();
             _ragService = Substitute.For<IRagService>();
-            _experimentQueue = new ExperimentQueue();
+            _experimentQueue = new BackgroundTaskQueue<ExperimentJob>();
             _config = CreateSampleRagConfiguration();
             _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _documentRepository, _ragService, _experimentQueue, _config);
         }
