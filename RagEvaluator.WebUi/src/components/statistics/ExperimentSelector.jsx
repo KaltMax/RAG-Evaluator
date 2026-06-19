@@ -118,13 +118,11 @@ function ExperimentSelector({
                   {exp.repeatCount}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {exp.progress.annotated}/{exp.progress.total} annotated
-                  {!isSelectable &&
-                    exp.status !== "Completed" &&
-                    ` · ${exp.status}`}
+                  {exp.status === "Running"
+                    ? `${exp.progress.completed}/${exp.progress.total} processed · Running`
+                    : `${exp.progress.annotated}/${exp.progress.total} annotated`}
                 </p>
               </button>
-              {/* Delete button — outside the disabled button so it's always clickable */}
               <TrashIcon
                 className="absolute top-3 right-3 w-4 h-4 text-gray-500 hover:text-red-400 shrink-0 transition-colors cursor-pointer"
                 onClick={() => onDelete(exp.id)}
