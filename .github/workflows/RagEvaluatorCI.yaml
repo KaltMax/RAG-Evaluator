@@ -65,6 +65,11 @@ jobs:
       run: |
         cd RagEvaluator.WebUi
         npm ci
+        
+    - name: Run prettier format check
+      run: |
+        cd RagEvaluator.WebUi
+        npm run format:check
 
     - name: Run linter
       run: |
