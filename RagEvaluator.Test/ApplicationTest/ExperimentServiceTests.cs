@@ -6,6 +6,7 @@ using RagEvaluator.Application.Workers;
 using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Configurations;
+using RagEvaluator.Contract.Dtos.Notifications;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
@@ -21,6 +22,7 @@ namespace RagEvaluator.Test.ApplicationTest
         private readonly IDocumentRepository _documentRepository;
         private readonly IRagService _ragService;
         private readonly IBackgroundTaskQueue<ExperimentJob> _experimentQueue;
+        private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
         private readonly ExperimentService _service;
 
@@ -32,8 +34,9 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository = Substitute.For<IDocumentRepository>();
             _ragService = Substitute.For<IRagService>();
             _experimentQueue = new BackgroundTaskQueue<ExperimentJob>();
+            _jobNotifier = Substitute.For<IJobNotifier>();
             _config = CreateSampleRagConfiguration();
-            _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _documentRepository, _ragService, _experimentQueue, _config);
+            _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _documentRepository, _ragService, _experimentQueue, _jobNotifier, _config);
         }
 
         #region CreateExperimentAsync Tests
@@ -154,6 +157,56 @@ namespace RagEvaluator.Test.ApplicationTest
             Assert.Equal(ExperimentStatus.Completed, experiment.Status);
             Assert.NotNull(experiment.CompletedAt);
             Assert.Equal(2, experiment.CompletedQueryCount);
+        }
+
+        [Fact]
+        public async Task ProcessExperimentAsync_ShouldNotifyProgressForEachCompletedQuery()
+        {
+            // Arrange
+            var experiment = CreateSampleExperiment();
+            var queries = CreateSampleCreateExperimentRequest().Queries;
+            var queryId = Guid.NewGuid();
+
+            _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
+            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+                .Returns(CreateSampleQueryResponse(queryId));
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
+                .Returns(new Query { Id = queryId });
+
+            // Act
+            await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
+
+            // Assert — 1 repeat * 2 queries = 2 progress notifications (status "Running")
+            await _jobNotifier.Received(2).NotifyAsync(
+                Arg.Is<JobNotification>(n => n.JobType == "experiment" && n.Status == ExperimentStatus.Running.ToString()),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ProcessExperimentAsync_WhenCompleted_ShouldNotifyCompletion()
+        {
+            // Arrange
+            var experiment = CreateSampleExperiment();
+            var queries = CreateSampleCreateExperimentRequest().Queries;
+            var queryId = Guid.NewGuid();
+
+            _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
+            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+                .Returns(CreateSampleQueryResponse(queryId));
+            _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
+                .Returns(new Query { Id = queryId });
+
+            // Act
+            await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
+
+            // Assert — exactly one completion notification carrying final progress
+            await _jobNotifier.Received(1).NotifyAsync(
+                Arg.Is<JobNotification>(n =>
+                    n.EntityId == experiment.Id &&
+                    n.Status == ExperimentStatus.Completed.ToString() &&
+                    n.Completed == experiment.TotalQueryCount &&
+                    n.Total == experiment.TotalQueryCount),
+                Arg.Any<CancellationToken>());
         }
 
         [Fact]
