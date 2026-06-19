@@ -11,11 +11,13 @@ import Settings from "./components/Settings";
 import Statistics from "./components/Statistics";
 import Experiments from "./components/Experiments";
 import SignalRProvider from "./signalr/SignalRProvider";
+import GlobalJobToasts from "./signalr/GlobalJobToasts";
 
 function App() {
   return (
     <BrowserRouter>
       <SignalRProvider>
+        <GlobalJobToasts />
         <div className="min-h-screen flex flex-col bg-[#1F1F1F]">
           <Header />
           <div className="flex flex-1 w-full overflow-x-hidden">
