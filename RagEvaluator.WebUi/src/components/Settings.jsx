@@ -90,7 +90,8 @@ function Settings() {
         try {
           const result = await reprocessDocuments();
           if (result.documentsFailed > 0) {
-            const succeeded = result.documentsProcessed - result.documentsFailed;
+            const succeeded =
+              result.documentsProcessed - result.documentsFailed;
             toast.warning(
               `Reprocessed ${succeeded}/${result.documentsProcessed} documents (${result.totalChunksCreated} chunks). ${result.documentsFailed} failed.`,
             );
@@ -208,7 +209,9 @@ function Settings() {
             </div>
             {(draft.chunkingStrategy === "FixedSize" ||
               draft.chunkingStrategy === "Semantic") && (
-              <div className={`grid gap-4 ${draft.chunkingStrategy === "Semantic" ? "grid-cols-3" : "grid-cols-2"}`}>
+              <div
+                className={`grid gap-4 ${draft.chunkingStrategy === "Semantic" ? "grid-cols-3" : "grid-cols-2"}`}
+              >
                 <div className="bg-[#1F1F1F] rounded-lg p-3 border border-gray-700">
                   <label
                     htmlFor="chunkSize"
@@ -300,8 +303,7 @@ function Settings() {
                       onChange={(e) =>
                         setDraft({
                           ...draft,
-                          minChunkSize:
-                            Number.parseInt(e.target.value) || 0,
+                          minChunkSize: Number.parseInt(e.target.value) || 0,
                         })
                       }
                       className="w-full bg-transparent text-gray-200 text-sm font-medium outline-none"
