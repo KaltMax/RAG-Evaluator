@@ -10,7 +10,8 @@
     "test": "vitest --coverage",
     "test:ui": "vitest --ui --coverage",
     "preview": "vite preview",
-    "format": "prettier --write \"src/**/*.{js,jsx}\""
+    "format": "prettier --write \"src/**/*.{js,jsx}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx}\""
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
