@@ -12,6 +12,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // SignalR hub for real-time job notifications (WebSocket)
+      '/hubs': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
     },
   },
 })

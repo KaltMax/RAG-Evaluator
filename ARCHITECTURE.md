@@ -233,6 +233,7 @@ RAG-Evaluator/
 ├── RagEvaluator.WebUi/                         # React Frontend (Vite)
 │   ├── src/
 │   │   ├── components/
+│   │   ├── signalr/                            # SignalR provider, context & global job toasts
 │   │   ├── assets/
 │   │   ├── api/
 │   │   ├── utils/
@@ -518,6 +519,10 @@ Reprocessing runs to completion **independently of the request** — the control
       → 14. Set status to Completed, set CompletedAt
       → 15. Broadcast completion JobNotification ("Completed") via IJobNotifier → SignalR
 
+(Client) SignalRProvider receives each JobNotification on the shared /hubs/jobs connection
+    → GlobalJobToasts shows a completion/failure toast from any route
+    → Statistics page updates the matching experiment's status & progress live
+
 16. GET /api/experiments/{id} → ExperimentMapper.ToResponse()
     → Groups queries by (Question, Language, TopK)
     → ExperimentMetricsAggregator computes aggregated metrics per group and overall:
@@ -783,6 +788,7 @@ course: "Software Engineering I"
 - **HTTP Client**: Axios
 - **Charting**: Recharts (bar charts, error bars, stacked bars)
 - **Markdown Rendering**: react-markdown + remark-gfm, styled with the Tailwind Typography plugin
+- **Real-time**: @microsoft/signalr client — a single app-wide connection (`SignalRProvider`) that drives global completion toasts and live experiment progress
 - **UI Libraries**: React Dropzone, React Toastify, Heroicons
 
 ### DevOps

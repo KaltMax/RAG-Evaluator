@@ -252,6 +252,7 @@ Response:
 - **HTTP Client**: Axios
 - **Charting**: Recharts (bar charts, error bars, stacked bars)
 - **Markdown Rendering**: react-markdown + remark-gfm with Tailwind Typography (renders LLM answers)
+- **Real-time**: @microsoft/signalr client for live job notifications (toasts + experiment progress)
 - **UI Libraries**: React Dropzone, React Toastify, Heroicons
 - **Testing**: Vitest with coverage
 

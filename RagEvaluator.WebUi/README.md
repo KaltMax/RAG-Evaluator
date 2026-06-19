@@ -77,6 +77,11 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - Response quality distribution chart (stacked horizontal bars)
   - Language comparison: side-by-side retrieval metrics for English vs German queries
   - Per-query breakdown: expandable accordion with per-experiment metric comparison
+  - Live experiment status & progress via SignalR (no manual refresh needed)
+
+- **Real-time Notifications** - SignalR-driven updates over a single app-wide connection
+  - Toast on experiment completion/failure from any page
+  - Live status and processing progress on the Statistics page
 
 ## Tech Stack
 
@@ -90,6 +95,7 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
 - **Recharts** - Charting library (bar charts, error bars, stacked bars)
 - **React Markdown + remark-gfm** - Renders LLM answers as GitHub-flavored Markdown
 - **Tailwind Typography** - Prose styling for rendered Markdown
+- **@microsoft/signalr** - Real-time job notifications (single shared connection)
 - **PropTypes** - Runtime type checking for React props
 - **Heroicons** - Icon library
 - **Vitest** - Unit testing with coverage
@@ -224,6 +230,10 @@ src/
 │   │   ├── LanguageComparison.jsx      # Side-by-side EN/DE retrieval charts
 │   │   └── PerQueryBreakdown.jsx       # Expandable per-question comparison accordion
 │   └── Settings.jsx                    # Settings page (embedding model, chunking, prompts)
+├── signalr/                            # Real-time job notifications
+│   ├── SignalRProvider.jsx             # App-wide SignalR connection + subscribe API
+│   ├── SignalRContext.js               # Context + useJobNotifications hook
+│   └── GlobalJobToasts.jsx             # Route-independent completion/failure toasts
 ├── assets/                             # Static assets
 │   └── rag-evaluator.svg               # Application logo
 ├── App.jsx                             # Main app component with routing
@@ -275,5 +285,8 @@ Brief summary of implemented API services (see `src/api`):
 | `GET /api/experiments/{id}` | Get experiment with query groups and aggregated metrics |
 | `POST /api/experiments` | Create experiment with `{ Name, RepeatCount, Queries[] }` |
 | `DELETE /api/experiments/{id}` | Delete an experiment |
+| `WS /hubs/jobs` | SignalR hub — subscribe to `JobUpdate` notifications (progress/completion) |
 
 Axios base URL is controlled by `VITE_API_BASE_URL` (default `/api`). Timeout is 300000 ms (5 min).
+
+Real-time updates use a SignalR connection to `/hubs/jobs` (proxied in dev via Vite and in production via nginx).

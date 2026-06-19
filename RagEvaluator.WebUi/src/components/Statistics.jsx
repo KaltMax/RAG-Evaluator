@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import {
@@ -13,6 +13,30 @@ import RetrievalMetricsChart from "./statistics/RetrievalMetricsChart";
 import ResponseQualityChart from "./statistics/ResponseQualityChart";
 import LanguageComparison from "./statistics/LanguageComparison";
 import PerQueryBreakdown from "./statistics/PerQueryBreakdown";
+import { useJobNotifications } from "../signalr/SignalRContext";
+
+// Merge an incoming job notification into a single experiment summary.
+function mergeExperimentUpdate(exp, notification) {
+  return {
+    ...exp,
+    status: notification.status,
+    progress: {
+      ...exp.progress,
+      completed: notification.completed,
+      total: notification.total,
+    },
+  };
+}
+
+// Apply an experiment job notification to the experiments list
+function applyExperimentNotification(experiments, notification) {
+  if (notification.jobType !== "experiment") return experiments;
+  return experiments.map((exp) =>
+    exp.id === notification.entityId
+      ? mergeExperimentUpdate(exp, notification)
+      : exp,
+  );
+}
 
 function Statistics() {
   const [experiments, setExperiments] = useState([]);
@@ -21,8 +45,9 @@ function Statistics() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(new Set());
+  const { subscribe } = useJobNotifications();
 
-  const fetchExperiments = async () => {
+  const fetchExperiments = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -35,11 +60,19 @@ function Statistics() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchExperiments();
-  }, []);
+  }, [fetchExperiments]);
+
+  // Live experiment status/progress updates via SignalR.
+  useEffect(() => {
+    const handleJobUpdate = (notification) =>
+      setExperiments((prev) => applyExperimentNotification(prev, notification));
+
+    return subscribe(handleJobUpdate);
+  }, [subscribe]);
 
   // Build a stable color map: experiment id -> color, based on order in experiments list
   const colorMap = {};
