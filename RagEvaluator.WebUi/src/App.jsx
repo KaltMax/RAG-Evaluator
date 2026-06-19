@@ -10,28 +10,31 @@ import QueryHistory from "./components/QueryHistory";
 import Settings from "./components/Settings";
 import Statistics from "./components/Statistics";
 import Experiments from "./components/Experiments";
+import SignalRProvider from "./signalr/SignalRProvider";
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col bg-[#1F1F1F]">
-        <Header />
-        <div className="flex flex-1 w-full overflow-x-hidden">
-          <Sidebar />
-          <main className="flex-1 min-w-0 p-4 md:p-8">
-            <Routes>
-              <Route path="/" element={<SearchView />} />
-              <Route path="/experiments" element={<Experiments />} />
-              <Route path="/uploadDocuments" element={<UploadDocuments />} />
-              <Route path="/documents" element={<DocumentList />} />
-              <Route path="/queryHistory" element={<QueryHistory />} />
-              <Route path="/statistics" element={<Statistics />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
-          </main>
+      <SignalRProvider>
+        <div className="min-h-screen flex flex-col bg-[#1F1F1F]">
+          <Header />
+          <div className="flex flex-1 w-full overflow-x-hidden">
+            <Sidebar />
+            <main className="flex-1 min-w-0 p-4 md:p-8">
+              <Routes>
+                <Route path="/" element={<SearchView />} />
+                <Route path="/experiments" element={<Experiments />} />
+                <Route path="/uploadDocuments" element={<UploadDocuments />} />
+                <Route path="/documents" element={<DocumentList />} />
+                <Route path="/queryHistory" element={<QueryHistory />} />
+                <Route path="/statistics" element={<Statistics />} />
+                <Route path="/settings" element={<Settings />} />
+              </Routes>
+            </main>
+          </div>
+          <ToastContainer position="bottom-left" theme="dark" />
         </div>
-        <ToastContainer position="bottom-left" theme="dark" />
-      </div>
+      </SignalRProvider>
     </BrowserRouter>
   );
 }
