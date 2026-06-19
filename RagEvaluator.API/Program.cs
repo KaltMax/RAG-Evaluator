@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using RagEvaluator.API.Hubs;
 using RagEvaluator.API.Middleware;
+using RagEvaluator.API.Services;
 using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Application.Workers;
@@ -81,6 +83,10 @@ namespace RagEvaluator.API
             builder.Services.AddScoped<IJobHandler<ExperimentJob>, ExperimentJobHandler>();
             builder.Services.AddHostedService<QueuedHostedService<ExperimentJob>>();
 
+            // Real-time job notifications (SignalR)
+            builder.Services.AddSignalR();
+            builder.Services.AddSingleton<IJobNotifier, SignalRJobNotifier>();
+
             // Add CORS
             builder.Services.AddCors(options =>
             {
@@ -136,6 +142,7 @@ namespace RagEvaluator.API
             app.UseCors();
             app.UseAuthorization();
             app.MapControllers();
+            app.MapHub<JobsHub>("/hubs/jobs");
             app.Run();
         }
     }

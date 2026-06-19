@@ -5,6 +5,7 @@ using RagEvaluator.Application.Workers;
 using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Configurations;
+using RagEvaluator.Contract.Dtos.Notifications;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
@@ -23,6 +24,7 @@ namespace RagEvaluator.Application.Services
         private readonly IDocumentRepository _documentRepository;
         private readonly IRagService _ragService;
         private readonly IBackgroundTaskQueue<ExperimentJob> _experimentQueue;
+        private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
 
         public ExperimentService(
@@ -32,6 +34,7 @@ namespace RagEvaluator.Application.Services
             IDocumentRepository documentRepository,
             IRagService ragService,
             IBackgroundTaskQueue<ExperimentJob> experimentQueue,
+            IJobNotifier jobNotifier,
             RagConfiguration config)
         {
             _logger = logger;
@@ -40,6 +43,7 @@ namespace RagEvaluator.Application.Services
             _documentRepository = documentRepository;
             _ragService = ragService;
             _experimentQueue = experimentQueue;
+            _jobNotifier = jobNotifier;
             _config = config;
         }
 
@@ -118,6 +122,13 @@ namespace RagEvaluator.Application.Services
             experiment.Status = ExperimentStatus.Completed;
             experiment.CompletedAt = DateTime.UtcNow;
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
+
+            await _jobNotifier.NotifyAsync(
+                new JobNotification("experiment", experiment.Id, experiment.Status.ToString(),
+                    experiment.Name, experiment.CompletedQueryCount, experiment.TotalQueryCount),
+                    cancellationToken);
+
+            _logger.LogInformation("Experiment {ExperimentId} completed", experiment.Id);
         }
 
         private async Task ProcessSingleQueryAsync(Experiment experiment, ExperimentQueryItem queryItem, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken)
@@ -153,6 +164,11 @@ namespace RagEvaluator.Application.Services
 
             experiment.CompletedQueryCount++;
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
+
+            await _jobNotifier.NotifyAsync(
+                new JobNotification("experiment", experiment.Id, experiment.Status.ToString(),
+                    experiment.Name, experiment.CompletedQueryCount, experiment.TotalQueryCount),
+                    cancellationToken);
 
             _logger.LogInformation(
                 "Experiment {ExperimentId}: completed query {Completed}/{Total}",

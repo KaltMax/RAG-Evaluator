@@ -106,6 +106,10 @@ RAG-Evaluator/
 │   │   └── SettingsController.cs               # Runtime RAG configuration
 │   ├── Middleware/
 │   │   └── ExceptionHandler.cs
+│   ├── Hubs/
+│   │   └── JobsHub.cs                          # SignalR hub broadcasting background-job updates
+│   ├── Services/
+│   │   └── SignalRJobNotifier.cs               # IJobNotifier implementation over SignalR
 │   ├── Program.cs
 │   ├── appsettings.json
 │   └── Dockerfile
@@ -144,7 +148,8 @@ RAG-Evaluator/
 │   ├── Abstractions/
 │   │   ├── BackgroundProcessing/
 │   │   │   ├── IBackgroundTaskQueue.cs         # Generic background job queue interface
-│   │   │   └── IJobHandler.cs                  # Generic per-job handler interface
+│   │   │   ├── IJobHandler.cs                  # Generic per-job handler interface
+│   │   │   └── IJobNotifier.cs                 # Generic real-time job notification interface
 │   │   ├── Services/
 │   │   │   ├── IChatService.cs                 # Chat/LLM service interface
 │   │   │   ├── IEmbeddingService.cs            # Embedding generation interface
@@ -160,6 +165,8 @@ RAG-Evaluator/
 │   │   ├── FileStorageConfiguration.cs         # File storage settings
 │   │   └── RagConfiguration.cs
 │   ├── Dtos/
+│   │   ├── Notifications/
+│   │   │   └── JobNotification.cs              # Real-time background-job update (progress/completion)
 │   │   ├── Requests/
 │   │   │   ├── AskQuestionRequest.cs
 │   │   │   ├── UploadDocumentRequest.cs
@@ -258,11 +265,14 @@ RAG-Evaluator/
 - CORS configuration (permissive for development)
 - Dependency injection wiring (composition root in `Program.cs`)
 - Auto-migration on startup (development only)
+- Real-time client notifications via SignalR (`/hubs/jobs`)
 
 **Key Components**:
 
 - Controllers (thin, delegate to Application layer)
 - `ExceptionHandler` middleware for global error handling
+- `JobsHub` (`/hubs/jobs`) - SignalR hub that broadcasts `JobNotification` updates to all connected clients (server→client only)
+- `SignalRJobNotifier` - implements the Contract `IJobNotifier` over `IHubContext<JobsHub>`; best-effort, delivery failures are logged and never disrupt the running job
 - `Program.cs` - composition root that wires all DI registrations
 
 **Dependencies**: → Application, Infrastructure, Contract, Domain (API references all layers because `Program.cs` is the composition root; controllers only use Application and Contract)
@@ -320,7 +330,7 @@ RAG-Evaluator/
   - `UpdateSettingsAsync()` - validates and applies partial config updates; triggers embedding service reinitialization when the model changes
 - `ExperimentService` - Experiment batch processing and aggregation
   - `CreateExperimentAsync()` - resolves RelevantDocumentNames to IDs via a single DocumentRepository.GetByNamesAsync() query (400 if any unknown), creates experiment with config snapshot, enqueues for background processing
-  - `ProcessExperimentAsync()` - runs all queries × repeatCount, links results to experiment, updates progress
+  - `ProcessExperimentAsync()` - runs all queries × repeatCount, links results to experiment, updates progress, and broadcasts progress/completion via `IJobNotifier`
   - `GetByIdAsync()` - returns experiment with query groups and aggregated metrics
   - `GetAllAsync()` / `DeleteAsync()` - list and delete operations
 - `QueuedHostedService<TJob>` - Generic `BackgroundService` that drains an `IBackgroundTaskQueue<TJob>` and dispatches each job to a scoped `IJobHandler<TJob>` (fresh DI scope per job; failures are logged without stopping the worker). Processes one job at a time per job type.
@@ -504,9 +514,11 @@ Reprocessing runs to completion **independently of the request** — the control
             → 10. RagService.AskQuestionAsync() - Runs full RAG pipeline
             → 11. Load resulting Query, set ExperimentId, populate ground truth from resolved document IDs, save
             → 12. Increment CompletedQueryCount, update experiment
-      → 13. Set status to Completed, set CompletedAt
+            → 13. Broadcast progress JobNotification ("Running", Completed/Total) via IJobNotifier → SignalR
+      → 14. Set status to Completed, set CompletedAt
+      → 15. Broadcast completion JobNotification ("Completed") via IJobNotifier → SignalR
 
-14. GET /api/experiments/{id} → ExperimentMapper.ToResponse()
+16. GET /api/experiments/{id} → ExperimentMapper.ToResponse()
     → Groups queries by (Question, Language, TopK)
     → ExperimentMetricsAggregator computes aggregated metrics per group and overall:
        • Mean/StdDev response time
@@ -747,6 +759,7 @@ course: "Software Engineering I"
 
 - **Framework**: ASP.NET Core 10.0
 - **Architecture**: Clean Architecture (Onion Architecture)
+- **Real-time**: ASP.NET Core SignalR (server→client job notifications via the `/hubs/jobs` hub)
 - **AI/ML Framework**: Microsoft Semantic Kernel 1.70.0
 - **LLM Provider**: Ollama (local models, configurable via `.env` and runtime Settings API)
   - **Embedding Models**: `nomic-embed-text-v2-moe` (default, multilingual), `mxbai-embed-large` (configurable, hot-swappable at runtime, monolingual en)
