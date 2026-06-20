@@ -111,10 +111,5 @@ namespace RagEvaluator.Application.Services
 
             return query.ToResponse();
         }
-
-        public async Task<bool> IsInitializedAsync(CancellationToken cancellationToken = default)
-        {
-            return await _queryService.IsReadyAsync(cancellationToken) && await _chatService.IsAvailableAsync(cancellationToken);
-        }
     }
 }

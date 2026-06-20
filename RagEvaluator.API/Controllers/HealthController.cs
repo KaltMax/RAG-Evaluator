@@ -7,11 +7,11 @@ namespace RagEvaluator.API.Controllers
     [Route("api/health")]
     public class HealthController : ControllerBase
     {
-        private readonly IRagService _ragService;
+        private readonly IHealthService _healthService;
 
-        public HealthController(IRagService ragService)
+        public HealthController(IHealthService healthService)
         {
-            _ragService = ragService;
+            _healthService = healthService;
         }
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace RagEvaluator.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetHealthAsync(CancellationToken cancellationToken)
         {
-            var isReady = await _ragService.IsInitializedAsync(cancellationToken);
+            var isReady = await _healthService.IsReadyAsync(cancellationToken);
 
             var response = new
             {

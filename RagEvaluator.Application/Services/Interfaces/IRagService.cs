@@ -17,10 +17,5 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// Answers a question using RAG: searches for relevant document chunks and generates an answer using the LLM with retrieved context.
         /// </summary>
         Task<QueryResponse> AskQuestionAsync(AskQuestionRequest request, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Checks if the RAG service is fully initialized and ready by verifying both query and chat services are available.
-        /// </summary>
-        Task<bool> IsInitializedAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -165,52 +165,6 @@ namespace RagEvaluator.Test.ApplicationTest
 
         #endregion
 
-        #region IsInitializedAsync Tests
-
-        [Fact]
-        public async Task IsInitializedAsync_WhenBothServicesAvailable_ShouldReturnTrue()
-        {
-            // Arrange
-            _queryService.IsReadyAsync(TestContext.Current.CancellationToken).Returns(true);
-            _chatService.IsAvailableAsync(TestContext.Current.CancellationToken).Returns(true);
-
-            // Act
-            var result = await _service.IsInitializedAsync(TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.True(result);
-        }
-
-        [Fact]
-        public async Task IsInitializedAsync_WhenQueryServiceUnavailable_ShouldReturnFalse()
-        {
-            // Arrange
-            _queryService.IsReadyAsync(TestContext.Current.CancellationToken).Returns(false);
-            _chatService.IsAvailableAsync(TestContext.Current.CancellationToken).Returns(true);
-
-            // Act
-            var result = await _service.IsInitializedAsync(TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task IsInitializedAsync_WhenChatServiceUnavailable_ShouldReturnFalse()
-        {
-            // Arrange
-            _queryService.IsReadyAsync(TestContext.Current.CancellationToken).Returns(true);
-            _chatService.IsAvailableAsync(TestContext.Current.CancellationToken).Returns(false);
-
-            // Act
-            var result = await _service.IsInitializedAsync(TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        #endregion
-
         #region Helper Methods
 
         private RagConfiguration CreateSampleRagConfiguration()
