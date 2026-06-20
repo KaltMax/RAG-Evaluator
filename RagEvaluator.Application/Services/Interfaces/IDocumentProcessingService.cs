@@ -22,10 +22,5 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// Gets all document chunks associated with a specific document.
         /// </summary>
         Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Searches for similar document chunks using vector similarity with the provided query embedding.
-        /// </summary>
-        Task<IReadOnlyList<ChunkSearchMatch>> SearchChunksAsync(float[] queryEmbedding, int topK, CancellationToken cancellationToken = default);
     }
 }

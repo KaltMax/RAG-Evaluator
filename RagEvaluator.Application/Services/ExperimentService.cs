@@ -22,7 +22,7 @@ namespace RagEvaluator.Application.Services
         private readonly IExperimentRepository _experimentRepository;
         private readonly IQueryRepository _queryRepository;
         private readonly IDocumentRepository _documentRepository;
-        private readonly IRagService _ragService;
+        private readonly IQueryService _queryService;
         private readonly IBackgroundTaskQueue<ExperimentJob> _experimentQueue;
         private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
@@ -32,7 +32,7 @@ namespace RagEvaluator.Application.Services
             IExperimentRepository experimentRepository,
             IQueryRepository queryRepository,
             IDocumentRepository documentRepository,
-            IRagService ragService,
+            IQueryService queryService,
             IBackgroundTaskQueue<ExperimentJob> experimentQueue,
             IJobNotifier jobNotifier,
             RagConfiguration config)
@@ -41,7 +41,7 @@ namespace RagEvaluator.Application.Services
             _experimentRepository = experimentRepository;
             _queryRepository = queryRepository;
             _documentRepository = documentRepository;
-            _ragService = ragService;
+            _queryService = queryService;
             _experimentQueue = experimentQueue;
             _jobNotifier = jobNotifier;
             _config = config;
@@ -140,7 +140,7 @@ namespace RagEvaluator.Application.Services
                 TopK = queryItem.TopK
             };
 
-            var response = await _ragService.AskQuestionAsync(askRequest, cancellationToken);
+            var response = await _queryService.AskQuestionAsync(askRequest, cancellationToken);
 
             var query = await _queryRepository.GetByIdWithResultsAsync(response.QueryId, cancellationToken);
             if (query is not null)

@@ -345,44 +345,6 @@ namespace RagEvaluator.Test.ApplicationTest
 
         #endregion
 
-        #region SearchChunksAsync Tests
-
-        [Fact]
-        public async Task SearchChunksAsync_DelegatesToRepository()
-        {
-            // Arrange
-            var queryEmbedding = new float[] { 0.1f, 0.2f, 0.3f };
-            var expectedMatches = new List<ChunkSearchMatch>
-            {
-                new() { Id = Guid.NewGuid(), Text = "Match 1", Embedding = new float[] { 0.1f }, DocumentId = Guid.NewGuid(), FileName = "test.pdf" },
-                new() { Id = Guid.NewGuid(), Text = "Match 2", Embedding = new float[] { 0.2f }, DocumentId = Guid.NewGuid(), FileName = "test.pdf" }
-            };
-            _documentChunkRepository.SearchAsync(queryEmbedding, 3, Arg.Any<CancellationToken>()).Returns(expectedMatches);
-
-            // Act
-            var result = await _service.SearchChunksAsync(queryEmbedding, 3, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(2, result.Count);
-            await _documentChunkRepository.Received(1).SearchAsync(queryEmbedding, 3, Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task SearchChunksAsync_WhenNoMatches_ReturnsEmptyList()
-        {
-            // Arrange
-            var queryEmbedding = new float[] { 0.1f, 0.2f, 0.3f };
-            _documentChunkRepository.SearchAsync(queryEmbedding, 5, Arg.Any<CancellationToken>())
-                .Returns(new List<ChunkSearchMatch>());
-
-            // Act
-            var result = await _service.SearchChunksAsync(queryEmbedding, 5, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Empty(result);
-        }
-
-        #endregion
 
         #region Helper Methods
 

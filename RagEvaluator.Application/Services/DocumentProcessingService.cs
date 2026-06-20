@@ -138,11 +138,6 @@ namespace RagEvaluator.Application.Services
             return chunks.ToResponseList();
         }
 
-        public async Task<IReadOnlyList<ChunkSearchMatch>> SearchChunksAsync(float[] queryEmbedding, int topK, CancellationToken cancellationToken = default)
-        {
-            return await _documentChunkRepository.SearchAsync(queryEmbedding, topK, cancellationToken);
-        }
-
         private async Task EnsureEmbeddingServiceAvailableAsync(CancellationToken cancellationToken)
         {
             if (!await _embeddingService.IsAvailableAsync(cancellationToken))
