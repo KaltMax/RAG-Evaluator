@@ -1,9 +1,12 @@
 using Microsoft.Extensions.Logging;
 using RagEvaluator.Application.Mappers;
 using RagEvaluator.Application.Services.Interfaces;
+using RagEvaluator.Application.Workers;
+using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
+using RagEvaluator.Contract.Dtos.Notifications;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.Enums;
@@ -23,6 +26,8 @@ namespace RagEvaluator.Application.Services
         private readonly IPdfLoader _pdfLoader;
         private readonly ITextChunker _textChunker;
         private readonly IEmbeddingService _embeddingService;
+        private readonly IBackgroundTaskQueue<DocumentProcessingJob> _documentQueue;
+        private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
 
         public DocumentService(
@@ -33,6 +38,8 @@ namespace RagEvaluator.Application.Services
             IPdfLoader pdfLoader,
             ITextChunker textChunker,
             IEmbeddingService embeddingService,
+            IBackgroundTaskQueue<DocumentProcessingJob> documentQueue,
+            IJobNotifier jobNotifier,
             RagConfiguration config)
         {
             _logger = logger;
@@ -42,6 +49,8 @@ namespace RagEvaluator.Application.Services
             _pdfLoader = pdfLoader;
             _textChunker = textChunker;
             _embeddingService = embeddingService;
+            _documentQueue = documentQueue;
+            _jobNotifier = jobNotifier;
             _config = config;
         }
 
@@ -49,28 +58,49 @@ namespace RagEvaluator.Application.Services
 
         public async Task<DocumentResponse> UploadDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string course, CancellationToken cancellationToken = default)
         {
-            // Create document with Pending status
+            // Create document with Pending status and persist the file to storage.
             var document = await CreateDocumentAsync(documentStream, fileName, documentStream.Length, contentType, language, course, cancellationToken);
+
+            await _documentQueue.EnqueueAsync(new DocumentProcessingJob(document.Id), cancellationToken);
+
+            return document.ToResponse();
+        }
+
+        public async Task ProcessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
+        {
+            var fileInfo = await GetDocumentFileInfoAsync(documentId, cancellationToken);
+            if (fileInfo is null)
+            {
+                _logger.LogError("Document {DocumentId} not found for processing", documentId);
+                return;
+            }
 
             try
             {
-                // Update status to Processing
-                await UpdateStatusAsync(document.Id, DocumentStatus.Processing, cancellationToken);
+                await UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken);
+                await NotifyDocumentAsync(documentId, DocumentStatus.Processing, fileInfo.FileName, cancellationToken);
 
-                // Process document content (PDF → chunks → embeddings → store → Completed)
-                documentStream.Position = 0;
-                await ProcessDocumentContentAsync(document.Id, documentStream, cancellationToken);
+                // ProcessDocumentContentAsync sets the document to Completed on success.
+                await using var stream = await _fileStorageService.OpenReadFileAsync(fileInfo.FilePath, cancellationToken);
+                await ProcessDocumentContentAsync(documentId, stream, cancellationToken);
 
-                // Return updated document
-                var updatedDocument = await GetByIdAsync(document.Id, cancellationToken);
-                return updatedDocument!;
+                await NotifyDocumentAsync(documentId, DocumentStatus.Completed, fileInfo.FileName, cancellationToken);
+                _logger.LogInformation("Document {DocumentId} processed successfully", documentId);
             }
-            catch
+            catch (Exception ex)
             {
-                // Update status to Failed on error
-                await UpdateStatusAsync(document.Id, DocumentStatus.Failed);
-                throw;
+                _logger.LogError(ex, "Failed to process document {DocumentId}", documentId);
+                await UpdateStatusAsync(documentId, DocumentStatus.Failed, CancellationToken.None);
+                await NotifyDocumentAsync(documentId, DocumentStatus.Failed, fileInfo.FileName, cancellationToken, ex.Message);
             }
+        }
+
+        private Task NotifyDocumentAsync(
+            Guid documentId, DocumentStatus status, string fileName, CancellationToken cancellationToken, string? message = null)
+        {
+            return _jobNotifier.NotifyAsync(
+                new JobNotification(JobTypes.Document, documentId, status.ToString(), fileName, Message: message),
+                cancellationToken);
         }
 
         // ---- CRUD ----

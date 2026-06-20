@@ -82,6 +82,11 @@ namespace RagEvaluator.API
             builder.Services.AddScoped<IJobHandler<ExperimentJob>, ExperimentJobHandler>();
             builder.Services.AddHostedService<QueuedHostedService<ExperimentJob>>();
 
+            // Document background processing
+            builder.Services.AddSingleton<IBackgroundTaskQueue<DocumentProcessingJob>, BackgroundTaskQueue<DocumentProcessingJob>>();
+            builder.Services.AddScoped<IJobHandler<DocumentProcessingJob>, DocumentProcessingJobHandler>();
+            builder.Services.AddHostedService<QueuedHostedService<DocumentProcessingJob>>();
+
             // Real-time job notifications (SignalR)
             builder.Services.AddSignalR();
             builder.Services.AddSingleton<IJobNotifier, SignalRJobNotifier>();

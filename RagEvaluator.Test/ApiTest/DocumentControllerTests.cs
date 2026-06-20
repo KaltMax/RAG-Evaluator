@@ -46,7 +46,7 @@ namespace RagEvaluator.Test.ApiTest
         }
 
         [Fact]
-        public async Task UploadDocumentAsync_WithValidPdf_ReturnsOkWithDocument()
+        public async Task UploadDocumentAsync_WithValidPdf_ReturnsAcceptedWithDocument()
         {
             // Arrange
             var fileName = "test.pdf";
@@ -68,8 +68,8 @@ namespace RagEvaluator.Test.ApiTest
             var result = await _controller.UploadDocumentAsync(request, TestContext.Current.CancellationToken);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var response = Assert.IsType<DocumentResponse>(okResult.Value);
+            var acceptedResult = Assert.IsType<AcceptedResult>(result.Result);
+            var response = Assert.IsType<DocumentResponse>(acceptedResult.Value);
             Assert.Equal(expectedResponse.Id, response.Id);
             Assert.Equal(expectedResponse.FileName, response.FileName);
         }

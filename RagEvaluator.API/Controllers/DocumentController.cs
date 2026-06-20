@@ -27,7 +27,7 @@ namespace RagEvaluator.API.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         [HttpPost("upload")]
         [Consumes("multipart/form-data")]
-        [ProducesResponseType(typeof(DocumentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(DocumentResponse), StatusCodes.Status202Accepted)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
@@ -56,8 +56,8 @@ namespace RagEvaluator.API.Controllers
             using var stream = request.File.OpenReadStream();
             var result = await _documentService.UploadDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
 
-            _logger.LogInformation("Document processed successfully: {DocumentId}", result.Id);
-            return Ok(result);
+            _logger.LogInformation("Document accepted for processing: {DocumentId}", result.Id);
+            return Accepted(result);
         }
 
         /// <summary>
