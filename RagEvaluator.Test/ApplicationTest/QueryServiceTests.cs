@@ -3,6 +3,7 @@ using RagEvaluator.Application.Services;
 using RagEvaluator.Application.Services.Interfaces;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
+using RagEvaluator.Contract.Configurations;
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.Enums;
@@ -15,6 +16,9 @@ namespace RagEvaluator.Test.ApplicationTest
         private readonly IEmbeddingService _embeddingService;
         private readonly IQueryRepository _queryRepository;
         private readonly IMetricsService _metricsService;
+        private readonly IChatService _chatService;
+        private readonly IDocumentChunkRepository _documentChunkRepository;
+        private readonly RagConfiguration _config;
         private readonly QueryService _service;
 
         public QueryServiceTests()
@@ -22,124 +26,85 @@ namespace RagEvaluator.Test.ApplicationTest
             _embeddingService = Substitute.For<IEmbeddingService>();
             _queryRepository = Substitute.For<IQueryRepository>();
             _metricsService = Substitute.For<IMetricsService>();
-            _service = new QueryService(_embeddingService, _queryRepository, _metricsService);
+            _chatService = Substitute.For<IChatService>();
+            _documentChunkRepository = Substitute.For<IDocumentChunkRepository>();
+            _config = CreateSampleRagConfiguration();
+            _service = new QueryService(_embeddingService, _queryRepository, _metricsService, _chatService, _documentChunkRepository, _config);
         }
 
-        #region IsReadyAsync Tests
+        #region AskQuestionAsync Tests
 
         [Fact]
-        public async Task IsReadyAsync_ReturnsTrue_WhenAllDependenciesAreReady()
+        public async Task AskQuestionAsync_WithMatchingChunks_ShouldGenerateAnswerAndPersist()
         {
             // Arrange
+            var request = new AskQuestionRequest { Question = "What is Cloud Computing?", Language = "en", TopK = 3 };
+            var chunkMatches = new List<ChunkSearchMatch> { CreateSampleChunkSearchMatch() };
+
+            _chatService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _embeddingService.GenerateQueryEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new float[] { 0.1f, 0.2f, 0.3f });
+            _documentChunkRepository.SearchAsync(Arg.Any<float[]>(), request.TopK, Arg.Any<CancellationToken>())
+                .Returns(chunkMatches);
+            _metricsService.CosineSimilarity(Arg.Any<float[]>(), Arg.Any<float[]>()).Returns(0.9f);
+            _chatService.GenerateResponseAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns("Cloud computing is a model.");
+
+            // Act
+            var result = await _service.AskQuestionAsync(request, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal("Cloud computing is a model.", result.Answer);
+            Assert.Equal(request.Question, result.Question);
+            await _chatService.Received(1).GenerateResponseAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+            await _queryRepository.Received(1).AddAsync(Arg.Any<Query>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task AskQuestionAsync_WithNoChunks_ShouldReturnFallbackAndSkipChat()
+        {
+            // Arrange
+            var request = new AskQuestionRequest { Question = "What is Cloud Computing?", Language = "en", TopK = 3 };
+
+            _chatService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _embeddingService.GenerateQueryEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new float[] { 0.1f });
+            _documentChunkRepository.SearchAsync(Arg.Any<float[]>(), request.TopK, Arg.Any<CancellationToken>())
+                .Returns(new List<ChunkSearchMatch>());
+
+            // Act
+            var result = await _service.AskQuestionAsync(request, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Contains("No relevant documents", result.Answer);
+            await _chatService.DidNotReceive().GenerateResponseAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+            await _queryRepository.Received(1).AddAsync(Arg.Any<Query>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task AskQuestionAsync_WhenChatServiceUnavailable_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            _chatService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
 
-            // Act
-            var result = await _service.IsReadyAsync(TestContext.Current.CancellationToken);
-            
-            // Assert
-            Assert.True(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _service.AskQuestionAsync(new AskQuestionRequest { Question = "test", Language = "en", TopK = 3 }, TestContext.Current.CancellationToken));
         }
 
         [Fact]
-        public async Task IsReadyAsync_ReturnsFalse_WhenEmbeddingServiceIsNotReady()
+        public async Task AskQuestionAsync_WhenEmbeddingServiceUnavailable_ShouldThrowInvalidOperationException()
         {
             // Arrange
+            _chatService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
-            
-            // Act
-            var result = await _service.IsReadyAsync(TestContext.Current.CancellationToken);
-            
-            // Assert
-            Assert.False(result);
-        }
 
-        #endregion
-
-        #region CreateQueryAsync Tests
-
-        [Fact]
-        public async Task CreateQueryAsync_ShouldReturnQueryWithEmbedding()
-        {
-            // Arrange
-            var embedding = new float[] { 0.1f, 0.2f, 0.3f };
-            _embeddingService.GenerateQueryEmbeddingAsync("What is Cloud Computing?", TestContext.Current.CancellationToken)
-                .Returns(embedding);
-
-            // Act
-            var result = await _service.CreateQueryAsync(
-                "What is Cloud Computing?", "en", 5,
-                "You are a helpful assistant.", "FixedSize",
-                "nomic-embed-text-v2-moe", "qwen2.5:14b",
-                TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.NotEqual(Guid.Empty, result.Id);
-            Assert.Equal("What is Cloud Computing?", result.Question);
-            Assert.Equal("en", result.Language);
-            Assert.Equal(5, result.TopK);
-            Assert.Equal(embedding, result.QueryEmbedding);
-        }
-
-        [Fact]
-        public async Task CreateQueryAsync_ShouldPassRawQuestionForEmbedding()
-        {
-            // Arrange
-            _embeddingService.GenerateQueryEmbeddingAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
-                .Returns(new float[] { 0.1f });
-
-            // Act
-            await _service.CreateQueryAsync(
-                "Test question", "en", 3,
-                "prompt", "FixedSize", "model", "chat",
-                TestContext.Current.CancellationToken);
-
-            // Assert
-            await _embeddingService.Received(1).GenerateQueryEmbeddingAsync(
-                "Test question", TestContext.Current.CancellationToken);
-        }
-
-        #endregion
-
-        #region CompleteQueryAsync Tests
-
-        [Fact]
-        public async Task CompleteQueryAsync_ShouldCompleteQueryAndSaveResults()
-        {
-            // Arrange
-            var query = CreateSampleQuery();
-            var answer = "Cloud computing is the delivery of computing services over the internet.";
-            var responseTimeMs = 1500;
-            var chunkMatches = new List<ChunkSearchMatch> { CreateSampleChunkSearchMatch() };
-            _metricsService.CosineSimilarity(Arg.Any<float[]>(), Arg.Any<float[]>()).Returns(0.95f);
-            
-            // Act
-            await _service.CompleteQueryAsync(query, answer, responseTimeMs, chunkMatches, TestContext.Current.CancellationToken);
-            
-            // Assert
-            Assert.Equal(answer, query.Answer);
-            Assert.Equal(responseTimeMs, query.ResponseTimeMs);
-            Assert.Single(query.Results);
-            Assert.Equal(0.95f, query.Results.First().SimilarityScore);
-            await _queryRepository.Received(1).AddAsync(query, TestContext.Current.CancellationToken);
-        }
-
-        [Fact]
-        public async Task CompleteQueryAsync_ShouldHandleEmptyChunkMatches()
-        {
-            // Arrange
-            var query = CreateSampleQuery();
-            var answer = "Cloud computing is the delivery of computing services over the internet.";
-            var responseTimeMs = 1500;
-            var chunkMatches = new List<ChunkSearchMatch>();
-            
-            // Act
-            await _service.CompleteQueryAsync(query, answer, responseTimeMs, chunkMatches, TestContext.Current.CancellationToken);
-            
-            // Assert
-            Assert.Equal(answer, query.Answer);
-            Assert.Equal(responseTimeMs, query.ResponseTimeMs);
-            Assert.Empty(query.Results);
-            await _queryRepository.Received(1).AddAsync(query, TestContext.Current.CancellationToken);
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _service.AskQuestionAsync(new AskQuestionRequest { Question = "test", Language = "en", TopK = 3 }, TestContext.Current.CancellationToken));
         }
 
         #endregion
@@ -571,6 +536,27 @@ namespace RagEvaluator.Test.ApplicationTest
                 ChunkingStrategy = "FixedSize",
                 EmbeddingModel = "nomic-embed-text-v2-moe",
                 Embedding = new float[] { 0.1f, 0.2f, 0.3f }
+            };
+        }
+
+        private RagConfiguration CreateSampleRagConfiguration()
+        {
+            return new RagConfiguration
+            {
+                OllamaEndpoint = "http://localhost:11434/v1",
+                EmbeddingModel = "nomic-embed-text-v2-moe",
+                AvailableEmbeddingModels = "nomic-embed-text-v2-moe",
+                ChatModel = "qwen2.5:14b",
+                ChunkingStrategy = ChunkingStrategy.FixedSize,
+                PromptTemplate = PromptTemplate.Basic,
+                PromptBasic = "You are a helpful assistant.",
+                PromptInstructed = "You are a helpful assistant.",
+                PromptLanguageAwareEn = "You are a helpful assistant.",
+                PromptLanguageAwareDe = "Du bist ein hilfreicher Assistent.",
+                ChunkSize = 1000,
+                ChunkOverlap = 200,
+                SimilarityThreshold = 0.5,
+                MinChunkSize = 200
             };
         }
 

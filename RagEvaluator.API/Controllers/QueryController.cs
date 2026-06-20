@@ -10,16 +10,13 @@ namespace RagEvaluator.API.Controllers
     public class QueryController : ControllerBase
     {
         private readonly ILogger<QueryController> _logger;
-        private readonly IRagService _ragService;
         private readonly IQueryService _queryService;
 
         public QueryController(
             ILogger<QueryController> logger,
-            IRagService ragService,
             IQueryService queryService)
         {
             _logger = logger;
-            _ragService = ragService;
             _queryService = queryService;
         }
 
@@ -43,7 +40,7 @@ namespace RagEvaluator.API.Controllers
 
             _logger.LogInformation("Processing query: {Question}", request.Question);
 
-            var result = await _ragService.AskQuestionAsync(request, cancellationToken);
+            var result = await _queryService.AskQuestionAsync(request, cancellationToken);
 
             _logger.LogInformation("Query processed successfully: {QueryId}", result.QueryId);
 

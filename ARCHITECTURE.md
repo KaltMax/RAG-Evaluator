@@ -40,13 +40,13 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 │  RagEvaluator.Application  │  │ RagEvaluator.Infrastructure│
 │  (Business Logic)          │  │   (Implementations)        │
 │                            │  │                            │
-│ • RagService               │  │ • OllamaChatService        │
-│ • DocumentService          │  │ • OllamaEmbeddingService   │
-│ • DocumentProcessingService│  │ • LocalFileStorageService  │
-│ • QueryService             │  │ • PdfPigLoader             │
-│ • MetricsService           │  │ • FixedSizeTextChunker     │
-│ • SettingsService          │  │ • SemanticTextChunker      │
-│ • ExperimentService        │  │ • DocumentRepository       │
+│ • DocumentService          │  │ • OllamaChatService        │
+│ • QueryService             │  │ • OllamaEmbeddingService   │
+│ • ExperimentService        │  │ • LocalFileStorageService  │
+│ • SettingsService          │  │ • PdfPigLoader             │
+│ • HealthService            │  │ • FixedSizeTextChunker     │
+│ • MetricsService           │  │ • SemanticTextChunker      │
+│                            │  │ • DocumentRepository       │
 │                            │  │ • DocumentChunkRepository  │
 │ References: Contract,      │  │ • QueryRepository          │
 │             Domain         │  │ • ExperimentRepository     │
@@ -89,7 +89,7 @@ The application follows **Clean Architecture** (Onion Architecture) principles w
 - **API** references all layers, but only `Program.cs` touches Infrastructure (for DI wiring). Controllers themselves only depend on Application services and Contract DTOs
 - **Application and Infrastructure are siblings** - they both depend on Contract and Domain but never on each other
 - **Infrastructure** implements interfaces defined in Contract (e.g., `OllamaChatService` implements `IChatService`)
-- **Application** orchestrates workflows using Contract abstractions (e.g., `RagService` depends on `IChatService`, not `OllamaChatService`)
+- **Application** orchestrates workflows using Contract abstractions (e.g., `QueryService` depends on `IChatService`, not `OllamaChatService`). Each feature has a single application service that owns its use-cases (`DocumentService`, `QueryService`, `ExperimentService`, `SettingsService`, `HealthService`); each controller depends on exactly one
 - **Domain** has zero dependencies - purely entities, enums, and value objects
 - **Contract** serves as the central interface hub, depending only on Domain for types used in interface signatures (e.g., `SearchResult`, `Document`)
 
@@ -123,18 +123,16 @@ RAG-Evaluator/
 │   │   └── PromptTemplateResolver.cs           # Prompt template resolution by language
 │   ├── Services/
 │   │   ├── Interfaces/
-│   │   │   ├── IRagService.cs
-│   │   │   ├── IDocumentService.cs             # Document CRUD operations
-│   │   │   ├── IDocumentProcessingService.cs   # PDF processing, chunking, embedding, chunk search
+│   │   │   ├── IDocumentService.cs             # Document feature: upload, processing, reprocess, CRUD, chunks
+│   │   │   ├── IQueryService.cs                # Query feature: RAG pipeline, history, annotation
 │   │   │   ├── IExperimentService.cs           # Experiment batch processing
-│   │   │   ├── IQueryService.cs
+│   │   │   ├── IHealthService.cs               # Service readiness (embeddings + chat)
 │   │   │   ├── IMetricsService.cs              # Similarity & evaluation metrics
 │   │   │   └── ISettingsService.cs             # Runtime settings management
-│   │   ├── RagService.cs                       # Core RAG orchestration
-│   │   ├── DocumentService.cs                  # Document CRUD operations
-│   │   ├── DocumentProcessingService.cs        # PDF processing, chunking, embedding, chunk search
+│   │   ├── DocumentService.cs                  # Upload + PDF processing + reprocess + CRUD + chunks
+│   │   ├── QueryService.cs                     # RAG question-answering pipeline + query persistence
 │   │   ├── ExperimentService.cs                # Experiment creation, processing & aggregation
-│   │   ├── QueryService.cs                     # Query handling & persistence
+│   │   ├── HealthService.cs                    # Embedding + chat readiness check
 │   │   ├── MetricsService.cs                   # Cosine similarity, MRR, Precision@K, etc.
 │   │   └── SettingsService.cs                  # Runtime RAG configuration management
 │   ├── Workers/
@@ -298,27 +296,23 @@ RAG-Evaluator/
 
 **Implemented Services**:
 
-- `RagService` - Core RAG orchestration
-  - `ProcessDocumentAsync()` - orchestrates document upload, extraction, chunking, embedding
-  - `AskQuestionAsync()` - orchestrates RAG query (embed question, search chunks, generate answer)
-  - `IsInitializedAsync()` - checks if Ollama services are available (used by health endpoint)
-- `DocumentService` - Document CRUD operations
+- `DocumentService` - Document feature: upload orchestration, PDF processing, reprocessing, CRUD, and chunk retrieval
+  - `UploadDocumentAsync()` - creates the document, saves the file, then extracts/chunks/embeds and stores it
   - `CreateDocumentAsync()` - rejects duplicate filenames (400), creates document entity and saves file to storage
+  - `ProcessDocumentContentAsync()` - extracts text, chunks, embeds, and stores chunks
+  - `ReprocessAllDocumentsAsync()` - re-chunks and re-embeds every document with stored content (any status) using the current config; per-document atomic chunk swap with isolated failures
+  - `GetChunksByDocumentIdAsync()` - retrieves document chunks
   - `GetByIdAsync()` / `GetByNameAsync()` / `GetAllAsync()` - document retrieval
   - `GetDocumentFileInfoAsync()` - file info for downloads
   - `UpdateStatusAsync()` - updates document processing status
   - `DeleteAsync()` - deletes document, file, and associated chunks
-- `DocumentProcessingService` - PDF processing, chunking, embedding, and chunk search
-  - `ProcessDocumentContentAsync()` - extracts text, chunks, embeds, and stores chunks
-  - `ReprocessAllDocumentsAsync()` - re-chunks and re-embeds every document with stored content (any status) using the current config; per-document atomic chunk swap with isolated failures
-  - `GetChunksByDocumentIdAsync()` - retrieves document chunks
-  - `SearchChunksAsync()` - vector similarity search across all chunks
-- `QueryService` - Query handling, persistence, and annotation
-  - `CreateQueryAsync()` - creates and persists a query with configuration snapshot
-  - `CompleteQueryAsync()` - populates query with answer, embedding, response time, and retrieved chunks
+- `QueryService` - Query feature: RAG question-answering pipeline, persistence, and annotation
+  - `AskQuestionAsync()` - runs the RAG query end-to-end (embed question, search chunks, generate answer, persist); pipeline steps (create/search/complete/readiness) are private helpers
   - `GetByIdAsync()` / `GetAllAsync()` - query retrieval and history
   - `AnnotateResultsAsync()` - updates query results with relevance grades, response quality, and ground truth documents; calculates metrics; propagates chunk annotations to unannotated sibling queries within the same experiment since they share the same retrieved chunks
   - `DeleteAsync()` - deletes a query
+- `HealthService` - Reports backend readiness
+  - `IsReadyAsync()` - true when both the embedding and chat services are available (used by the health endpoint)
 - `MetricsService` - Similarity and retrieval evaluation metrics
   - `CosineSimilarity()` / `CosineDistance()` - vector similarity calculations
   - `MeanReciprocalRank()` - MRR for retrieval evaluation (chunk-level: rank of first relevant chunk)
@@ -437,10 +431,10 @@ RAG-Evaluator/
 
 ```
 1. PDF Upload (Controller)
-   → 2. RagService.ProcessDocumentAsync() (Application Layer)
-      → 3. DocumentService.CreateDocumentAsync() - Save file and create document entity (status: Pending)
-      → 4. DocumentService.UpdateStatusAsync(Processing)
-      → 5. DocumentProcessingService.ProcessDocumentContentAsync()
+   → 2. DocumentService.UploadDocumentAsync() (Application Layer)
+      → 3. CreateDocumentAsync() - Save file and create document entity (status: Pending)
+      → 4. UpdateStatusAsync(Processing)
+      → 5. ProcessDocumentContentAsync()
          → 6. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor
          → 7. Join pages into single content string
          → 8. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
@@ -461,7 +455,7 @@ Reprocessing runs to completion **independently of the request** — the control
 
 ```
 1. Settings Change or Manual Trigger
-   → 2. DocumentProcessingService.ReprocessAllDocumentsAsync() (Application Layer)
+   → 2. DocumentService.ReprocessAllDocumentsAsync() (Application Layer)
       → 3. DocumentRepository.GetReprocessableAsync() - Fetch all documents that have content,
            regardless of status (recovers docs left Failed by a prior run or stuck Processing)
       → 4. DocumentRepository.SetStatusAsync(..., Processing) - Mark all as Processing in one bulk update
@@ -481,19 +475,16 @@ Reprocessing runs to completion **independently of the request** — the control
 
 ```
 1. Question Submission (Controller)
-   → 2. RagService.AskQuestionAsync() (Application Layer)
+   → 2. QueryService.AskQuestionAsync() (Application Layer; steps 3-10 are private helpers within it)
       → 3. Start timing with Stopwatch
       → 4. PromptTemplateResolver.Resolve() - Resolve system prompt from template + query language
-      → 5. QueryService.CreateQueryAsync() - Create query object with configuration snapshot
-           and generate query embedding via IEmbeddingService.GenerateQueryEmbeddingAsync(question)
-           (in-memory only, not persisted yet)
-      → 6. DocumentProcessingService.SearchChunksAsync() - Find top K similar chunks
-           (delegates to DocumentChunkRepository, uses pgvector cosine distance for ordering)
+      → 5. Create query object with configuration snapshot and generate query embedding via
+           IEmbeddingService.GenerateQueryEmbeddingAsync(question) (in-memory only, not persisted yet)
+      → 6. Search top K similar chunks (via DocumentChunkRepository, pgvector cosine distance for ordering)
       → 7. Build context from retrieved chunks
       → 8. IChatService.GenerateResponseAsync() - Generate answer with system prompt and context
       → 9. Stop timing, calculate response time
-      → 10. QueryService.CompleteQueryAsync() - Populate and persist query with answer,
-            response time, and QueryResults to database
+      → 10. Populate and persist query with answer, response time, and QueryResults to database
    → 11. Return QueryResponse with answer + sources
 ```
 
@@ -512,7 +503,7 @@ Reprocessing runs to completion **independently of the request** — the control
    → 8. ExperimentJobHandler → ExperimentService.ProcessExperimentAsync()
       → 9. For each repeat (1..repeatCount):
          → For each query in queries:
-            → 10. RagService.AskQuestionAsync() - Runs full RAG pipeline
+            → 10. QueryService.AskQuestionAsync() - Runs full RAG pipeline
             → 11. Load resulting Query, set ExperimentId, populate ground truth from resolved document IDs, save
             → 12. Increment CompletedQueryCount, update experiment
             → 13. Broadcast progress JobNotification ("Running", Completed/Total) via IJobNotifier → SignalR

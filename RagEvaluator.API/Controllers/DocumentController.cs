@@ -10,20 +10,14 @@ namespace RagEvaluator.API.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly ILogger<DocumentController> _logger;
-        private readonly IRagService _ragService;
         private readonly IDocumentService _documentService;
-        private readonly IDocumentProcessingService _documentProcessingService;
 
         public DocumentController(
             ILogger<DocumentController> logger,
-            IRagService ragService,
-            IDocumentService documentService,
-            IDocumentProcessingService documentProcessingService)
+            IDocumentService documentService)
         {
             _logger = logger;
-            _ragService = ragService;
             _documentService = documentService;
-            _documentProcessingService = documentProcessingService;
         }
 
         /// <summary>
@@ -60,7 +54,7 @@ namespace RagEvaluator.API.Controllers
             _logger.LogInformation("Uploading document: {FileName}, Language: {Language}, Course: {Course}", request.File.FileName, request.Language, request.Course);
 
             using var stream = request.File.OpenReadStream();
-            var result = await _ragService.ProcessDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
+            var result = await _documentService.UploadDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
 
             _logger.LogInformation("Document processed successfully: {DocumentId}", result.Id);
             return Ok(result);
@@ -178,7 +172,7 @@ namespace RagEvaluator.API.Controllers
         {
             _logger.LogInformation("Reprocessing all documents with current configuration");
             // Decoupled from the request lifetime: a client disconnect must not abort a long-running reprocess.
-            var result = await _documentProcessingService.ReprocessAllDocumentsAsync(CancellationToken.None);
+            var result = await _documentService.ReprocessAllDocumentsAsync(CancellationToken.None);
             _logger.LogInformation("Reprocessing complete: {Documents} documents, {Chunks} chunks", result.DocumentsProcessed, result.TotalChunksCreated);
             return Ok(result);
         }
@@ -201,7 +195,7 @@ namespace RagEvaluator.API.Controllers
                 return NotFound();
             }
 
-            var chunks = await _documentProcessingService.GetChunksByDocumentIdAsync(id, cancellationToken);
+            var chunks = await _documentService.GetChunksByDocumentIdAsync(id, cancellationToken);
             return Ok(chunks);
         }
     }

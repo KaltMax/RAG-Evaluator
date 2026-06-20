@@ -8,6 +8,11 @@ namespace RagEvaluator.Application.Mappers
     /// </summary>
     public static class ExperimentMapper
     {
+        public static IReadOnlyList<ExperimentSummaryResponse> ToSummaryList(this IEnumerable<Experiment> experiments)
+        {
+            return experiments.Select(e => e.ToSummary()).ToList();
+        }
+
         public static ExperimentSummaryResponse ToSummary(this Experiment experiment)
         {
             var annotatedCount = experiment.Queries.Count(q => q.ResponseQuality.HasValue);

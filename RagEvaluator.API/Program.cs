@@ -71,9 +71,8 @@ namespace RagEvaluator.API
 
             // Register Application services (business logic)
             builder.Services.AddScoped<IDocumentService, DocumentService>();
-            builder.Services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
             builder.Services.AddScoped<IQueryService, QueryService>();
-            builder.Services.AddScoped<IRagService, RagService>();
+            builder.Services.AddScoped<IHealthService, HealthService>();
             builder.Services.AddSingleton<ISettingsService, SettingsService>();
             builder.Services.AddSingleton<IMetricsService, MetricsService>();
             builder.Services.AddScoped<IExperimentService, ExperimentService>();

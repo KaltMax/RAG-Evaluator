@@ -22,7 +22,7 @@ namespace RagEvaluator.Application.Services
         private readonly IExperimentRepository _experimentRepository;
         private readonly IQueryRepository _queryRepository;
         private readonly IDocumentRepository _documentRepository;
-        private readonly IRagService _ragService;
+        private readonly IQueryService _queryService;
         private readonly IBackgroundTaskQueue<ExperimentJob> _experimentQueue;
         private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
@@ -32,7 +32,7 @@ namespace RagEvaluator.Application.Services
             IExperimentRepository experimentRepository,
             IQueryRepository queryRepository,
             IDocumentRepository documentRepository,
-            IRagService ragService,
+            IQueryService queryService,
             IBackgroundTaskQueue<ExperimentJob> experimentQueue,
             IJobNotifier jobNotifier,
             RagConfiguration config)
@@ -41,7 +41,7 @@ namespace RagEvaluator.Application.Services
             _experimentRepository = experimentRepository;
             _queryRepository = queryRepository;
             _documentRepository = documentRepository;
-            _ragService = ragService;
+            _queryService = queryService;
             _experimentQueue = experimentQueue;
             _jobNotifier = jobNotifier;
             _config = config;
@@ -123,10 +123,7 @@ namespace RagEvaluator.Application.Services
             experiment.CompletedAt = DateTime.UtcNow;
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
 
-            await _jobNotifier.NotifyAsync(
-                new JobNotification("experiment", experiment.Id, experiment.Status.ToString(),
-                    experiment.Name, experiment.CompletedQueryCount, experiment.TotalQueryCount),
-                    cancellationToken);
+            await NotifyExperimentAsync(experiment, cancellationToken);
 
             _logger.LogInformation("Experiment {ExperimentId} completed", experiment.Id);
         }
@@ -140,7 +137,7 @@ namespace RagEvaluator.Application.Services
                 TopK = queryItem.TopK
             };
 
-            var response = await _ragService.AskQuestionAsync(askRequest, cancellationToken);
+            var response = await _queryService.AskQuestionAsync(askRequest, cancellationToken);
 
             var query = await _queryRepository.GetByIdWithResultsAsync(response.QueryId, cancellationToken);
             if (query is not null)
@@ -165,14 +162,24 @@ namespace RagEvaluator.Application.Services
             experiment.CompletedQueryCount++;
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
 
-            await _jobNotifier.NotifyAsync(
-                new JobNotification("experiment", experiment.Id, experiment.Status.ToString(),
-                    experiment.Name, experiment.CompletedQueryCount, experiment.TotalQueryCount),
-                    cancellationToken);
+            await NotifyExperimentAsync(experiment, cancellationToken);
 
             _logger.LogInformation(
                 "Experiment {ExperimentId}: completed query {Completed}/{Total}",
                 experiment.Id, experiment.CompletedQueryCount, experiment.TotalQueryCount);
+        }
+
+        private Task NotifyExperimentAsync(Experiment experiment, CancellationToken cancellationToken)
+        {
+            return _jobNotifier.NotifyAsync(
+                new JobNotification(
+                    JobTypes.Experiment,
+                    experiment.Id,
+                    experiment.Status.ToString(),
+                    experiment.Name,
+                    experiment.CompletedQueryCount,
+                    experiment.TotalQueryCount),
+                cancellationToken);
         }
 
         public async Task<ExperimentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -184,7 +191,7 @@ namespace RagEvaluator.Application.Services
         public async Task<IReadOnlyList<ExperimentSummaryResponse>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var experiments = await _experimentRepository.GetAllAsync(cancellationToken);
-            return experiments.Select(e => e.ToSummary()).ToList();
+            return experiments.ToSummaryList();
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)

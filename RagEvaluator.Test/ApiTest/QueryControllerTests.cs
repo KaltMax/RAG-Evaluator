@@ -15,16 +15,14 @@ namespace RagEvaluator.Test.ApiTest
     public class QueryControllerTests
     {
         private readonly ILogger<QueryController> _logger;
-        private readonly IRagService _ragService;
         private readonly IQueryService _queryService;
         private readonly QueryController _controller;
 
         public QueryControllerTests()
         {
             _logger = Substitute.For<ILogger<QueryController>>();
-            _ragService = Substitute.For<IRagService>();
             _queryService = Substitute.For<IQueryService>();
-            _controller = new QueryController(_logger, _ragService, _queryService);
+            _controller = new QueryController(_logger, _queryService);
         }
 
         #region QueryAsync Tests
@@ -52,7 +50,7 @@ namespace RagEvaluator.Test.ApiTest
             // Arrange
             var request = CreateSampleQueryRequest();
             var expectedResponse = CreateSampleQueryResponse();
-            _ragService.AskQuestionAsync(request, Arg.Any<CancellationToken>())
+            _queryService.AskQuestionAsync(request, Arg.Any<CancellationToken>())
                 .Returns(expectedResponse);
 
             // Act

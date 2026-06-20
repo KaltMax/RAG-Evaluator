@@ -20,7 +20,7 @@ namespace RagEvaluator.Test.ApplicationTest
         private readonly IExperimentRepository _experimentRepository;
         private readonly IQueryRepository _queryRepository;
         private readonly IDocumentRepository _documentRepository;
-        private readonly IRagService _ragService;
+        private readonly IQueryService _queryService;
         private readonly IBackgroundTaskQueue<ExperimentJob> _experimentQueue;
         private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
@@ -32,11 +32,11 @@ namespace RagEvaluator.Test.ApplicationTest
             _experimentRepository = Substitute.For<IExperimentRepository>();
             _queryRepository = Substitute.For<IQueryRepository>();
             _documentRepository = Substitute.For<IDocumentRepository>();
-            _ragService = Substitute.For<IRagService>();
+            _queryService = Substitute.For<IQueryService>();
             _experimentQueue = new BackgroundTaskQueue<ExperimentJob>();
             _jobNotifier = Substitute.For<IJobNotifier>();
             _config = CreateSampleRagConfiguration();
-            _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _documentRepository, _ragService, _experimentQueue, _jobNotifier, _config);
+            _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _documentRepository, _queryService, _experimentQueue, _jobNotifier, _config);
         }
 
         #region CreateExperimentAsync Tests
@@ -132,7 +132,7 @@ namespace RagEvaluator.Test.ApplicationTest
             await _service.ProcessExperimentAsync(experimentId, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert
-            await _ragService.DidNotReceive().AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
+            await _queryService.DidNotReceive().AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var queryId = Guid.NewGuid();
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
             _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(new Query { Id = queryId });
@@ -153,7 +153,7 @@ namespace RagEvaluator.Test.ApplicationTest
             await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert — 1 repeat * 2 queries = 2 calls
-            await _ragService.Received(2).AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
+            await _queryService.Received(2).AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
             Assert.Equal(ExperimentStatus.Completed, experiment.Status);
             Assert.NotNull(experiment.CompletedAt);
             Assert.Equal(2, experiment.CompletedQueryCount);
@@ -168,7 +168,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var queryId = Guid.NewGuid();
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
             _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(new Query { Id = queryId });
@@ -178,7 +178,7 @@ namespace RagEvaluator.Test.ApplicationTest
 
             // Assert — 1 repeat * 2 queries = 2 progress notifications (status "Running")
             await _jobNotifier.Received(2).NotifyAsync(
-                Arg.Is<JobNotification>(n => n.JobType == "experiment" && n.Status == ExperimentStatus.Running.ToString()),
+                Arg.Is<JobNotification>(n => n.JobType == JobTypes.Experiment && n.Status == ExperimentStatus.Running.ToString()),
                 Arg.Any<CancellationToken>());
         }
 
@@ -191,7 +191,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var queryId = Guid.NewGuid();
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
             _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(new Query { Id = queryId });
@@ -219,7 +219,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var queryId = Guid.NewGuid();
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
             _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(new Query { Id = queryId });
@@ -228,7 +228,7 @@ namespace RagEvaluator.Test.ApplicationTest
             await _service.ProcessExperimentAsync(experiment.Id, queries, new Dictionary<string, Guid>(), TestContext.Current.CancellationToken);
 
             // Assert — 3 repeats * 2 queries = 6 calls
-            await _ragService.Received(6).AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
+            await _queryService.Received(6).AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken);
             Assert.Equal(6, experiment.CompletedQueryCount);
         }
 
@@ -241,7 +241,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var queryId = Guid.NewGuid();
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(
                     _ => throw new Exception("Embedding service unavailable"),
                     _ => Task.FromResult(CreateSampleQueryResponse(queryId)));
@@ -266,7 +266,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var query = new Query { Id = queryId };
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
             _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(query);
@@ -305,7 +305,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var query = new Query { Id = queryId };
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
             _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(query);
@@ -332,7 +332,7 @@ namespace RagEvaluator.Test.ApplicationTest
             var query = new Query { Id = queryId };
 
             _experimentRepository.GetByIdAsync(experiment.Id, TestContext.Current.CancellationToken).Returns(experiment);
-            _ragService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
+            _queryService.AskQuestionAsync(Arg.Any<AskQuestionRequest>(), TestContext.Current.CancellationToken)
                 .Returns(CreateSampleQueryResponse(queryId));
             _queryRepository.GetByIdWithResultsAsync(queryId, TestContext.Current.CancellationToken)
                 .Returns(query);

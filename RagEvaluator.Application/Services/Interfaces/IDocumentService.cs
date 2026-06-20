@@ -1,14 +1,19 @@
-﻿using RagEvaluator.Contract.Dtos.Responses;
+using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {
     /// <summary>
-    /// Service for document CRUD operations.
+    /// Document feature service: upload, PDF processing, reprocessing, CRUD, and chunk retrieval.
     /// </summary>
     public interface IDocumentService
     {
+        /// <summary>
+        /// Uploads a document: creates it, saves the file, then extracts content, chunks, embeds, and stores it.
+        /// </summary>
+        Task<DocumentResponse> UploadDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string course, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Creates a new document entity and saves the file to storage.
         /// </summary>
@@ -43,5 +48,20 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// Deletes a document, its associated file from storage, and all related chunks.
         /// </summary>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Processes a PDF document by extracting text, splitting into chunks, generating embeddings, and storing the chunks.
+        /// </summary>
+        Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reprocesses all documents with content by deleting existing chunks and re-chunking + re-embedding with the current configuration.
+        /// </summary>
+        Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets all document chunks associated with a specific document.
+        /// </summary>
+        Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
     }
 }
