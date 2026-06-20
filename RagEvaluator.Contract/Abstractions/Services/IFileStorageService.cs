@@ -14,7 +14,12 @@
         /// Deletes a file from storage by its file path.
         /// </summary>
         Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default);
-        
+
+        /// <summary>
+        /// Opens a readable stream for a stored file by its file path.
+        /// </summary>
+        Task<Stream> OpenReadFileAsync(string filePath, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Checks whether a file exists at the specified file path.
         /// </summary>

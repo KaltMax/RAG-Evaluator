@@ -38,6 +38,19 @@ namespace RagEvaluator.Infrastructure.Services
             return Task.CompletedTask;
         }
 
+        public Task<Stream> OpenReadFileAsync(string filePath, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"File not found at path: {filePath}");
+            }
+
+            Stream fileStream = File.OpenRead(filePath);
+            return Task.FromResult(fileStream);
+        }
+
         public bool FileExists(string filePath)
         {
             return File.Exists(filePath);
