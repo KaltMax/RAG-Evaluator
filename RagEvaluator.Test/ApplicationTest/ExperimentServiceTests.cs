@@ -178,7 +178,7 @@ namespace RagEvaluator.Test.ApplicationTest
 
             // Assert — 1 repeat * 2 queries = 2 progress notifications (status "Running")
             await _jobNotifier.Received(2).NotifyAsync(
-                Arg.Is<JobNotification>(n => n.JobType == "experiment" && n.Status == ExperimentStatus.Running.ToString()),
+                Arg.Is<JobNotification>(n => n.JobType == JobTypes.Experiment && n.Status == ExperimentStatus.Running.ToString()),
                 Arg.Any<CancellationToken>());
         }
 

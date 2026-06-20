@@ -123,10 +123,7 @@ namespace RagEvaluator.Application.Services
             experiment.CompletedAt = DateTime.UtcNow;
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
 
-            await _jobNotifier.NotifyAsync(
-                new JobNotification("experiment", experiment.Id, experiment.Status.ToString(),
-                    experiment.Name, experiment.CompletedQueryCount, experiment.TotalQueryCount),
-                    cancellationToken);
+            await NotifyExperimentAsync(experiment, cancellationToken);
 
             _logger.LogInformation("Experiment {ExperimentId} completed", experiment.Id);
         }
@@ -165,14 +162,24 @@ namespace RagEvaluator.Application.Services
             experiment.CompletedQueryCount++;
             await _experimentRepository.UpdateAsync(experiment, cancellationToken);
 
-            await _jobNotifier.NotifyAsync(
-                new JobNotification("experiment", experiment.Id, experiment.Status.ToString(),
-                    experiment.Name, experiment.CompletedQueryCount, experiment.TotalQueryCount),
-                    cancellationToken);
+            await NotifyExperimentAsync(experiment, cancellationToken);
 
             _logger.LogInformation(
                 "Experiment {ExperimentId}: completed query {Completed}/{Total}",
                 experiment.Id, experiment.CompletedQueryCount, experiment.TotalQueryCount);
+        }
+
+        private Task NotifyExperimentAsync(Experiment experiment, CancellationToken cancellationToken)
+        {
+            return _jobNotifier.NotifyAsync(
+                new JobNotification(
+                    JobTypes.Experiment,
+                    experiment.Id,
+                    experiment.Status.ToString(),
+                    experiment.Name,
+                    experiment.CompletedQueryCount,
+                    experiment.TotalQueryCount),
+                cancellationToken);
         }
 
         public async Task<ExperimentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
