@@ -191,7 +191,7 @@ namespace RagEvaluator.Application.Services
         public async Task<IReadOnlyList<ExperimentSummaryResponse>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var experiments = await _experimentRepository.GetAllAsync(cancellationToken);
-            return experiments.Select(e => e.ToSummary()).ToList();
+            return experiments.ToSummaryList();
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
