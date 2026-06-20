@@ -2,9 +2,12 @@
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using RagEvaluator.Application.Services;
+using RagEvaluator.Application.Workers;
+using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
+using RagEvaluator.Contract.Dtos.Notifications;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.Enums;
 
@@ -19,6 +22,8 @@ namespace RagEvaluator.Test.ApplicationTest
         private readonly IPdfLoader _pdfLoader;
         private readonly ITextChunker _textChunker;
         private readonly IEmbeddingService _embeddingService;
+        private readonly IBackgroundTaskQueue<DocumentProcessingJob> _documentQueue;
+        private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
         private readonly DocumentService _service;
 
@@ -31,8 +36,10 @@ namespace RagEvaluator.Test.ApplicationTest
             _pdfLoader = Substitute.For<IPdfLoader>();
             _textChunker = Substitute.For<ITextChunker>();
             _embeddingService = Substitute.For<IEmbeddingService>();
+            _documentQueue = Substitute.For<IBackgroundTaskQueue<DocumentProcessingJob>>();
+            _jobNotifier = Substitute.For<IJobNotifier>();
             _config = CreateSampleRagConfiguration();
-            _service = new DocumentService(_logger, _documentRepository, _documentChunkRepository, _fileStorageService, _pdfLoader, _textChunker, _embeddingService, _config);
+            _service = new DocumentService(_logger, _documentRepository, _documentChunkRepository, _fileStorageService, _pdfLoader, _textChunker, _embeddingService, _documentQueue, _jobNotifier, _config);
         }
 
         private static RagConfiguration CreateSampleRagConfiguration()
@@ -59,16 +66,37 @@ namespace RagEvaluator.Test.ApplicationTest
         #region UploadDocumentAsync Tests
 
         [Fact]
-        public async Task UploadDocumentAsync_WithValidInput_CreatesProcessesAndReturnsDocument()
+        public async Task UploadDocumentAsync_CreatesPendingDocumentAndEnqueuesJob()
         {
             // Arrange
             var stream = new MemoryStream("PDF content"u8.ToArray());
-            var document = new Document { Id = Guid.NewGuid(), FileName = "test.pdf", Status = DocumentStatus.Pending };
-
             _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns((Document?)null);
             _fileStorageService.SaveFileAsync(Arg.Any<Stream>(), Arg.Any<Guid>(), "test.pdf", Arg.Any<CancellationToken>())
                 .Returns("/storage/test.pdf");
-            _documentRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(document);
+
+            // Act
+            var result = await _service.UploadDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
+
+            // Assert — returns the Pending document, enqueues a job, and does NOT process inline
+            Assert.Equal(DocumentStatus.Pending.ToString(), result.Status);
+            await _documentRepository.Received(1).AddAsync(Arg.Any<Document>(), Arg.Any<CancellationToken>());
+            await _documentQueue.Received(1).EnqueueAsync(Arg.Any<DocumentProcessingJob>(), Arg.Any<CancellationToken>());
+            await _documentChunkRepository.DidNotReceive().AddRangeAsync(Arg.Any<List<DocumentChunk>>(), Arg.Any<CancellationToken>());
+        }
+
+        #endregion
+
+        #region ProcessQueuedDocumentAsync Tests
+
+        [Fact]
+        public async Task ProcessQueuedDocumentAsync_WithValidDocument_ProcessesAndNotifiesCompleted()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+            _fileStorageService.OpenReadFileAsync(document.FilePath!, Arg.Any<CancellationToken>())
+                .Returns(new MemoryStream("PDF content"u8.ToArray()));
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
             _pdfLoader.LoadPdf(Arg.Any<Stream>()).Returns(new List<string> { "Page text" });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -77,32 +105,50 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns(new float[] { 0.1f });
 
             // Act
-            var result = await _service.UploadDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
+            await _service.ProcessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(document.Id, result.Id);
             await _documentChunkRepository.Received(1).AddRangeAsync(Arg.Any<List<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            await _jobNotifier.Received(1).NotifyAsync(
+                Arg.Is<JobNotification>(n => n.JobType == JobTypes.Document && n.Status == DocumentStatus.Completed.ToString()),
+                Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task UploadDocumentAsync_WhenProcessingFails_SetsStatusToFailed()
+        public async Task ProcessQueuedDocumentAsync_WhenProcessingFails_SetsFailedAndNotifies()
         {
             // Arrange
-            var stream = new MemoryStream("PDF content"u8.ToArray());
-            var document = new Document { Id = Guid.NewGuid(), FileName = "test.pdf", Status = DocumentStatus.Pending };
-
-            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns((Document?)null);
-            _fileStorageService.SaveFileAsync(Arg.Any<Stream>(), Arg.Any<Guid>(), "test.pdf", Arg.Any<CancellationToken>())
-                .Returns("/storage/test.pdf");
-            _documentRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(document);
-            // Embedding unavailable → ProcessDocumentContentAsync throws
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+            _fileStorageService.OpenReadFileAsync(document.FilePath!, Arg.Any<CancellationToken>())
+                .Returns(new MemoryStream("PDF content"u8.ToArray()));
+            // Embedding unavailable → ProcessDocumentContentAsync throws (handled, not rethrown)
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
 
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _service.UploadDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken));
+            // Act
+            await _service.ProcessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.Equal(DocumentStatus.Failed, document.Status);
+            await _jobNotifier.Received(1).NotifyAsync(
+                Arg.Is<JobNotification>(n => n.Status == DocumentStatus.Failed.ToString()),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ProcessQueuedDocumentAsync_WhenDocumentNotFound_ReturnsWithoutProcessing()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns((Document?)null);
+
+            // Act
+            await _service.ProcessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert
+            await _documentChunkRepository.DidNotReceive().AddRangeAsync(Arg.Any<List<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            await _jobNotifier.DidNotReceive().NotifyAsync(Arg.Any<JobNotification>(), Arg.Any<CancellationToken>());
         }
 
         #endregion

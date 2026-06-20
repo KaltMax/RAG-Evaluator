@@ -15,6 +15,12 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task<DocumentResponse> UploadDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string course, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Background worker entry point: reloads a previously created (Pending) document from storage,
+        /// processes its content, and broadcasts status transitions (Processing/Completed/Failed).
+        /// </summary>
+        Task ProcessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Creates a new document entity and saves the file to storage.
         /// </summary>
         Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, string course, CancellationToken cancellationToken = default);
