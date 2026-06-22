@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { useJobNotifications } from "./SignalRContext";
 
-const JOB_LABELS = {
-  experiment: "Experiment",
-  document: "Document",
-  reprocess: "Reprocess",
+// Per-jobType wording so each job reads naturally.
+const JOBS = {
+  experiment: { label: "Experiment", done: "completed", failed: "failed" },
+  document: { label: "Document", done: "processed", failed: "failed to process" },
+  reprocess: { label: "Reprocess", done: "completed", failed: "failed" },
 };
 
 /**
@@ -17,14 +18,16 @@ function GlobalJobToasts() {
 
   useEffect(() => {
     const unsubscribe = subscribe((n) => {
-      const label = JOB_LABELS[n.jobType] ?? "Job";
-      const target = n.name ? `${label} '${n.name}'` : label;
+      const job = JOBS[n.jobType];
+      if (!job) return;
+
+      const target = n.name ? `${job.label} '${n.name}'` : job.label;
 
       if (n.status === "Completed") {
-        toast.success(`${target} completed`);
+        toast.success(`${target} ${job.done}`);
       } else if (n.status === "Failed") {
-        const message = n.message ? `: ${n.message}` : "";
-        toast.error(`${target} failed${message}`);
+        const suffix = n.message ? `: ${n.message}` : "";
+        toast.error(`${target} ${job.failed}${suffix}`);
       }
     });
 
