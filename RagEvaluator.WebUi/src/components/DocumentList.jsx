@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import {
   ArrowPathIcon,
@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import {
   getAllDocuments,
+  getDocumentById,
   deleteDocument,
   downloadDocument,
 } from "../api/documentService";
@@ -17,6 +18,25 @@ import { formatDate } from "../utils/formatDate";
 import { formatFileSize } from "../utils/formatFileSize";
 import { formatLanguage } from "../utils/formatLanguage";
 import { sortByKey } from "../utils/sortByKey";
+import { useJobNotifications } from "../signalr/SignalRContext";
+
+// Replace a row with its freshly fetched version, or prepend it if not yet listed.
+function upsertDocument(documents, doc) {
+  const isListed = documents.some((d) => d.id === doc.id);
+  if (!isListed) {
+    return [doc, ...documents];
+  }
+  // Swap the matching row for the fresh copy, keep the others (and their order).
+  return documents.map((d) => (d.id === doc.id ? doc : d));
+}
+
+// A notification only signals that a document changed; the server holds the
+// authoritative status and counts, so refetch it and merge it into the list.
+function refreshDocument(id, setDocuments) {
+  getDocumentById(id)
+    .then((doc) => setDocuments((prev) => upsertDocument(prev, doc)))
+    .catch(() => {});
+}
 
 function DocumentList() {
   const [documents, setDocuments] = useState([]);
@@ -24,8 +44,9 @@ function DocumentList() {
   const [error, setError] = useState(null);
   const [sortKey, setSortKey] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
+  const { subscribe } = useJobNotifications();
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -38,11 +59,21 @@ function DocumentList() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+  }, [fetchDocuments]);
+
+  // Live document status updates via SignalR: refetch the changed document so its
+  // status and counts reflect the server, and the matching row updates in place.
+  useEffect(() => {
+    const handleJobUpdate = (n) => {
+      if (n.jobType === "document") refreshDocument(n.entityId, setDocuments);
+    };
+
+    return subscribe(handleJobUpdate);
+  }, [subscribe]);
 
   const handleDownload = async (id, fileName) => {
     try {
