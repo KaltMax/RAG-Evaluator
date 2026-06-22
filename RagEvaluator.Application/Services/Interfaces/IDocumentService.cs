@@ -53,7 +53,7 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// <summary>
         /// Processes a PDF document by extracting text, splitting into chunks, generating embeddings, and storing the chunks.
         /// </summary>
-        Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream, CancellationToken cancellationToken = default);
+        Task ProcessDocumentAsync(Guid documentId, string filePath, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Reprocesses all documents with content by deleting existing chunks and re-chunking + re-embedding with the current configuration.

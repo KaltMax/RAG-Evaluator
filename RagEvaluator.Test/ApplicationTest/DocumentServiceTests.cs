@@ -123,7 +123,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
             _fileStorageService.OpenReadFileAsync(document.FilePath!, Arg.Any<CancellationToken>())
                 .Returns(new MemoryStream("PDF content"u8.ToArray()));
-            // Embedding unavailable → ProcessDocumentContentAsync throws (handled, not rethrown)
+            // Embedding unavailable → ProcessDocumentAsync throws (handled, not rethrown)
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
 
             // Act
@@ -449,27 +449,29 @@ namespace RagEvaluator.Test.ApplicationTest
 
         #endregion
 
-        #region ProcessDocumentContentAsync Tests
+        #region ProcessDocumentAsync Tests
 
         [Fact]
-        public async Task ProcessDocumentContentAsync_WithValidInput_ExtractsChunksAndUpdatesDocument()
+        public async Task ProcessDocumentAsync_WithValidInput_ExtractsChunksAndUpdatesDocument()
         {
             // Arrange
             var documentId = Guid.NewGuid();
             var document = CreateSampleDocument(documentId);
+            const string filePath = "/storage/test.pdf";
             var pdfStream = new MemoryStream("PDF content"u8.ToArray());
             var pages = new List<string> { "Page 1 text", "Page 2 text" };
             var chunks = new List<string> { "Chunk 1", "Chunk 2", "Chunk 3" };
             var embedding = new float[] { 0.1f, 0.2f, 0.3f };
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _fileStorageService.OpenReadFileAsync(filePath, Arg.Any<CancellationToken>()).Returns(pdfStream);
             _pdfLoader.LoadPdf(pdfStream).Returns(pages);
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(chunks);
             _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(embedding);
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
             // Act
-            await _service.ProcessDocumentContentAsync(documentId, pdfStream, TestContext.Current.CancellationToken);
+            await _service.ProcessDocumentAsync(documentId, filePath, TestContext.Current.CancellationToken);
 
             // Assert
             await _documentChunkRepository.Received(1).AddRangeAsync(
@@ -483,15 +485,17 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task ProcessDocumentContentAsync_WithCorrectConfig_UsesConfigForChunkEntities()
+        public async Task ProcessDocumentAsync_WithCorrectConfig_UsesConfigForChunkEntities()
         {
             // Arrange
             var documentId = Guid.NewGuid();
             var document = CreateSampleDocument(documentId);
+            const string filePath = "/storage/test.pdf";
             var pdfStream = new MemoryStream("PDF content"u8.ToArray());
             var embedding = new float[] { 0.1f, 0.2f, 0.3f };
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _fileStorageService.OpenReadFileAsync(filePath, Arg.Any<CancellationToken>()).Returns(pdfStream);
             _pdfLoader.LoadPdf(pdfStream).Returns(new List<string> { "Page text" });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk 1" });
@@ -499,7 +503,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
             // Act
-            await _service.ProcessDocumentContentAsync(documentId, pdfStream, TestContext.Current.CancellationToken);
+            await _service.ProcessDocumentAsync(documentId, filePath, TestContext.Current.CancellationToken);
 
             // Assert
             await _documentChunkRepository.Received(1).AddRangeAsync(
@@ -511,14 +515,16 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task ProcessDocumentContentAsync_PassesRawChunkTextForEmbedding()
+        public async Task ProcessDocumentAsync_PassesRawChunkTextForEmbedding()
         {
             // Arrange
             var documentId = Guid.NewGuid();
             var document = CreateSampleDocument(documentId);
+            const string filePath = "/storage/test.pdf";
             var pdfStream = new MemoryStream("PDF content"u8.ToArray());
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _fileStorageService.OpenReadFileAsync(filePath, Arg.Any<CancellationToken>()).Returns(pdfStream);
             _pdfLoader.LoadPdf(pdfStream).Returns(new List<string> { "Page text" });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Hello world" });
@@ -527,7 +533,7 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
 
             // Act
-            await _service.ProcessDocumentContentAsync(documentId, pdfStream, TestContext.Current.CancellationToken);
+            await _service.ProcessDocumentAsync(documentId, filePath, TestContext.Current.CancellationToken);
 
             // Assert
             await _embeddingService.Received(1).GenerateDocumentEmbeddingAsync(
@@ -535,24 +541,26 @@ namespace RagEvaluator.Test.ApplicationTest
         }
 
         [Fact]
-        public async Task ProcessDocumentContentAsync_WhenEmbeddingUnavailable_ThrowsInvalidOperationException()
+        public async Task ProcessDocumentAsync_WhenEmbeddingUnavailable_ThrowsInvalidOperationException()
         {
             // Arrange
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
 
-            // Act & Assert
+            // Act & Assert — availability is checked before the file is opened
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _service.ProcessDocumentContentAsync(Guid.NewGuid(), new MemoryStream(), TestContext.Current.CancellationToken));
+                _service.ProcessDocumentAsync(Guid.NewGuid(), "/storage/test.pdf", TestContext.Current.CancellationToken));
         }
 
         [Fact]
-        public async Task ProcessDocumentContentAsync_WhenDocumentNotFound_ThrowsArgumentException()
+        public async Task ProcessDocumentAsync_WhenDocumentNotFound_ThrowsArgumentException()
         {
             // Arrange
             var documentId = Guid.NewGuid();
+            const string filePath = "/storage/test.pdf";
             var pdfStream = new MemoryStream("PDF content"u8.ToArray());
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _fileStorageService.OpenReadFileAsync(filePath, Arg.Any<CancellationToken>()).Returns(pdfStream);
             _pdfLoader.LoadPdf(pdfStream).Returns(new List<string> { "Page text" });
             _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(new List<string> { "Chunk" });
@@ -562,7 +570,7 @@ namespace RagEvaluator.Test.ApplicationTest
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.ProcessDocumentContentAsync(documentId, pdfStream, TestContext.Current.CancellationToken));
+                _service.ProcessDocumentAsync(documentId, filePath, TestContext.Current.CancellationToken));
         }
 
         #endregion
