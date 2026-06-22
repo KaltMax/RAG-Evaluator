@@ -80,9 +80,8 @@ namespace RagEvaluator.Application.Services
                 await _documentRepository.SetStatusAsync([documentId], DocumentStatus.Processing, cancellationToken);
                 await NotifyDocumentAsync(documentId, DocumentStatus.Processing, fileInfo.FileName, cancellationToken);
 
-                // ProcessDocumentContentAsync sets the document to Completed on success.
-                await using var stream = await _fileStorageService.OpenReadFileAsync(fileInfo.FilePath, cancellationToken);
-                await ProcessDocumentContentAsync(documentId, stream, cancellationToken);
+                // ProcessDocumentAsync sets the document to Completed on success.
+                await ProcessDocumentAsync(documentId, fileInfo.FilePath, cancellationToken);
 
                 await NotifyDocumentAsync(documentId, DocumentStatus.Completed, fileInfo.FileName, cancellationToken);
                 _logger.LogInformation("Document {DocumentId} processed successfully", documentId);
@@ -195,12 +194,13 @@ namespace RagEvaluator.Application.Services
 
         // ---- Processing ----
 
-        public async Task ProcessDocumentContentAsync(Guid documentId, Stream pdfStream, CancellationToken cancellationToken = default)
+        public async Task ProcessDocumentAsync(Guid documentId, string filePath, CancellationToken cancellationToken = default)
         {
             await EnsureEmbeddingServiceAvailableAsync(cancellationToken);
 
-            // Load and extract text from PDF
-            var pages = _pdfLoader.LoadPdf(pdfStream);
+            // Load and extract text from the stored PDF.
+            await using var stream = await _fileStorageService.OpenReadFileAsync(filePath, cancellationToken);
+            var pages = _pdfLoader.LoadPdf(stream);
             var content = string.Join("\n\n", pages);
             _logger.LogInformation("Document {DocumentId}: extracted {PageCount} pages", documentId, pages.Count);
 
