@@ -154,6 +154,75 @@ namespace RagEvaluator.Test.ApplicationTest
 
         #endregion
 
+        #region ReprocessQueuedDocumentAsync Tests
+
+        [Fact]
+        public async Task ReprocessQueuedDocumentAsync_WithValidDocument_SwapsChunksAndNotifiesCompleted()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = "Existing content";
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+            _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new List<string> { "Chunk 1" });
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new float[] { 0.1f });
+
+            // Act
+            await _service.ReprocessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert — rebuilds from stored content (no PDF re-extraction) and swaps chunks
+            _pdfLoader.DidNotReceive().LoadPdf(Arg.Any<Stream>());
+            await _documentChunkRepository.Received(1).ReplaceChunksAsync(
+                documentId, Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            await _jobNotifier.Received(1).NotifyAsync(
+                Arg.Is<JobNotification>(n => n.JobType == JobTypes.Document && n.Status == DocumentStatus.Completed.ToString()),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ReprocessQueuedDocumentAsync_WhenProcessingFails_SetsFailedAndNotifies()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = "Existing content";
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+            _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .ThrowsAsync(new InvalidOperationException("chunking failed"));
+
+            // Act
+            await _service.ReprocessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert — failure persists via a set-based update
+            await _documentRepository.Received(1).SetStatusAsync(
+                documentId, DocumentStatus.Failed, Arg.Any<CancellationToken>());
+            await _jobNotifier.Received(1).NotifyAsync(
+                Arg.Is<JobNotification>(n => n.Status == DocumentStatus.Failed.ToString()),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ReprocessQueuedDocumentAsync_WhenNoContent_ReturnsWithoutProcessing()
+        {
+            // Arrange — a document without extracted content cannot be reprocessed
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = null;
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+
+            // Act
+            await _service.ReprocessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert
+            await _documentChunkRepository.DidNotReceive().ReplaceChunksAsync(
+                Arg.Any<Guid>(), Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            await _jobNotifier.DidNotReceive().NotifyAsync(Arg.Any<JobNotification>(), Arg.Any<CancellationToken>());
+        }
+
+        #endregion
+
         #region CreateDocumentAsync Tests
 
         [Fact]

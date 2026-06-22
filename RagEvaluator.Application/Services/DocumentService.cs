@@ -95,6 +95,35 @@ namespace RagEvaluator.Application.Services
             }
         }
 
+        public async Task ReprocessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
+        {
+            var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken);
+            if (document?.Content is null)
+            {
+                _logger.LogError("Document {DocumentId} not found or has no content for reprocessing", documentId);
+                return;
+            }
+
+            try
+            {
+                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Processing, cancellationToken);
+                await NotifyDocumentAsync(documentId, DocumentStatus.Processing, document.FileName, cancellationToken);
+
+                // ReprocessDocumentAsync sets the document to Completed on success.
+                await ReprocessDocumentAsync(document, cancellationToken);
+
+                await NotifyDocumentAsync(documentId, DocumentStatus.Completed, document.FileName, cancellationToken);
+                _logger.LogInformation("Document {DocumentId} reprocessed successfully", documentId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to reprocess document {DocumentId}", documentId);
+
+                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Failed, CancellationToken.None);
+                await NotifyDocumentAsync(documentId, DocumentStatus.Failed, document.FileName, cancellationToken);
+            }
+        }
+
         private Task NotifyDocumentAsync(
             Guid documentId, DocumentStatus status, string fileName, CancellationToken cancellationToken, string? message = null)
         {

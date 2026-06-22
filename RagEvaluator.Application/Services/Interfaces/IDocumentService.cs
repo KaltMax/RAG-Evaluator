@@ -56,6 +56,12 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task ProcessDocumentAsync(Guid documentId, string filePath, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Reprocesses a single queued document (re-chunk + re-embed from stored content), updating its
+        /// status and emitting notifications. Invoked by the background worker.
+        /// </summary>
+        Task ReprocessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Reprocesses all documents with content by deleting existing chunks and re-chunking + re-embedding with the current configuration.
         /// </summary>
         Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default);
