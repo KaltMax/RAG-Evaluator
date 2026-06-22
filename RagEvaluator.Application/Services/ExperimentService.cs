@@ -47,6 +47,8 @@ namespace RagEvaluator.Application.Services
             _config = config;
         }
 
+        // ---- CRUD ----
+
         public async Task<ExperimentSummaryResponse> CreateExperimentAsync(
             CreateExperimentRequest request, CancellationToken cancellationToken = default)
         {
@@ -89,6 +91,30 @@ namespace RagEvaluator.Application.Services
 
             return experiment.ToSummary();
         }
+
+        public async Task<ExperimentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var experiment = await _experimentRepository.GetByIdWithQueriesAsync(id, cancellationToken);
+            return experiment?.ToResponse();
+        }
+
+        public async Task<IReadOnlyList<ExperimentSummaryResponse>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var experiments = await _experimentRepository.GetAllAsync(cancellationToken);
+            return experiments.ToSummaryList();
+        }
+
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            await _experimentRepository.DeleteAsync(id, cancellationToken);
+        }
+
+        public Task SetStatusAsync(Guid experimentId, ExperimentStatus status, CancellationToken cancellationToken = default)
+        {
+            return _experimentRepository.SetStatusAsync(experimentId, status, cancellationToken);
+        }
+
+        // ---- Processing ----
 
         public async Task ProcessExperimentAsync(Guid experimentId, List<ExperimentQueryItem> queries, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken)
         {
@@ -180,23 +206,6 @@ namespace RagEvaluator.Application.Services
                     experiment.CompletedQueryCount,
                     experiment.TotalQueryCount),
                 cancellationToken);
-        }
-
-        public async Task<ExperimentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            var experiment = await _experimentRepository.GetByIdWithQueriesAsync(id, cancellationToken);
-            return experiment?.ToResponse();
-        }
-
-        public async Task<IReadOnlyList<ExperimentSummaryResponse>> GetAllAsync(CancellationToken cancellationToken = default)
-        {
-            var experiments = await _experimentRepository.GetAllAsync(cancellationToken);
-            return experiments.ToSummaryList();
-        }
-
-        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            await _experimentRepository.DeleteAsync(id, cancellationToken);
         }
     }
 }

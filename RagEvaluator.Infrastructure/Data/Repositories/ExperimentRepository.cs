@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Infrastructure.Data.Repositories
 {
@@ -49,6 +50,13 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
         {
             _context.Experiments.Update(experiment);
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task SetStatusAsync(Guid id, ExperimentStatus status, CancellationToken cancellationToken = default)
+        {
+            await _context.Experiments
+                .Where(e => e.Id == id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.Status, status), cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)

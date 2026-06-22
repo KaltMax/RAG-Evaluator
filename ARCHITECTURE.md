@@ -139,7 +139,7 @@ RAG-Evaluator/
 │   │   ├── QueuedHostedService.cs              # Generic BackgroundService draining a queue into an IJobHandler<TJob>
 │   │   ├── BackgroundTaskQueue.cs              # Generic Channel<T>-based in-memory IBackgroundTaskQueue<TJob>
 │   │   ├── ExperimentJob.cs                    # Experiment job payload (record)
-│   │   ├── ExperimentJobHandler.cs             # IJobHandler<ExperimentJob> → ExperimentService.ProcessExperimentAsync()
+│   │   ├── ExperimentJobHandler.cs             # IJobHandler<ExperimentJob>: runs ExperimentService.ProcessExperimentAsync(), marks Failed on error
 │   │   ├── DocumentProcessingJob.cs            # Document upload job payload (record)
 │   │   ├── DocumentProcessingJobHandler.cs     # IJobHandler<DocumentProcessingJob>: owns the status/notify lifecycle, calls DocumentService.ProcessDocumentAsync()
 │   │   ├── DocumentReprocessingJob.cs          # Document reprocess job payload (record)
@@ -198,7 +198,7 @@ RAG-Evaluator/
 │   │   └── QueryRelevantDocument.cs             # Ground truth relevant document for Recall@K
 │   ├── Enums/
 │   │   ├── DocumentStatus.cs                   # Document processing status
-│   │   ├── ExperimentStatus.cs                 # Experiment status (Running, Completed)
+│   │   ├── ExperimentStatus.cs                 # Experiment status (Running, Completed, Failed)
 │   │   ├── ChunkingStrategy.cs                 # Chunking strategy selection (FixedSize, Semantic)
 │   │   ├── PromptTemplate.cs                   # Prompt template types (Basic, Instructed, LanguageAware)
 │   │   ├── RelevanceGrade.cs                   # Binary relevance scale (0-1)
@@ -329,12 +329,13 @@ RAG-Evaluator/
   - `UpdateSettingsAsync()` - validates and applies partial config updates; triggers embedding service reinitialization when the model changes
 - `ExperimentService` - Experiment batch processing and aggregation
   - `CreateExperimentAsync()` - resolves RelevantDocumentNames to IDs via a single DocumentRepository.GetByNamesAsync() query (400 if any unknown), creates experiment with config snapshot, enqueues for background processing
-  - `ProcessExperimentAsync()` - runs all queries × repeatCount, links results to experiment, updates progress, and broadcasts progress/completion via `IJobNotifier`
+  - `ProcessExperimentAsync()` - runs all queries × repeatCount, links results to experiment, updates progress, and broadcasts progress/completion via `IJobNotifier` (the worker wraps this to mark the run Failed if it throws)
+  - `SetStatusAsync()` - set-based status update used by the worker to mark a run Failed
   - `GetByIdAsync()` - returns experiment with query groups and aggregated metrics
   - `GetAllAsync()` / `DeleteAsync()` - list and delete operations
 - `QueuedHostedService<TJob>` - Generic `BackgroundService` that drains an `IBackgroundTaskQueue<TJob>` and dispatches each job to a scoped `IJobHandler<TJob>` (fresh DI scope per job; failures are logged without stopping the worker). Processes one job at a time per job type.
 - `BackgroundTaskQueue<TJob>` - Generic in-memory `Channel<T>`-based `IBackgroundTaskQueue<TJob>` implementation (registered as a singleton; jobs are lost on restart).
-- `ExperimentJob` / `ExperimentJobHandler` - Experiment job payload and its handler, a thin dispatcher to `ExperimentService.ProcessExperimentAsync()` (the experiment lifecycle, including mid-run progress notifications, lives inside that method by design).
+- `ExperimentJob` / `ExperimentJobHandler` - Experiment job payload and its handler. The handler runs `ExperimentService.ProcessExperimentAsync()` and owns the failure path: on exception it marks the experiment Failed (via `SetStatusAsync`) and broadcasts a Failed notification. The progress and completion notifications stay inside `ProcessExperimentAsync` because they carry live query counts, so `ExperimentService` retains its `IJobNotifier` dependency (unlike `DocumentService`).
 - `DocumentProcessingJob` / `DocumentProcessingJobHandler` - Document upload job payload and its handler. The handler owns the job lifecycle (set Processing → notify → `DocumentService.ProcessDocumentAsync()` → notify Completed; on error set Failed → notify) and broadcasts via `IJobNotifier`. The generic queue/worker are reused per job type by registering another `QueuedHostedService<TJob>`.
 - `DocumentReprocessingJob` / `DocumentReprocessingJobHandler` - Document reprocess job payload and its handler, which owns the same Processing/Completed/Failed lifecycle around `DocumentService.ReprocessDocumentAsync()`.
 
@@ -513,7 +514,7 @@ Reprocessing is asynchronous: the request only validates and **enqueues** one jo
    → 7. Return 202 Accepted with ExperimentSummaryResponse
 
 7. QueuedHostedService<ExperimentJob> dequeues the job and resolves IJobHandler<ExperimentJob> in a fresh scope
-   → 8. ExperimentJobHandler → ExperimentService.ProcessExperimentAsync()
+   → 8. ExperimentJobHandler wraps ExperimentService.ProcessExperimentAsync() with a failure path:
       → 9. For each repeat (1..repeatCount):
          → For each query in queries:
             → 10. QueryService.AskQuestionAsync() - Runs full RAG pipeline
@@ -522,6 +523,7 @@ Reprocessing is asynchronous: the request only validates and **enqueues** one jo
             → 13. Broadcast progress JobNotification ("Running", Completed/Total) via IJobNotifier → SignalR
       → 14. Set status to Completed, set CompletedAt
       → 15. Broadcast completion JobNotification ("Completed") via IJobNotifier → SignalR
+      → On failure: handler sets status Failed (set-based) + broadcasts JobNotification ("Failed")
 
 (Client) SignalRProvider receives each JobNotification on the shared /hubs/jobs connection
     → GlobalJobToasts shows a completion/failure toast from any route
@@ -578,7 +580,7 @@ CREATE TABLE Experiments (
     Id UUID PRIMARY KEY,
     Name VARCHAR(200) NOT NULL,
     RepeatCount INT NOT NULL,
-    Status TEXT NOT NULL,                -- ExperimentStatus enum: 'Running', 'Completed'
+    Status TEXT NOT NULL,                -- ExperimentStatus enum: 'Running', 'Completed', 'Failed'
     CreatedAt TIMESTAMP NOT NULL,
     CompletedAt TIMESTAMP,
     EmbeddingModel VARCHAR(100) NOT NULL,
