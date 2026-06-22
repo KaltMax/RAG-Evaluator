@@ -77,7 +77,7 @@ namespace RagEvaluator.Application.Services
 
             try
             {
-                await _documentRepository.SetStatusAsync([documentId], DocumentStatus.Processing, cancellationToken);
+                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Processing, cancellationToken);
                 await NotifyDocumentAsync(documentId, DocumentStatus.Processing, fileInfo.FileName, cancellationToken);
 
                 // ProcessDocumentAsync sets the document to Completed on success.
@@ -90,7 +90,7 @@ namespace RagEvaluator.Application.Services
             {
                 _logger.LogError(ex, "Failed to process document {DocumentId}", documentId);
 
-                await _documentRepository.SetStatusAsync([documentId], DocumentStatus.Failed, CancellationToken.None);
+                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Failed, CancellationToken.None);
                 await NotifyDocumentAsync(documentId, DocumentStatus.Failed, fileInfo.FileName, cancellationToken);
             }
         }

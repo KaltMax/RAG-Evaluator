@@ -131,7 +131,7 @@ namespace RagEvaluator.Test.ApplicationTest
 
             // Assert — failure persists via a set-based update, so it survives an invalid tracked entity
             await _documentRepository.Received(1).SetStatusAsync(
-                Arg.Is<IEnumerable<Guid>>(ids => ids.Single() == documentId), DocumentStatus.Failed, Arg.Any<CancellationToken>());
+                documentId, DocumentStatus.Failed, Arg.Any<CancellationToken>());
             await _jobNotifier.Received(1).NotifyAsync(
                 Arg.Is<JobNotification>(n => n.Status == DocumentStatus.Failed.ToString()),
                 Arg.Any<CancellationToken>());
