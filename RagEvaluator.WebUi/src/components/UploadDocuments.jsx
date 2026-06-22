@@ -95,7 +95,9 @@ function UploadDocuments() {
     const failCount = results.filter((r) => !r.success).length;
 
     if (failCount === 0) {
-      toast.info(`${queuedCount} document(s) uploaded and queued for processing`);
+      toast.info(
+        `${queuedCount} document(s) uploaded and queued for processing`,
+      );
     } else if (queuedCount === 0) {
       toast.error(`All ${failCount} document(s) failed to upload`);
     } else {

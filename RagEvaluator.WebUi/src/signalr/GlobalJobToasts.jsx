@@ -5,7 +5,11 @@ import { useJobNotifications } from "./SignalRContext";
 // Per-jobType wording so each job reads naturally.
 const JOBS = {
   experiment: { label: "Experiment", done: "completed", failed: "failed" },
-  document: { label: "Document", done: "processed", failed: "failed to process" },
+  document: {
+    label: "Document",
+    done: "processed",
+    failed: "failed to process",
+  },
   reprocess: { label: "Reprocess", done: "completed", failed: "failed" },
 };
 
