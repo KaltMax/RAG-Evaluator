@@ -46,11 +46,6 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task<DocumentFileInfo?> GetDocumentFileInfoAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Updates the processing status of a document, stamping ProcessedAt when it becomes Completed.
-        /// </summary>
-        Task UpdateStatusAsync(Guid id, DocumentStatus status, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Deletes a document, its associated file from storage, and all related chunks.
         /// </summary>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);

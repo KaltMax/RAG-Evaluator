@@ -129,8 +129,9 @@ namespace RagEvaluator.Test.ApplicationTest
             // Act
             await _service.ProcessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.Equal(DocumentStatus.Failed, document.Status);
+            // Assert — failure persists via a set-based update, so it survives an invalid tracked entity
+            await _documentRepository.Received(1).SetStatusAsync(
+                Arg.Is<IEnumerable<Guid>>(ids => ids.Single() == documentId), DocumentStatus.Failed, Arg.Any<CancellationToken>());
             await _jobNotifier.Received(1).NotifyAsync(
                 Arg.Is<JobNotification>(n => n.Status == DocumentStatus.Failed.ToString()),
                 Arg.Any<CancellationToken>());
@@ -388,72 +389,6 @@ namespace RagEvaluator.Test.ApplicationTest
             // Assert
             Assert.NotNull(result);
             Assert.Equal("application/pdf", result.MimeType);
-        }
-
-        #endregion
-
-        #region UpdateStatusAsync Tests
-
-        [Fact]
-        public async Task UpdateStatusAsync_WithValidId_UpdatesStatus()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            var document = CreateSampleDocument(documentId);
-            document.Status = DocumentStatus.Pending;
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-
-            // Act
-            await _service.UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(DocumentStatus.Processing, document.Status);
-            await _documentRepository.Received(1).UpdateAsync(document, TestContext.Current.CancellationToken);
-        }
-
-        [Fact]
-        public async Task UpdateStatusAsync_WithCompleted_SetsProcessedAt()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            var document = CreateSampleDocument(documentId);
-            document.ProcessedAt = null;
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-
-            // Act
-            await _service.UpdateStatusAsync(documentId, DocumentStatus.Completed, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(DocumentStatus.Completed, document.Status);
-            Assert.NotNull(document.ProcessedAt);
-        }
-
-        [Fact]
-        public async Task UpdateStatusAsync_WithNonCompletedStatus_DoesNotSetProcessedAt()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            var document = CreateSampleDocument(documentId);
-            document.ProcessedAt = null;
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
-
-            // Act
-            await _service.UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Null(document.ProcessedAt);
-        }
-
-        [Fact]
-        public async Task UpdateStatusAsync_WithNonExistentDocument_ThrowsArgumentException()
-        {
-            // Arrange
-            var documentId = Guid.NewGuid();
-            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns((Document?)null);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         #endregion

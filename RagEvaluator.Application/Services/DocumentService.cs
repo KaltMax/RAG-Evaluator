@@ -77,7 +77,7 @@ namespace RagEvaluator.Application.Services
 
             try
             {
-                await UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken);
+                await _documentRepository.SetStatusAsync([documentId], DocumentStatus.Processing, cancellationToken);
                 await NotifyDocumentAsync(documentId, DocumentStatus.Processing, fileInfo.FileName, cancellationToken);
 
                 // ProcessDocumentContentAsync sets the document to Completed on success.
@@ -90,8 +90,9 @@ namespace RagEvaluator.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to process document {DocumentId}", documentId);
-                await UpdateStatusAsync(documentId, DocumentStatus.Failed, CancellationToken.None);
-                await NotifyDocumentAsync(documentId, DocumentStatus.Failed, fileInfo.FileName, cancellationToken, ex.Message);
+
+                await _documentRepository.SetStatusAsync([documentId], DocumentStatus.Failed, CancellationToken.None);
+                await NotifyDocumentAsync(documentId, DocumentStatus.Failed, fileInfo.FileName, cancellationToken);
             }
         }
 
@@ -178,24 +179,6 @@ namespace RagEvaluator.Application.Services
                 FileName = document.FileName,
                 MimeType = document.MimeType ?? "application/pdf"
             };
-        }
-
-        public async Task UpdateStatusAsync(Guid id, DocumentStatus status, CancellationToken cancellationToken = default)
-        {
-            var document = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (document is null)
-            {
-                throw new ArgumentException($"Document with id {id} not found");
-            }
-
-            document.Status = status;
-
-            if (status == DocumentStatus.Completed)
-            {
-                document.ProcessedAt = DateTime.UtcNow;
-            }
-
-            await _documentRepository.UpdateAsync(document, cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
