@@ -54,7 +54,7 @@ namespace RagEvaluator.API.Controllers
             _logger.LogInformation("Uploading document: {FileName}, Language: {Language}, Course: {Course}", request.File.FileName, request.Language, request.Course);
 
             using var stream = request.File.OpenReadStream();
-            var result = await _documentService.UploadDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
+            var result = await _documentService.CreateDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
 
             _logger.LogInformation("Document accepted for processing: {DocumentId}", result.Id);
             return Accepted(result);

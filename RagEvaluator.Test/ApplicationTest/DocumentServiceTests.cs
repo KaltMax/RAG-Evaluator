@@ -65,29 +65,6 @@ namespace RagEvaluator.Test.ApplicationTest
             };
         }
 
-        #region UploadDocumentAsync Tests
-
-        [Fact]
-        public async Task UploadDocumentAsync_CreatesPendingDocumentAndEnqueuesJob()
-        {
-            // Arrange
-            var stream = new MemoryStream("PDF content"u8.ToArray());
-            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns((Document?)null);
-            _fileStorageService.SaveFileAsync(Arg.Any<Stream>(), Arg.Any<Guid>(), "test.pdf", Arg.Any<CancellationToken>())
-                .Returns("/storage/test.pdf");
-
-            // Act
-            var result = await _service.UploadDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
-
-            // Assert — returns the Pending document, enqueues a job, and does NOT process inline
-            Assert.Equal(DocumentStatus.Pending.ToString(), result.Status);
-            await _documentRepository.Received(1).AddAsync(Arg.Any<Document>(), Arg.Any<CancellationToken>());
-            await _documentQueue.Received(1).EnqueueAsync(Arg.Any<DocumentProcessingJob>(), Arg.Any<CancellationToken>());
-            await _documentChunkRepository.DidNotReceive().AddRangeAsync(Arg.Any<List<DocumentChunk>>(), Arg.Any<CancellationToken>());
-        }
-
-        #endregion
-
         #region ProcessQueuedDocumentAsync Tests
 
         [Fact]
@@ -228,26 +205,28 @@ namespace RagEvaluator.Test.ApplicationTest
         #region CreateDocumentAsync Tests
 
         [Fact]
-        public async Task CreateDocumentAsync_WithValidInput_ReturnsDocumentWithCorrectFields()
+        public async Task CreateDocumentAsync_WithValidInput_CreatesPendingDocumentAndEnqueuesJob()
         {
             // Arrange
             var stream = new MemoryStream("PDF content"u8.ToArray());
-            var expectedFilePath = "/storage/some-guid.pdf";
+            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns((Document?)null);
             _fileStorageService.SaveFileAsync(Arg.Any<Stream>(), Arg.Any<Guid>(), "test.pdf", Arg.Any<CancellationToken>())
-                .Returns(expectedFilePath);
+                .Returns("/storage/some-guid.pdf");
 
             // Act
-            var result = await _service.CreateDocumentAsync(stream, "test.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
+            var result = await _service.CreateDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
 
-            // Assert
+            // Assert — returns the Pending document (FileSize taken from the stream), enqueues a job, no inline processing
             Assert.Equal("test.pdf", result.FileName);
-            Assert.Equal(expectedFilePath, result.FilePath);
-            Assert.Equal(1024, result.FileSize);
+            Assert.Equal(stream.Length, result.FileSize);
             Assert.Equal("application/pdf", result.MimeType);
             Assert.Equal("en", result.Language);
-            Assert.Equal(DocumentStatus.Pending, result.Status);
+            Assert.Equal(DocumentStatus.Pending.ToString(), result.Status);
             await _fileStorageService.Received(1).SaveFileAsync(Arg.Any<Stream>(), result.Id, "test.pdf", TestContext.Current.CancellationToken);
-            await _documentRepository.Received(1).AddAsync(result, TestContext.Current.CancellationToken);
+            await _documentRepository.Received(1).AddAsync(Arg.Is<Document>(d => d.Id == result.Id), TestContext.Current.CancellationToken);
+            await _documentQueue.Received(1).EnqueueAsync(
+                Arg.Is<DocumentProcessingJob>(j => j.DocumentId == result.Id), Arg.Any<CancellationToken>());
+            await _documentChunkRepository.DidNotReceive().AddRangeAsync(Arg.Any<List<DocumentChunk>>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -259,7 +238,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns("/storage/some-guid.pdf");
 
             // Act
-            var result = await _service.CreateDocumentAsync(stream, "../../../evil.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
+            var result = await _service.CreateDocumentAsync(stream, "../../../evil.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("evil.pdf", result.FileName);
@@ -277,11 +256,12 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository.AddAsync(Arg.Any<Document>(), Arg.Any<CancellationToken>())
                 .ThrowsAsync(new InvalidOperationException("persistence failed"));
 
-            // Act & Assert — the failure propagates and the orphaned file is cleaned up
+            // Act & Assert — the failure propagates, the orphaned file is cleaned up, and no job is enqueued
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _service.CreateDocumentAsync(stream, "test.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken));
+                _service.CreateDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken));
 
             await _fileStorageService.Received(1).DeleteFileAsync(filePath, Arg.Any<CancellationToken>());
+            await _documentQueue.DidNotReceive().EnqueueAsync(Arg.Any<DocumentProcessingJob>(), Arg.Any<CancellationToken>());
         }
 
         #endregion

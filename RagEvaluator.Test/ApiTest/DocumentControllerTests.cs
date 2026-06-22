@@ -55,7 +55,7 @@ namespace RagEvaluator.Test.ApiTest
             var request = new UploadDocumentRequest { File = formFile, Language = "en", Course = "Test Course" };
             var expectedResponse = CreateDocumentResponse();
 
-            _documentService.UploadDocumentAsync(
+            _documentService.CreateDocumentAsync(
                 Arg.Any<Stream>(),
                 fileName,
                 "application/pdf",

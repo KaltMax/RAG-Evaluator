@@ -59,7 +59,7 @@ namespace RagEvaluator.Application.Services
 
         // ---- CRUD ----
 
-        public async Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, string course, CancellationToken cancellationToken = default)
+        public async Task<DocumentResponse> CreateDocumentAsync(Stream fileStream, string fileName, string mimeType, string language, string course, CancellationToken cancellationToken = default)
         {
             fileName = Path.GetFileName(fileName);
 
@@ -74,7 +74,7 @@ namespace RagEvaluator.Application.Services
                 Id = Guid.NewGuid(),
                 FileName = fileName,
                 FilePath = null,
-                FileSize = fileSize,
+                FileSize = fileStream.Length,
                 MimeType = mimeType,
                 Language = language,
                 Course = course,
@@ -97,7 +97,9 @@ namespace RagEvaluator.Application.Services
                 throw;
             }
 
-            return document;
+            await _documentQueue.EnqueueAsync(new DocumentProcessingJob(document.Id), cancellationToken);
+
+            return document.ToResponse();
         }
 
         public async Task<DocumentResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -154,16 +156,6 @@ namespace RagEvaluator.Application.Services
 
         // ---- Processing ----
 
-        public async Task<DocumentResponse> UploadDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string course, CancellationToken cancellationToken = default)
-        {
-            // Create document with Pending status and persist the file to storage.
-            var document = await CreateDocumentAsync(documentStream, fileName, documentStream.Length, contentType, language, course, cancellationToken);
-
-            await _documentQueue.EnqueueAsync(new DocumentProcessingJob(document.Id), cancellationToken);
-
-            return document.ToResponse();
-        }
-
         public async Task ProcessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
         {
             var fileInfo = await GetDocumentFileInfoAsync(documentId, cancellationToken);
@@ -208,7 +200,7 @@ namespace RagEvaluator.Application.Services
                 await NotifyDocumentAsync(documentId, DocumentStatus.Processing, document.FileName, cancellationToken);
 
                 // ReprocessDocumentAsync sets the document to Completed on success.
-                await ReprocessDocumentAsync(document, cancellationToken);
+                await ReprocessDocumentAsync(documentId, cancellationToken);
 
                 await NotifyDocumentAsync(documentId, DocumentStatus.Completed, document.FileName, cancellationToken);
                 _logger.LogInformation("Document {DocumentId} reprocessed successfully", documentId);
@@ -252,6 +244,27 @@ namespace RagEvaluator.Application.Services
             _logger.LogInformation("Document {DocumentId}: processing completed", documentId);
         }
 
+        public async Task ReprocessDocumentAsync(Guid documentId, CancellationToken cancellationToken)
+        {
+            var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken);
+            if (document?.Content is null)
+            {
+                throw new ArgumentException($"Document with id {documentId} not found or has no content for reprocessing");
+            }
+
+            // Build new chunks first; the old chunks stay queryable until the atomic swap below.
+            var documentChunks = await BuildChunksAsync(document.Id, document.Content, cancellationToken);
+
+            await _documentChunkRepository.ReplaceChunksAsync(document.Id, documentChunks, cancellationToken);
+
+            document.Status = DocumentStatus.Completed;
+            document.ChunkCount = documentChunks.Count;
+            document.ProcessedAt = DateTime.UtcNow;
+            await _documentRepository.UpdateAsync(document, cancellationToken);
+
+            _logger.LogInformation("Document {DocumentId}: reprocessing completed", documentId);
+        }
+
         public async Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default)
         {
             // Fail fast: reject the whole request if embeddings can't be generated.
@@ -275,21 +288,6 @@ namespace RagEvaluator.Application.Services
         }
 
         // ---- Private helpers ----
-
-        private async Task<int> ReprocessDocumentAsync(Document document, CancellationToken cancellationToken)
-        {
-            // Build new chunks first; the old chunks stay queryable until the atomic swap below.
-            var documentChunks = await BuildChunksAsync(document.Id, document.Content!, cancellationToken);
-
-            await _documentChunkRepository.ReplaceChunksAsync(document.Id, documentChunks, cancellationToken);
-
-            document.Status = DocumentStatus.Completed;
-            document.ChunkCount = documentChunks.Count;
-            document.ProcessedAt = DateTime.UtcNow;
-            await _documentRepository.UpdateAsync(document, cancellationToken);
-
-            return documentChunks.Count;
-        }
 
         private async Task<List<DocumentChunk>> BuildChunksAsync(Guid documentId, string content, CancellationToken cancellationToken)
         {
