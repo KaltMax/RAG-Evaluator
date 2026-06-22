@@ -91,15 +91,17 @@ function UploadDocuments() {
 
     setUploadResults(results);
 
-    const successCount = results.filter((r) => r.success).length;
+    const queuedCount = results.filter((r) => r.success).length;
     const failCount = results.filter((r) => !r.success).length;
 
     if (failCount === 0) {
-      toast.success(`All ${successCount} document(s) uploaded successfully!`);
-    } else if (successCount === 0) {
+      toast.info(`${queuedCount} document(s) uploaded and queued for processing`);
+    } else if (queuedCount === 0) {
       toast.error(`All ${failCount} document(s) failed to upload`);
     } else {
-      toast.warning(`${successCount} succeeded, ${failCount} failed`);
+      toast.warning(
+        `${queuedCount} uploaded and queued, ${failCount} failed to upload`,
+      );
     }
 
     setSelectedFiles([]);
