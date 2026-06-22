@@ -260,7 +260,7 @@ function UploadDocuments() {
               {isUploading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Uploading and Processing...</span>
+                  <span>Uploading...</span>
                 </>
               ) : (
                 <>
@@ -287,16 +287,14 @@ function UploadDocuments() {
               <div
                 key={result.success ? result.result.id : result.id}
                 className={`bg-[#1F1F1F] rounded-lg p-4 border ${
-                  result.success ? "border-green-700" : "border-red-700"
+                  result.success ? "border-blue-700" : "border-red-700"
                 }`}
               >
                 {result.success ? (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-green-400 font-medium">
-                        Success
-                      </span>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-blue-400 font-medium">Queued</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <span className="text-gray-400">Document ID:</span>
@@ -315,19 +313,14 @@ function UploadDocuments() {
                       <span className="text-gray-200">
                         {result.result.course}
                       </span>
-                      <span className="text-gray-400">Pages:</span>
-                      <span className="text-gray-200">
-                        {result.result.pageCount}
-                      </span>
-                      <span className="text-gray-400">Chunks:</span>
-                      <span className="text-gray-200">
-                        {result.result.chunkCount}
-                      </span>
                       <span className="text-gray-400">Uploaded At:</span>
                       <span className="text-gray-200">
                         {formatDate(result.result.uploadedAt)}
                       </span>
                     </div>
+                    <p className="text-xs text-gray-500 pt-1">
+                      Track processing status in the Documents list.
+                    </p>
                   </div>
                 ) : (
                   <div>
