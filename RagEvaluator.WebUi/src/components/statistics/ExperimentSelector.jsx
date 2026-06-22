@@ -6,6 +6,27 @@ import {
   colorEntryShape,
 } from "../../utils/statisticsPropTypes";
 
+function experimentCardClassName(isSelected, isSelectable) {
+  const base = "w-full text-left p-3 rounded-lg border transition-all";
+  if (isSelected) {
+    return `${base} border-2 bg-[#1F1F1F]`;
+  }
+  if (isSelectable) {
+    return `${base} border border-gray-700 hover:border-gray-500 bg-[#1F1F1F]`;
+  }
+  return `${base} border border-gray-800 bg-[#1A1A1A] opacity-50 cursor-not-allowed`;
+}
+
+function experimentStatusLabel(exp) {
+  if (exp.status === "Running") {
+    return `${exp.progress.completed}/${exp.progress.total} processed · Running`;
+  }
+  if (exp.status === "Failed") {
+    return "Processing failed";
+  }
+  return `${exp.progress.annotated}/${exp.progress.total} annotated`;
+}
+
 function ExperimentSelector({
   experiments,
   selectedIds,
@@ -68,13 +89,7 @@ function ExperimentSelector({
               <button
                 onClick={() => isSelectable && onToggle(exp.id)}
                 disabled={!isSelectable}
-                className={`w-full text-left p-3 rounded-lg border transition-all ${
-                  isSelected
-                    ? "border-2 bg-[#1F1F1F]"
-                    : isSelectable
-                      ? "border border-gray-700 hover:border-gray-500 bg-[#1F1F1F]"
-                      : "border border-gray-800 bg-[#1A1A1A] opacity-50 cursor-not-allowed"
-                }`}
+                className={experimentCardClassName(isSelected, isSelectable)}
                 style={isSelected ? { borderColor: color.hex } : undefined}
                 title={exp.name}
               >
@@ -117,10 +132,12 @@ function ExperimentSelector({
                   </span>{" "}
                   {exp.repeatCount}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {exp.status === "Running"
-                    ? `${exp.progress.completed}/${exp.progress.total} processed · Running`
-                    : `${exp.progress.annotated}/${exp.progress.total} annotated`}
+                <p
+                  className={`text-xs mt-1 ${
+                    exp.status === "Failed" ? "text-red-400" : "text-gray-500"
+                  }`}
+                >
+                  {experimentStatusLabel(exp)}
                 </p>
               </button>
               <TrashIcon
