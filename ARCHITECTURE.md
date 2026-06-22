@@ -141,9 +141,9 @@ RAG-Evaluator/
 │   │   ├── ExperimentJob.cs                    # Experiment job payload (record)
 │   │   ├── ExperimentJobHandler.cs             # IJobHandler<ExperimentJob> → ExperimentService.ProcessExperimentAsync()
 │   │   ├── DocumentProcessingJob.cs            # Document upload job payload (record)
-│   │   ├── DocumentProcessingJobHandler.cs     # IJobHandler<DocumentProcessingJob> → DocumentService.ProcessQueuedDocumentAsync()
+│   │   ├── DocumentProcessingJobHandler.cs     # IJobHandler<DocumentProcessingJob>: owns the status/notify lifecycle, calls DocumentService.ProcessDocumentAsync()
 │   │   ├── DocumentReprocessingJob.cs          # Document reprocess job payload (record)
-│   │   └── DocumentReprocessingJobHandler.cs   # IJobHandler<DocumentReprocessingJob> → DocumentService.ReprocessQueuedDocumentAsync()
+│   │   └── DocumentReprocessingJobHandler.cs   # IJobHandler<DocumentReprocessingJob>: owns the status/notify lifecycle, calls DocumentService.ReprocessDocumentAsync()
 │   └── Validators/
 │
 ├── RagEvaluator.Contract/                      # DTOs, Abstractions & Shared Contracts
@@ -300,12 +300,11 @@ RAG-Evaluator/
 
 **Implemented Services**:
 
-- `DocumentService` - Document feature: upload orchestration, PDF processing, reprocessing, CRUD, and chunk retrieval
+- `DocumentService` - Document feature: upload, PDF processing, reprocessing, CRUD, and chunk retrieval. Exposes the processing *work* (plus enqueue); the per-job status/notify lifecycle lives in the job handlers, not here, so the service no longer depends on `IJobNotifier`. Handlers drive status transitions through `SetStatusAsync` rather than touching the repository directly.
   - `CreateDocumentAsync()` - rejects duplicate filenames (400), creates the document (Pending), saves the file, enqueues a `DocumentProcessingJob`, and returns the Pending `DocumentResponse` immediately; processing happens in the background
-  - `ProcessQueuedDocumentAsync()` - upload worker entry point: reloads the stored file, runs processing, and broadcasts Processing/Completed/Failed via `IJobNotifier`
-  - `ProcessDocumentAsync()` - opens the stored PDF and extracts text, chunks, embeds, and stores chunks (sets Completed)
-  - `ReprocessQueuedDocumentAsync()` - reprocess worker entry point: re-chunks/re-embeds a single document and broadcasts Processing/Completed/Failed via `IJobNotifier`
-  - `ReprocessDocumentAsync()` - re-chunks and re-embeds a document's stored content and atomically replaces its chunks (sets Completed)
+  - `SetStatusAsync()` - set-based status update used by the workers to drive Processing/Failed transitions (the work methods set Completed themselves)
+  - `ProcessDocumentAsync()` - opens the stored PDF and extracts text, chunks, embeds, and stores chunks (sets Completed); invoked by the background worker
+  - `ReprocessDocumentAsync()` - re-chunks and re-embeds a document's stored content and atomically replaces its chunks (sets Completed); invoked by the background worker
   - `ReprocessAllDocumentsAsync()` - fail-fast embedding check, bulk-marks every reprocessable document (any status with stored content) Pending, then enqueues one `DocumentReprocessingJob` per document; returns the queued count
   - `GetChunksByDocumentIdAsync()` - retrieves document chunks
   - `GetByIdAsync()` / `GetByNameAsync()` / `GetAllAsync()` - document retrieval
@@ -335,9 +334,9 @@ RAG-Evaluator/
   - `GetAllAsync()` / `DeleteAsync()` - list and delete operations
 - `QueuedHostedService<TJob>` - Generic `BackgroundService` that drains an `IBackgroundTaskQueue<TJob>` and dispatches each job to a scoped `IJobHandler<TJob>` (fresh DI scope per job; failures are logged without stopping the worker). Processes one job at a time per job type.
 - `BackgroundTaskQueue<TJob>` - Generic in-memory `Channel<T>`-based `IBackgroundTaskQueue<TJob>` implementation (registered as a singleton; jobs are lost on restart).
-- `ExperimentJob` / `ExperimentJobHandler` - Experiment job payload and its handler, which delegates to `ExperimentService.ProcessExperimentAsync()`.
-- `DocumentProcessingJob` / `DocumentProcessingJobHandler` - Document upload job payload and its handler, which delegates to `DocumentService.ProcessQueuedDocumentAsync()`. The generic queue/worker are reused per job type by registering another `QueuedHostedService<TJob>`.
-- `DocumentReprocessingJob` / `DocumentReprocessingJobHandler` - Document reprocess job payload and its handler, which delegates to `DocumentService.ReprocessQueuedDocumentAsync()`.
+- `ExperimentJob` / `ExperimentJobHandler` - Experiment job payload and its handler, a thin dispatcher to `ExperimentService.ProcessExperimentAsync()` (the experiment lifecycle, including mid-run progress notifications, lives inside that method by design).
+- `DocumentProcessingJob` / `DocumentProcessingJobHandler` - Document upload job payload and its handler. The handler owns the job lifecycle (set Processing → notify → `DocumentService.ProcessDocumentAsync()` → notify Completed; on error set Failed → notify) and broadcasts via `IJobNotifier`. The generic queue/worker are reused per job type by registering another `QueuedHostedService<TJob>`.
+- `DocumentReprocessingJob` / `DocumentReprocessingJobHandler` - Document reprocess job payload and its handler, which owns the same Processing/Completed/Failed lifecycle around `DocumentService.ReprocessDocumentAsync()`.
 
 **Dependencies**: → Domain, Contract
 
@@ -444,9 +443,9 @@ RAG-Evaluator/
    → 5. Return 202 Accepted with the Pending DocumentResponse
 
 6. QueuedHostedService<DocumentProcessingJob> dequeues the job and resolves IJobHandler<DocumentProcessingJob> in a fresh scope
-   → 7. DocumentProcessingJobHandler → DocumentService.ProcessQueuedDocumentAsync()
+   → 7. DocumentProcessingJobHandler owns the lifecycle:
       → 8. SetStatusAsync(Processing) + broadcast JobNotification("document", "Processing") via IJobNotifier → SignalR
-      → 9. ProcessDocumentAsync()
+      → 9. DocumentService.ProcessDocumentAsync()
          → 10. IFileStorageService.OpenReadFileAsync() - Reload the stored PDF (the upload request stream is gone)
          → 11. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor; join pages into content
          → 12. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
@@ -473,9 +472,9 @@ Reprocessing is asynchronous: the request only validates and **enqueues** one jo
    → 7. Return 202 Accepted with ReprocessResponse (number of documents queued)
 
 8. QueuedHostedService<DocumentReprocessingJob> dequeues each job and resolves IJobHandler<DocumentReprocessingJob> in a fresh scope
-   → 9. DocumentReprocessingJobHandler → DocumentService.ReprocessQueuedDocumentAsync()
+   → 9. DocumentReprocessingJobHandler owns the lifecycle:
       → 10. SetStatusAsync(Processing) + broadcast JobNotification("document", "Processing") via IJobNotifier → SignalR
-      → 11. ReprocessDocumentAsync()
+      → 11. DocumentService.ReprocessDocumentAsync()
          → 12. ITextChunker.CreateDocumentChunksAsync(document.Content) - Build new chunks from stored content
          → 13. For each chunk: IEmbeddingService.GenerateDocumentEmbeddingAsync() → DocumentChunk entity (current config)
          → 14. DocumentChunkRepository.ReplaceChunksAsync() - Atomically swap old chunks for new
