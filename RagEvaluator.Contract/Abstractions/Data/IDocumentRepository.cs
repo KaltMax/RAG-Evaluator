@@ -55,6 +55,12 @@ namespace RagEvaluator.Contract.Abstractions.Data
         Task UpdateAsync(Document document, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Sets the status of a single document via a set-based update (does not load or flush the
+        /// tracked entity, so it persists independently of any invalid pending changes).
+        /// </summary>
+        Task SetStatusAsync(Guid id, DocumentStatus status, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Sets the status of the given documents.
         /// </summary>
         Task SetStatusAsync(IEnumerable<Guid> documentIds, DocumentStatus status, CancellationToken cancellationToken = default);

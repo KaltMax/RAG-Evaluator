@@ -140,8 +140,10 @@ RAG-Evaluator/
 │   │   ├── BackgroundTaskQueue.cs              # Generic Channel<T>-based in-memory IBackgroundTaskQueue<TJob>
 │   │   ├── ExperimentJob.cs                    # Experiment job payload (record)
 │   │   ├── ExperimentJobHandler.cs             # IJobHandler<ExperimentJob> → ExperimentService.ProcessExperimentAsync()
-│   │   ├── DocumentProcessingJob.cs            # Document job payload (record)
-│   │   └── DocumentProcessingJobHandler.cs     # IJobHandler<DocumentProcessingJob> → DocumentService.ProcessQueuedDocumentAsync()
+│   │   ├── DocumentProcessingJob.cs            # Document upload job payload (record)
+│   │   ├── DocumentProcessingJobHandler.cs     # IJobHandler<DocumentProcessingJob> → DocumentService.ProcessQueuedDocumentAsync()
+│   │   ├── DocumentReprocessingJob.cs          # Document reprocess job payload (record)
+│   │   └── DocumentReprocessingJobHandler.cs   # IJobHandler<DocumentReprocessingJob> → DocumentService.ReprocessQueuedDocumentAsync()
 │   └── Validators/
 │
 ├── RagEvaluator.Contract/                      # DTOs, Abstractions & Shared Contracts
@@ -164,26 +166,26 @@ RAG-Evaluator/
 │   ├── Configurations/
 │   │   ├── FileStorageConfiguration.cs         # File storage settings
 │   │   └── RagConfiguration.cs
-│   ├── Dtos/
-│   │   ├── Notifications/
-│   │   │   └── JobNotification.cs              # Real-time background-job update (progress/completion)
-│   │   ├── Requests/
-│   │   │   ├── AskQuestionRequest.cs
-│   │   │   ├── UploadDocumentRequest.cs
-│   │   │   ├── AnnotateResultsRequest.cs       # Relevance + response quality + ground truth annotations
-│   │   │   ├── CreateExperimentRequest.cs      # Experiment batch creation (queries + repeat count)
-│   │   │   └── UpdateSettingsRequest.cs        # Runtime settings partial update
-│   │   └── Responses/
-│   │       ├── QueryResponse.cs
-│   │       ├── QuerySummaryResponse.cs         # Query history list item
-│   │       ├── SearchResultDto.cs
-│   │       ├── DocumentResponse.cs
-│   │       ├── DocumentChunkResponse.cs        # Document chunk details
-│   │       ├── DocumentFileInfo.cs             # File info for downloads
-│   │       ├── ExperimentResponse.cs           # Full experiment with query groups & aggregated metrics
-│   │       ├── ExperimentSummaryResponse.cs    # Experiment list item with progress & config
-│   │       ├── ReprocessResponse.cs            # Reprocess result (docs processed, docs failed, chunks created)
-│   │       └── SettingsResponse.cs             # Current settings + available options
+│   └── Dtos/
+│       ├── Notifications/
+│       │   └── JobNotification.cs              # Real-time background-job update (progress/completion)
+│       ├── Requests/
+│       │   ├── AskQuestionRequest.cs
+│       │   ├── UploadDocumentRequest.cs
+│       │   ├── AnnotateResultsRequest.cs       # Relevance + response quality + ground truth annotations
+│       │   ├── CreateExperimentRequest.cs      # Experiment batch creation (queries + repeat count)
+│       │   └── UpdateSettingsRequest.cs        # Runtime settings partial update
+│       └── Responses/
+│           ├── QueryResponse.cs
+│           ├── QuerySummaryResponse.cs         # Query history list item
+│           ├── SearchResultDto.cs
+│           ├── DocumentResponse.cs
+│           ├── DocumentChunkResponse.cs        # Document chunk details
+│           ├── DocumentFileInfo.cs             # File info for downloads
+│           ├── ExperimentResponse.cs           # Full experiment with query groups & aggregated metrics
+│           ├── ExperimentSummaryResponse.cs    # Experiment list item with progress & config
+│           ├── ReprocessResponse.cs            # Reprocess result (number of documents queued)
+│           └── SettingsResponse.cs             # Current settings + available options
 │
 ├── RagEvaluator.Domain/                        # Domain Models & Business Rules
 │   ├── Entities/
@@ -294,20 +296,20 @@ RAG-Evaluator/
 
 - Service interfaces and implementations (`Services/`)
 - Mappers for entity-to-DTO conversion (`Mappers/`)
-- Generic background processing infrastructure (`Workers/`): `QueuedHostedService<TJob>` + `BackgroundTaskQueue<TJob>`, consumed by `ExperimentJob` and `DocumentProcessingJob`
+- Generic background processing infrastructure (`Workers/`): `QueuedHostedService<TJob>` + `BackgroundTaskQueue<TJob>`, consumed by `ExperimentJob`, `DocumentProcessingJob`, and `DocumentReprocessingJob`
 
 **Implemented Services**:
 
 - `DocumentService` - Document feature: upload orchestration, PDF processing, reprocessing, CRUD, and chunk retrieval
-  - `UploadDocumentAsync()` - creates the document (Pending), saves the file, enqueues a `DocumentProcessingJob`, and returns immediately; processing happens in the background
-  - `ProcessQueuedDocumentAsync()` - background worker entry point: reloads the stored file, runs processing, and broadcasts Processing/Completed/Failed via `IJobNotifier`
-  - `CreateDocumentAsync()` - rejects duplicate filenames (400), creates document entity and saves file to storage
-  - `ProcessDocumentContentAsync()` - extracts text, chunks, embeds, and stores chunks
-  - `ReprocessAllDocumentsAsync()` - re-chunks and re-embeds every document with stored content (any status) using the current config; per-document atomic chunk swap with isolated failures
+  - `CreateDocumentAsync()` - rejects duplicate filenames (400), creates the document (Pending), saves the file, enqueues a `DocumentProcessingJob`, and returns the Pending `DocumentResponse` immediately; processing happens in the background
+  - `ProcessQueuedDocumentAsync()` - upload worker entry point: reloads the stored file, runs processing, and broadcasts Processing/Completed/Failed via `IJobNotifier`
+  - `ProcessDocumentAsync()` - opens the stored PDF and extracts text, chunks, embeds, and stores chunks (sets Completed)
+  - `ReprocessQueuedDocumentAsync()` - reprocess worker entry point: re-chunks/re-embeds a single document and broadcasts Processing/Completed/Failed via `IJobNotifier`
+  - `ReprocessDocumentAsync()` - re-chunks and re-embeds a document's stored content and atomically replaces its chunks (sets Completed)
+  - `ReprocessAllDocumentsAsync()` - fail-fast embedding check, bulk-marks every reprocessable document (any status with stored content) Pending, then enqueues one `DocumentReprocessingJob` per document; returns the queued count
   - `GetChunksByDocumentIdAsync()` - retrieves document chunks
   - `GetByIdAsync()` / `GetByNameAsync()` / `GetAllAsync()` - document retrieval
   - `GetDocumentFileInfoAsync()` - file info for downloads
-  - `UpdateStatusAsync()` - updates document processing status
   - `DeleteAsync()` - deletes document, file, and associated chunks
 - `QueryService` - Query feature: RAG question-answering pipeline, persistence, and annotation
   - `AskQuestionAsync()` - runs the RAG query end-to-end (embed question, search chunks, generate answer, persist); pipeline steps (create/search/complete/readiness) are private helpers
@@ -334,7 +336,8 @@ RAG-Evaluator/
 - `QueuedHostedService<TJob>` - Generic `BackgroundService` that drains an `IBackgroundTaskQueue<TJob>` and dispatches each job to a scoped `IJobHandler<TJob>` (fresh DI scope per job; failures are logged without stopping the worker). Processes one job at a time per job type.
 - `BackgroundTaskQueue<TJob>` - Generic in-memory `Channel<T>`-based `IBackgroundTaskQueue<TJob>` implementation (registered as a singleton; jobs are lost on restart).
 - `ExperimentJob` / `ExperimentJobHandler` - Experiment job payload and its handler, which delegates to `ExperimentService.ProcessExperimentAsync()`.
-- `DocumentProcessingJob` / `DocumentProcessingJobHandler` - Document job payload and its handler, which delegates to `DocumentService.ProcessQueuedDocumentAsync()`. The generic queue/worker are reused per job type by registering another `QueuedHostedService<TJob>`.
+- `DocumentProcessingJob` / `DocumentProcessingJobHandler` - Document upload job payload and its handler, which delegates to `DocumentService.ProcessQueuedDocumentAsync()`. The generic queue/worker are reused per job type by registering another `QueuedHostedService<TJob>`.
+- `DocumentReprocessingJob` / `DocumentReprocessingJobHandler` - Document reprocess job payload and its handler, which delegates to `DocumentService.ReprocessQueuedDocumentAsync()`.
 
 **Dependencies**: → Domain, Contract
 
@@ -435,16 +438,16 @@ RAG-Evaluator/
 
 ```
 1. PDF Upload (Controller)
-   → 2. DocumentService.UploadDocumentAsync() (Application Layer)
-      → 3. CreateDocumentAsync() - Save file to storage and create document entity (status: Pending)
+   → 2. DocumentService.CreateDocumentAsync() (Application Layer)
+      → 3. Reject duplicate filename (400), save file to storage, create document entity (status: Pending)
       → 4. Enqueue DocumentProcessingJob(documentId) to IBackgroundTaskQueue<DocumentProcessingJob> (Channel<T>)
    → 5. Return 202 Accepted with the Pending DocumentResponse
 
 6. QueuedHostedService<DocumentProcessingJob> dequeues the job and resolves IJobHandler<DocumentProcessingJob> in a fresh scope
    → 7. DocumentProcessingJobHandler → DocumentService.ProcessQueuedDocumentAsync()
-      → 8. UpdateStatusAsync(Processing) + broadcast JobNotification("document", "Processing") via IJobNotifier → SignalR
-      → 9. IFileStorageService.OpenReadFileAsync() - Reload the stored PDF (the upload request stream is gone)
-      → 10. ProcessDocumentContentAsync()
+      → 8. SetStatusAsync(Processing) + broadcast JobNotification("document", "Processing") via IJobNotifier → SignalR
+      → 9. ProcessDocumentAsync()
+         → 10. IFileStorageService.OpenReadFileAsync() - Reload the stored PDF (the upload request stream is gone)
          → 11. PdfPigLoader.LoadPdf() - Extract text using ContentOrderTextExtractor; join pages into content
          → 12. ITextChunker.CreateDocumentChunksAsync() - Split into chunks
                • fixed-size: Character-based splitting (ChunkSize, ChunkOverlap)
@@ -452,29 +455,34 @@ RAG-Evaluator/
          → 13. For each chunk: IEmbeddingService.GenerateDocumentEmbeddingAsync() → DocumentChunk entity
          → 14. DocumentChunkRepository.AddRangeAsync() - Persist chunks; set status Completed (content stored for future reprocessing)
       → 15. Broadcast JobNotification("document", "Completed") via IJobNotifier → SignalR
-      → On failure: UpdateStatusAsync(Failed) + broadcast JobNotification("document", "Failed")
+      → On failure: SetStatusAsync(Failed, set-based) + broadcast JobNotification("document", "Failed")
 ```
 
 ### Document Reprocessing Pipeline
 
-Reprocessing runs to completion **independently of the request** — the controller invokes it with `CancellationToken.None`, so a client disconnect never aborts an in-progress run.
+Reprocessing is asynchronous: the request only validates and **enqueues** one job per document, then returns immediately. Each document is reprocessed independently in the background, so per-document progress is delivered via job notifications and one document's failure never affects the rest.
 
 ```
-1. Settings Change or Manual Trigger
+1. Settings Change or Manual Trigger (Controller)
    → 2. DocumentService.ReprocessAllDocumentsAsync() (Application Layer)
-      → 3. DocumentRepository.GetReprocessableAsync() - Fetch all documents that have content,
+      → 3. EnsureEmbeddingServiceAvailableAsync() - Fail fast (503) so no doomed jobs are queued
+      → 4. DocumentRepository.GetReprocessableAsync() - Fetch all documents that have content,
            regardless of status (recovers docs left Failed by a prior run or stuck Processing)
-      → 4. DocumentRepository.SetStatusAsync(..., Processing) - Mark all as Processing in one bulk update
-      → 5. For each document (independently — one failure does not abort the rest):
-         → 6. ITextChunker.CreateDocumentChunksAsync(document.Content) - Build new chunks first
-         → 7. For each chunk:
-            → 8. IEmbeddingService.GenerateDocumentEmbeddingAsync(chunk)
-            → 9. Create DocumentChunk entity with current config (strategy, model)
-         → 10. DocumentChunkRepository.ReplaceChunksAsync() - Atomically swap old chunks for new
+      → 5. DocumentRepository.SetStatusAsync(ids, Pending) - Bulk-mark all queued docs Pending so a refresh reflects the queued state immediately
+      → 6. For each document: enqueue DocumentReprocessingJob(documentId) to IBackgroundTaskQueue<DocumentReprocessingJob>
+   → 7. Return 202 Accepted with ReprocessResponse (number of documents queued)
+
+8. QueuedHostedService<DocumentReprocessingJob> dequeues each job and resolves IJobHandler<DocumentReprocessingJob> in a fresh scope
+   → 9. DocumentReprocessingJobHandler → DocumentService.ReprocessQueuedDocumentAsync()
+      → 10. SetStatusAsync(Processing) + broadcast JobNotification("document", "Processing") via IJobNotifier → SignalR
+      → 11. ReprocessDocumentAsync()
+         → 12. ITextChunker.CreateDocumentChunksAsync(document.Content) - Build new chunks from stored content
+         → 13. For each chunk: IEmbeddingService.GenerateDocumentEmbeddingAsync() → DocumentChunk entity (current config)
+         → 14. DocumentChunkRepository.ReplaceChunksAsync() - Atomically swap old chunks for new
                (delete + insert in one transaction; old chunks stay queryable until the swap)
-         → 11. Update document ChunkCount, ProcessedAt, Status = Completed
-         → On failure: log, set Status = Failed, and continue with the next document
-   → 12. Return ReprocessResponse (documents processed, documents failed, total chunks, config used)
+         → 15. Update document ChunkCount, ProcessedAt, Status = Completed
+      → 16. Broadcast JobNotification("document", "Completed") via IJobNotifier → SignalR
+      → On failure: SetStatusAsync(Failed, set-based) + broadcast JobNotification("document", "Failed")
 ```
 
 ### Query Processing Pipeline

@@ -87,6 +87,13 @@ namespace RagEvaluator.Infrastructure.Data.Repositories
             await _context.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task SetStatusAsync(Guid id, DocumentStatus status, CancellationToken cancellationToken = default)
+        {
+            await _context.Documents
+                .Where(d => d.Id == id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(d => d.Status, status), cancellationToken);
+        }
+
         public async Task SetStatusAsync(IEnumerable<Guid> documentIds, DocumentStatus status, CancellationToken cancellationToken = default)
         {
             var ids = documentIds.ToList();

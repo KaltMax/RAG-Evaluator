@@ -1,6 +1,4 @@
 using RagEvaluator.Contract.Dtos.Responses;
-using RagEvaluator.Domain.Entities;
-using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {
@@ -10,20 +8,9 @@ namespace RagEvaluator.Application.Services.Interfaces
     public interface IDocumentService
     {
         /// <summary>
-        /// Uploads a document: creates it, saves the file, then extracts content, chunks, embeds, and stores it.
+        /// Creates a Pending document, saves the file to storage, and enqueues it for background processing.
         /// </summary>
-        Task<DocumentResponse> UploadDocumentAsync(Stream documentStream, string fileName, string contentType, string language, string course, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Background worker entry point: reloads a previously created (Pending) document from storage,
-        /// processes its content, and broadcasts status transitions (Processing/Completed/Failed).
-        /// </summary>
-        Task ProcessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Creates a new document entity and saves the file to storage.
-        /// </summary>
-        Task<Document> CreateDocumentAsync(Stream fileStream, string fileName, long fileSize, string mimeType, string language, string course, CancellationToken cancellationToken = default);
+        Task<DocumentResponse> CreateDocumentAsync(Stream fileStream, string fileName, string mimeType, string language, string course, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets a document by its unique identifier.
@@ -46,9 +33,20 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task<DocumentFileInfo?> GetDocumentFileInfoAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Gets all document chunks associated with a specific document.
+        /// </summary>
+        Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Deletes a document, its associated file from storage, and all related chunks.
         /// </summary>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Background worker entry point: reloads a previously created (Pending) document from storage,
+        /// processes its content, and broadcasts status transitions (Processing/Completed/Failed).
+        /// </summary>
+        Task ProcessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Processes a PDF document by extracting text, splitting into chunks, generating embeddings, and storing the chunks.
@@ -56,13 +54,19 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task ProcessDocumentAsync(Guid documentId, string filePath, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Reprocesses a single queued document (re-chunk + re-embed from stored content), updating its
+        /// status and emitting notifications. Invoked by the background worker.
+        /// </summary>
+        Task ReprocessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reprocesses a document by re-chunking and re-embedding its stored content and replacing its existing chunks.
+        /// </summary>
+        Task ReprocessDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Reprocesses all documents with content by deleting existing chunks and re-chunking + re-embedding with the current configuration.
         /// </summary>
         Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Gets all document chunks associated with a specific document.
-        /// </summary>
-        Task<IReadOnlyList<DocumentChunkResponse>> GetChunksByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
     }
 }

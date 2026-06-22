@@ -55,7 +55,7 @@ namespace RagEvaluator.Test.ApiTest
             var request = new UploadDocumentRequest { File = formFile, Language = "en", Course = "Test Course" };
             var expectedResponse = CreateDocumentResponse();
 
-            _documentService.UploadDocumentAsync(
+            _documentService.CreateDocumentAsync(
                 Arg.Any<Stream>(),
                 fileName,
                 "application/pdf",
@@ -276,27 +276,20 @@ namespace RagEvaluator.Test.ApiTest
         #region ReprocessDocumentsAsync Tests
 
         [Fact]
-        public async Task ReprocessDocumentsAsync_ReturnsOkWithResponse()
+        public async Task ReprocessDocumentsAsync_ReturnsAcceptedWithQueuedCount()
         {
             // Arrange
-            var expectedResponse = new ReprocessResponse
-            {
-                DocumentsProcessed = 5,
-                TotalChunksCreated = 50,
-                ChunkingStrategy = "FixedSize",
-                EmbeddingModel = "nomic-embed-text-v2-moe"
-            };
+            var expectedResponse = new ReprocessResponse { DocumentsQueued = 5 };
             _documentService.ReprocessAllDocumentsAsync(Arg.Any<CancellationToken>())
                 .Returns(expectedResponse);
 
             // Act
-            var result = await _controller.ReprocessDocumentsAsync();
+            var result = await _controller.ReprocessDocumentsAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var response = Assert.IsType<ReprocessResponse>(okResult.Value);
-            Assert.Equal(5, response.DocumentsProcessed);
-            Assert.Equal(50, response.TotalChunksCreated);
+            var acceptedResult = Assert.IsType<AcceptedResult>(result.Result);
+            var response = Assert.IsType<ReprocessResponse>(acceptedResult.Value);
+            Assert.Equal(5, response.DocumentsQueued);
         }
 
         #endregion

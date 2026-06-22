@@ -1,14 +1,11 @@
 namespace RagEvaluator.Contract.Dtos.Responses
 {
     /// <summary>
-    /// Response returned after reprocessing all documents with the current configuration.
+    /// Response returned after queuing documents for reprocessing. Processing happens asynchronously;
+    /// per-document progress is delivered via job notifications.
     /// </summary>
     public class ReprocessResponse
     {
-        public int DocumentsProcessed { get; set; }
-        public int DocumentsFailed { get; set; }
-        public int TotalChunksCreated { get; set; }
-        public required string ChunkingStrategy { get; set; }
-        public required string EmbeddingModel { get; set; }
+        public int DocumentsQueued { get; set; }
     }
 }

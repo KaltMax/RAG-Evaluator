@@ -54,7 +54,7 @@ namespace RagEvaluator.API.Controllers
             _logger.LogInformation("Uploading document: {FileName}, Language: {Language}, Course: {Course}", request.File.FileName, request.Language, request.Course);
 
             using var stream = request.File.OpenReadStream();
-            var result = await _documentService.UploadDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
+            var result = await _documentService.CreateDocumentAsync(stream, request.File.FileName, request.File.ContentType, request.Language, request.Course, cancellationToken);
 
             _logger.LogInformation("Document accepted for processing: {DocumentId}", result.Id);
             return Accepted(result);
@@ -161,20 +161,19 @@ namespace RagEvaluator.API.Controllers
         }
 
         /// <summary>
-        /// Reprocesses all documents with content by re-chunking + re-embedding them with the current configuration.
-        /// Runs to completion independently of the request: it is intentionally not cancelled if the client disconnects.
+        /// Queues all documents with content for reprocessing (re-chunk + re-embed with the current
+        /// configuration). Each document is processed asynchronously; progress arrives via job notifications.
         /// </summary>
         [HttpPost("reprocess")]
-        [ProducesResponseType(typeof(ReprocessResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ReprocessResponse), StatusCodes.Status202Accepted)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-        public async Task<ActionResult<ReprocessResponse>> ReprocessDocumentsAsync()
+        public async Task<ActionResult<ReprocessResponse>> ReprocessDocumentsAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Reprocessing all documents with current configuration");
-            // Decoupled from the request lifetime: a client disconnect must not abort a long-running reprocess.
-            var result = await _documentService.ReprocessAllDocumentsAsync(CancellationToken.None);
-            _logger.LogInformation("Reprocessing complete: {Documents} documents, {Chunks} chunks", result.DocumentsProcessed, result.TotalChunksCreated);
-            return Ok(result);
+            _logger.LogInformation("Queuing all documents for reprocessing with current configuration");
+            var result = await _documentService.ReprocessAllDocumentsAsync(cancellationToken);
+            _logger.LogInformation("Queued {Documents} documents for reprocessing", result.DocumentsQueued);
+            return Accepted(result);
         }
 
         /// <summary>

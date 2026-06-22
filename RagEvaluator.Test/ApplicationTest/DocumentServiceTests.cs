@@ -23,6 +23,7 @@ namespace RagEvaluator.Test.ApplicationTest
         private readonly ITextChunker _textChunker;
         private readonly IEmbeddingService _embeddingService;
         private readonly IBackgroundTaskQueue<DocumentProcessingJob> _documentQueue;
+        private readonly IBackgroundTaskQueue<DocumentReprocessingJob> _reprocessQueue;
         private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
         private readonly DocumentService _service;
@@ -37,9 +38,10 @@ namespace RagEvaluator.Test.ApplicationTest
             _textChunker = Substitute.For<ITextChunker>();
             _embeddingService = Substitute.For<IEmbeddingService>();
             _documentQueue = Substitute.For<IBackgroundTaskQueue<DocumentProcessingJob>>();
+            _reprocessQueue = Substitute.For<IBackgroundTaskQueue<DocumentReprocessingJob>>();
             _jobNotifier = Substitute.For<IJobNotifier>();
             _config = CreateSampleRagConfiguration();
-            _service = new DocumentService(_logger, _documentRepository, _documentChunkRepository, _fileStorageService, _pdfLoader, _textChunker, _embeddingService, _documentQueue, _jobNotifier, _config);
+            _service = new DocumentService(_logger, _documentRepository, _documentChunkRepository, _fileStorageService, _pdfLoader, _textChunker, _embeddingService, _documentQueue, _reprocessQueue, _jobNotifier, _config);
         }
 
         private static RagConfiguration CreateSampleRagConfiguration()
@@ -62,29 +64,6 @@ namespace RagEvaluator.Test.ApplicationTest
                 MinChunkSize = 200
             };
         }
-
-        #region UploadDocumentAsync Tests
-
-        [Fact]
-        public async Task UploadDocumentAsync_CreatesPendingDocumentAndEnqueuesJob()
-        {
-            // Arrange
-            var stream = new MemoryStream("PDF content"u8.ToArray());
-            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns((Document?)null);
-            _fileStorageService.SaveFileAsync(Arg.Any<Stream>(), Arg.Any<Guid>(), "test.pdf", Arg.Any<CancellationToken>())
-                .Returns("/storage/test.pdf");
-
-            // Act
-            var result = await _service.UploadDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
-
-            // Assert — returns the Pending document, enqueues a job, and does NOT process inline
-            Assert.Equal(DocumentStatus.Pending.ToString(), result.Status);
-            await _documentRepository.Received(1).AddAsync(Arg.Any<Document>(), Arg.Any<CancellationToken>());
-            await _documentQueue.Received(1).EnqueueAsync(Arg.Any<DocumentProcessingJob>(), Arg.Any<CancellationToken>());
-            await _documentChunkRepository.DidNotReceive().AddRangeAsync(Arg.Any<List<DocumentChunk>>(), Arg.Any<CancellationToken>());
-        }
-
-        #endregion
 
         #region ProcessQueuedDocumentAsync Tests
 
@@ -131,7 +110,7 @@ namespace RagEvaluator.Test.ApplicationTest
 
             // Assert — failure persists via a set-based update, so it survives an invalid tracked entity
             await _documentRepository.Received(1).SetStatusAsync(
-                Arg.Is<IEnumerable<Guid>>(ids => ids.Single() == documentId), DocumentStatus.Failed, Arg.Any<CancellationToken>());
+                documentId, DocumentStatus.Failed, Arg.Any<CancellationToken>());
             await _jobNotifier.Received(1).NotifyAsync(
                 Arg.Is<JobNotification>(n => n.Status == DocumentStatus.Failed.ToString()),
                 Arg.Any<CancellationToken>());
@@ -154,29 +133,100 @@ namespace RagEvaluator.Test.ApplicationTest
 
         #endregion
 
+        #region ReprocessQueuedDocumentAsync Tests
+
+        [Fact]
+        public async Task ReprocessQueuedDocumentAsync_WithValidDocument_SwapsChunksAndNotifiesCompleted()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = "Existing content";
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+            _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new List<string> { "Chunk 1" });
+            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new float[] { 0.1f });
+
+            // Act
+            await _service.ReprocessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert — rebuilds from stored content (no PDF re-extraction) and swaps chunks
+            _pdfLoader.DidNotReceive().LoadPdf(Arg.Any<Stream>());
+            await _documentChunkRepository.Received(1).ReplaceChunksAsync(
+                documentId, Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            await _jobNotifier.Received(1).NotifyAsync(
+                Arg.Is<JobNotification>(n => n.JobType == JobTypes.Document && n.Status == DocumentStatus.Completed.ToString()),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ReprocessQueuedDocumentAsync_WhenProcessingFails_SetsFailedAndNotifies()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = "Existing content";
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+            _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .ThrowsAsync(new InvalidOperationException("chunking failed"));
+
+            // Act
+            await _service.ReprocessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert — failure persists via a set-based update
+            await _documentRepository.Received(1).SetStatusAsync(
+                documentId, DocumentStatus.Failed, Arg.Any<CancellationToken>());
+            await _jobNotifier.Received(1).NotifyAsync(
+                Arg.Is<JobNotification>(n => n.Status == DocumentStatus.Failed.ToString()),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ReprocessQueuedDocumentAsync_WhenNoContent_ReturnsWithoutProcessing()
+        {
+            // Arrange — a document without extracted content cannot be reprocessed
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = null;
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+
+            // Act
+            await _service.ReprocessQueuedDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert
+            await _documentChunkRepository.DidNotReceive().ReplaceChunksAsync(
+                Arg.Any<Guid>(), Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            await _jobNotifier.DidNotReceive().NotifyAsync(Arg.Any<JobNotification>(), Arg.Any<CancellationToken>());
+        }
+
+        #endregion
+
         #region CreateDocumentAsync Tests
 
         [Fact]
-        public async Task CreateDocumentAsync_WithValidInput_ReturnsDocumentWithCorrectFields()
+        public async Task CreateDocumentAsync_WithValidInput_CreatesPendingDocumentAndEnqueuesJob()
         {
             // Arrange
             var stream = new MemoryStream("PDF content"u8.ToArray());
-            var expectedFilePath = "/storage/some-guid.pdf";
+            _documentRepository.GetByNameAsync("test.pdf", Arg.Any<CancellationToken>()).Returns((Document?)null);
             _fileStorageService.SaveFileAsync(Arg.Any<Stream>(), Arg.Any<Guid>(), "test.pdf", Arg.Any<CancellationToken>())
-                .Returns(expectedFilePath);
+                .Returns("/storage/some-guid.pdf");
 
             // Act
-            var result = await _service.CreateDocumentAsync(stream, "test.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
+            var result = await _service.CreateDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
 
-            // Assert
+            // Assert — returns the Pending document (FileSize taken from the stream), enqueues a job, no inline processing
             Assert.Equal("test.pdf", result.FileName);
-            Assert.Equal(expectedFilePath, result.FilePath);
-            Assert.Equal(1024, result.FileSize);
+            Assert.Equal(stream.Length, result.FileSize);
             Assert.Equal("application/pdf", result.MimeType);
             Assert.Equal("en", result.Language);
-            Assert.Equal(DocumentStatus.Pending, result.Status);
+            Assert.Equal(DocumentStatus.Pending.ToString(), result.Status);
             await _fileStorageService.Received(1).SaveFileAsync(Arg.Any<Stream>(), result.Id, "test.pdf", TestContext.Current.CancellationToken);
-            await _documentRepository.Received(1).AddAsync(result, TestContext.Current.CancellationToken);
+            await _documentRepository.Received(1).AddAsync(Arg.Is<Document>(d => d.Id == result.Id), TestContext.Current.CancellationToken);
+            await _documentQueue.Received(1).EnqueueAsync(
+                Arg.Is<DocumentProcessingJob>(j => j.DocumentId == result.Id), Arg.Any<CancellationToken>());
+            await _documentChunkRepository.DidNotReceive().AddRangeAsync(Arg.Any<List<DocumentChunk>>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -188,7 +238,7 @@ namespace RagEvaluator.Test.ApplicationTest
                 .Returns("/storage/some-guid.pdf");
 
             // Act
-            var result = await _service.CreateDocumentAsync(stream, "../../../evil.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
+            var result = await _service.CreateDocumentAsync(stream, "../../../evil.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("evil.pdf", result.FileName);
@@ -206,11 +256,12 @@ namespace RagEvaluator.Test.ApplicationTest
             _documentRepository.AddAsync(Arg.Any<Document>(), Arg.Any<CancellationToken>())
                 .ThrowsAsync(new InvalidOperationException("persistence failed"));
 
-            // Act & Assert — the failure propagates and the orphaned file is cleaned up
+            // Act & Assert — the failure propagates, the orphaned file is cleaned up, and no job is enqueued
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _service.CreateDocumentAsync(stream, "test.pdf", 1024, "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken));
+                _service.CreateDocumentAsync(stream, "test.pdf", "application/pdf", "en", "Test Course", TestContext.Current.CancellationToken));
 
             await _fileStorageService.Received(1).DeleteFileAsync(filePath, Arg.Any<CancellationToken>());
+            await _documentQueue.DidNotReceive().EnqueueAsync(Arg.Any<DocumentProcessingJob>(), Arg.Any<CancellationToken>());
         }
 
         #endregion
@@ -578,7 +629,7 @@ namespace RagEvaluator.Test.ApplicationTest
         #region ReprocessAllDocumentsAsync Tests
 
         [Fact]
-        public async Task ReprocessAllDocumentsAsync_WithDocuments_SwapsChunksAndReprocesses()
+        public async Task ReprocessAllDocumentsAsync_QueuesAllReprocessableDocuments()
         {
             // Arrange
             var doc1 = CreateSampleDocument();
@@ -589,110 +640,40 @@ namespace RagEvaluator.Test.ApplicationTest
 
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
             _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>()).Returns(documents);
-            _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(new List<string> { "Chunk A", "Chunk B" });
-            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(new float[] { 0.1f, 0.2f });
 
             // Act
             var result = await _service.ReprocessAllDocumentsAsync(TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.Equal(2, result.DocumentsProcessed);
-            Assert.Equal(0, result.DocumentsFailed);
-            Assert.Equal(4, result.TotalChunksCreated);
-            Assert.Equal("FixedSize", result.ChunkingStrategy);
-            Assert.Equal("nomic-embed-text-v2-moe", result.EmbeddingModel);
-            await _documentChunkRepository.Received(1).ReplaceChunksAsync(doc1.Id, Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
-            await _documentChunkRepository.Received(1).ReplaceChunksAsync(doc2.Id, Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            // Assert — enqueues one job per document and does NOT process inline
+            Assert.Equal(2, result.DocumentsQueued);
+            await _reprocessQueue.Received(1).EnqueueAsync(
+                Arg.Is<DocumentReprocessingJob>(j => j.DocumentId == doc1.Id), Arg.Any<CancellationToken>());
+            await _reprocessQueue.Received(1).EnqueueAsync(
+                Arg.Is<DocumentReprocessingJob>(j => j.DocumentId == doc2.Id), Arg.Any<CancellationToken>());
+            await _documentChunkRepository.DidNotReceive().ReplaceChunksAsync(
+                Arg.Any<Guid>(), Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task ReprocessAllDocumentsAsync_MarksAllProcessingUpFrontThenCompleted()
+        public async Task ReprocessAllDocumentsAsync_MarksAllPendingUpFront()
         {
             // Arrange
             var doc = CreateSampleDocument();
             doc.Content = "Content";
-            var documents = new List<Document> { doc };
-
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>()).Returns(documents);
-            _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(new List<string> { "Chunk" });
-            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(new float[] { 0.1f });
-
-            var statusHistory = new List<DocumentStatus>();
-            _documentRepository.When(r => r.UpdateAsync(doc, Arg.Any<CancellationToken>()))
-                .Do(_ => statusHistory.Add(doc.Status));
+            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>())
+                .Returns(new List<Document> { doc });
 
             // Act
             await _service.ReprocessAllDocumentsAsync(TestContext.Current.CancellationToken);
 
-            // Assert — all marked Processing up front via a single bulk update, then each set Completed
+            // Assert — bulk-marked Pending so a refresh immediately reflects the queued state
             await _documentRepository.Received(1).SetStatusAsync(
-                Arg.Any<IEnumerable<Guid>>(), DocumentStatus.Processing, Arg.Any<CancellationToken>());
-            Assert.Single(statusHistory);
-            Assert.Equal(DocumentStatus.Completed, statusHistory[0]);
+                Arg.Is<IEnumerable<Guid>>(ids => ids.Single() == doc.Id), DocumentStatus.Pending, Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task ReprocessAllDocumentsAsync_WhenDocumentFails_MarksFailedAndContinues()
-        {
-            // Arrange
-            var failingDoc = CreateSampleDocument();
-            failingDoc.Content = "fail";
-            var okDoc = CreateSampleDocument();
-            okDoc.Content = "ok";
-            var documents = new List<Document> { failingDoc, okDoc };
-
-            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>()).Returns(documents);
-            _textChunker.CreateDocumentChunksAsync("fail", Arg.Any<CancellationToken>())
-                .ThrowsAsync(new InvalidOperationException("boom"));
-            _textChunker.CreateDocumentChunksAsync("ok", Arg.Any<CancellationToken>())
-                .Returns(new List<string> { "Chunk" });
-            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(new float[] { 0.1f });
-
-            // Act
-            var result = await _service.ReprocessAllDocumentsAsync(TestContext.Current.CancellationToken);
-
-            // Assert — the failure is isolated: it is marked Failed, the rest still completes
-            Assert.Equal(2, result.DocumentsProcessed);
-            Assert.Equal(1, result.DocumentsFailed);
-            Assert.Equal(1, result.TotalChunksCreated);
-            Assert.Equal(DocumentStatus.Failed, failingDoc.Status);
-            Assert.Equal(DocumentStatus.Completed, okDoc.Status);
-        }
-
-        [Fact]
-        public async Task ReprocessAllDocumentsAsync_ReprocessesPreviouslyFailedDocuments()
-        {
-            // Arrange — a document left in Failed state (but with content) is still reprocessed, not skipped
-            var failedDoc = CreateSampleDocument();
-            failedDoc.Content = "recoverable content";
-            failedDoc.Status = DocumentStatus.Failed;
-
-            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
-            _documentRepository.GetReprocessableAsync(Arg.Any<CancellationToken>())
-                .Returns(new List<Document> { failedDoc });
-            _textChunker.CreateDocumentChunksAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(new List<string> { "Chunk" });
-            _embeddingService.GenerateDocumentEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(new float[] { 0.1f });
-
-            // Act
-            var result = await _service.ReprocessAllDocumentsAsync(TestContext.Current.CancellationToken);
-
-            // Assert — the formerly Failed document is recovered to Completed
-            Assert.Equal(1, result.DocumentsProcessed);
-            Assert.Equal(0, result.DocumentsFailed);
-            Assert.Equal(DocumentStatus.Completed, failedDoc.Status);
-        }
-
-        [Fact]
-        public async Task ReprocessAllDocumentsAsync_WhenNoDocuments_ReturnsZeroCounts()
+        public async Task ReprocessAllDocumentsAsync_WhenNoDocuments_QueuesNothing()
         {
             // Arrange
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
@@ -703,21 +684,23 @@ namespace RagEvaluator.Test.ApplicationTest
             var result = await _service.ReprocessAllDocumentsAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(0, result.DocumentsProcessed);
-            Assert.Equal(0, result.DocumentsFailed);
-            Assert.Equal(0, result.TotalChunksCreated);
-            await _documentChunkRepository.DidNotReceive().ReplaceChunksAsync(Arg.Any<Guid>(), Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            Assert.Equal(0, result.DocumentsQueued);
+            await _reprocessQueue.DidNotReceive().EnqueueAsync(
+                Arg.Any<DocumentReprocessingJob>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task ReprocessAllDocumentsAsync_WhenEmbeddingUnavailable_ThrowsInvalidOperationException()
+        public async Task ReprocessAllDocumentsAsync_WhenEmbeddingUnavailable_ThrowsAndQueuesNothing()
         {
-            // Arrange
+            // Arrange — fail fast before queuing any work
             _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _service.ReprocessAllDocumentsAsync(TestContext.Current.CancellationToken));
+
+            await _reprocessQueue.DidNotReceive().EnqueueAsync(
+                Arg.Any<DocumentReprocessingJob>(), Arg.Any<CancellationToken>());
         }
 
         #endregion
