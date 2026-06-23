@@ -1,4 +1,5 @@
 using RagEvaluator.Domain.Entities;
+using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Contract.Abstractions.Data
 {
@@ -31,6 +32,11 @@ namespace RagEvaluator.Contract.Abstractions.Data
         /// Updates an existing experiment in the repository and saves changes to the data store.
         /// </summary>
         Task UpdateAsync(Experiment experiment, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Sets an experiment's status via a set-based update.
+        /// </summary>
+        Task SetStatusAsync(Guid id, ExperimentStatus status, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes an experiment by its unique identifier from the repository and saves changes to the data store.

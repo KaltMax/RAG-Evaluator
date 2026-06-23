@@ -6,7 +6,6 @@ using RagEvaluator.Contract.Abstractions.BackgroundProcessing;
 using RagEvaluator.Contract.Abstractions.Data;
 using RagEvaluator.Contract.Abstractions.Services;
 using RagEvaluator.Contract.Configurations;
-using RagEvaluator.Contract.Dtos.Notifications;
 using RagEvaluator.Contract.Dtos.Responses;
 using RagEvaluator.Domain.Entities;
 using RagEvaluator.Domain.Enums;
@@ -28,7 +27,6 @@ namespace RagEvaluator.Application.Services
         private readonly IEmbeddingService _embeddingService;
         private readonly IBackgroundTaskQueue<DocumentProcessingJob> _documentQueue;
         private readonly IBackgroundTaskQueue<DocumentReprocessingJob> _reprocessQueue;
-        private readonly IJobNotifier _jobNotifier;
         private readonly RagConfiguration _config;
 
         public DocumentService(
@@ -41,7 +39,6 @@ namespace RagEvaluator.Application.Services
             IEmbeddingService embeddingService,
             IBackgroundTaskQueue<DocumentProcessingJob> documentQueue,
             IBackgroundTaskQueue<DocumentReprocessingJob> reprocessQueue,
-            IJobNotifier jobNotifier,
             RagConfiguration config)
         {
             _logger = logger;
@@ -53,7 +50,6 @@ namespace RagEvaluator.Application.Services
             _embeddingService = embeddingService;
             _documentQueue = documentQueue;
             _reprocessQueue = reprocessQueue;
-            _jobNotifier = jobNotifier;
             _config = config;
         }
 
@@ -154,65 +150,12 @@ namespace RagEvaluator.Application.Services
             await _documentRepository.DeleteAsync(id, CancellationToken.None);
         }
 
+        public Task SetStatusAsync(Guid documentId, DocumentStatus status, CancellationToken cancellationToken = default)
+        {
+            return _documentRepository.SetStatusAsync(documentId, status, cancellationToken);
+        }
+
         // ---- Processing ----
-
-        public async Task ProcessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
-        {
-            var fileInfo = await GetDocumentFileInfoAsync(documentId, cancellationToken);
-            if (fileInfo is null)
-            {
-                _logger.LogError("Document {DocumentId} not found for processing", documentId);
-                return;
-            }
-
-            try
-            {
-                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Processing, cancellationToken);
-                await NotifyDocumentAsync(documentId, DocumentStatus.Processing, fileInfo.FileName, cancellationToken);
-
-                // ProcessDocumentAsync sets the document to Completed on success.
-                await ProcessDocumentAsync(documentId, fileInfo.FilePath, cancellationToken);
-
-                await NotifyDocumentAsync(documentId, DocumentStatus.Completed, fileInfo.FileName, cancellationToken);
-                _logger.LogInformation("Document {DocumentId} processed successfully", documentId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process document {DocumentId}", documentId);
-
-                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Failed, CancellationToken.None);
-                await NotifyDocumentAsync(documentId, DocumentStatus.Failed, fileInfo.FileName, cancellationToken);
-            }
-        }
-
-        public async Task ReprocessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
-        {
-            var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken);
-            if (document?.Content is null)
-            {
-                _logger.LogError("Document {DocumentId} not found or has no content for reprocessing", documentId);
-                return;
-            }
-
-            try
-            {
-                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Processing, cancellationToken);
-                await NotifyDocumentAsync(documentId, DocumentStatus.Processing, document.FileName, cancellationToken);
-
-                // ReprocessDocumentAsync sets the document to Completed on success.
-                await ReprocessDocumentAsync(documentId, cancellationToken);
-
-                await NotifyDocumentAsync(documentId, DocumentStatus.Completed, document.FileName, cancellationToken);
-                _logger.LogInformation("Document {DocumentId} reprocessed successfully", documentId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to reprocess document {DocumentId}", documentId);
-
-                await _documentRepository.SetStatusAsync(documentId, DocumentStatus.Failed, CancellationToken.None);
-                await NotifyDocumentAsync(documentId, DocumentStatus.Failed, document.FileName, cancellationToken);
-            }
-        }
 
         public async Task ProcessDocumentAsync(Guid documentId, string filePath, CancellationToken cancellationToken = default)
         {
@@ -310,14 +253,6 @@ namespace RagEvaluator.Application.Services
             }
 
             return documentChunks;
-        }
-
-        private Task NotifyDocumentAsync(
-            Guid documentId, DocumentStatus status, string fileName, CancellationToken cancellationToken, string? message = null)
-        {
-            return _jobNotifier.NotifyAsync(
-                new JobNotification(JobTypes.Document, documentId, status.ToString(), fileName, Message: message),
-                cancellationToken);
         }
 
         private async Task EnsureEmbeddingServiceAvailableAsync(CancellationToken cancellationToken)

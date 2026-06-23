@@ -39,6 +39,23 @@ namespace RagEvaluator.Test.ApplicationTest
             _service = new ExperimentService(_logger, _experimentRepository, _queryRepository, _documentRepository, _queryService, _experimentQueue, _jobNotifier, _config);
         }
 
+        #region SetStatusAsync Tests
+
+        [Fact]
+        public async Task SetStatusAsync_ForwardsToRepository()
+        {
+            // Arrange
+            var experimentId = Guid.NewGuid();
+
+            // Act
+            await _service.SetStatusAsync(experimentId, ExperimentStatus.Failed, TestContext.Current.CancellationToken);
+
+            // Assert
+            await _experimentRepository.Received(1).SetStatusAsync(experimentId, ExperimentStatus.Failed, Arg.Any<CancellationToken>());
+        }
+
+        #endregion
+
         #region CreateExperimentAsync Tests
 
         [Fact]

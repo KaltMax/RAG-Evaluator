@@ -1,4 +1,5 @@
 using RagEvaluator.Contract.Dtos.Responses;
+using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {
@@ -43,24 +44,19 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Background worker entry point: reloads a previously created (Pending) document from storage,
-        /// processes its content, and broadcasts status transitions (Processing/Completed/Failed).
+        /// Updates a document's processing status.
         /// </summary>
-        Task ProcessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
+        Task SetStatusAsync(Guid documentId, DocumentStatus status, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Processes a PDF document by extracting text, splitting into chunks, generating embeddings, and storing the chunks.
+        /// Sets the document to Completed on success. Invoked by the background worker.
         /// </summary>
         Task ProcessDocumentAsync(Guid documentId, string filePath, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Reprocesses a single queued document (re-chunk + re-embed from stored content), updating its
-        /// status and emitting notifications. Invoked by the background worker.
-        /// </summary>
-        Task ReprocessQueuedDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Reprocesses a document by re-chunking and re-embedding its stored content and replacing its existing chunks.
+        /// Sets the document to Completed on success. Invoked by the background worker.
         /// </summary>
         Task ReprocessDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
 

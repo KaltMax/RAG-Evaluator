@@ -1,5 +1,6 @@
 using RagEvaluator.Contract.Dtos.Requests;
 using RagEvaluator.Contract.Dtos.Responses;
+using RagEvaluator.Domain.Enums;
 
 namespace RagEvaluator.Application.Services.Interfaces
 {
@@ -12,11 +13,6 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// Creates a new experiment with a configuration snapshot and enqueues it for background processing.
         /// </summary>
         Task<ExperimentSummaryResponse> CreateExperimentAsync(CreateExperimentRequest request, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Processes an experiment by executing its queries sequentially and linking the results to the experiment.
-        /// </summary>
-        Task ProcessExperimentAsync(Guid experimentId, List<ExperimentQueryItem> queries, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken);
 
         /// <summary>
         /// Gets an experiment by its unique identifier, including aggregated metrics computed from its linked queries.
@@ -32,5 +28,16 @@ namespace RagEvaluator.Application.Services.Interfaces
         /// Deletes an experiment by its unique identifier.
         /// </summary>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Updates an experiment's status.
+        /// </summary>
+        Task SetStatusAsync(Guid experimentId, ExperimentStatus status, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Processes an experiment by executing its queries sequentially and linking the results to the experiment.
+        /// Emits per-query progress and a final completion notification.
+        /// </summary>
+        Task ProcessExperimentAsync(Guid experimentId, List<ExperimentQueryItem> queries, Dictionary<string, Guid> resolvedDocumentIds, CancellationToken cancellationToken);
     }
 }
