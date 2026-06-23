@@ -13,6 +13,7 @@ import {
   getDocumentById,
   deleteDocument,
   downloadDocument,
+  reprocessDocumentById,
 } from "../api/documentService";
 import { formatDate } from "../utils/formatDate";
 import { formatFileSize } from "../utils/formatFileSize";
@@ -30,13 +31,16 @@ function upsertDocument(documents, doc) {
   return documents.map((d) => (d.id === doc.id ? doc : d));
 }
 
-// A notification only signals that a document changed; the server holds the
-// authoritative status and counts, so refetch it and merge it into the list.
+// A notification only signals that a document changed.
 function refreshDocument(id, setDocuments) {
   getDocumentById(id)
     .then((doc) => setDocuments((prev) => upsertDocument(prev, doc)))
     .catch(() => {});
 }
+
+// Only documents with these statuses can be reprocessed.
+const REPROCESSABLE_STATUSES = new Set(["Completed", "Failed"]);
+const canReprocess = (status) => REPROCESSABLE_STATUSES.has(status);
 
 function DocumentList() {
   const [documents, setDocuments] = useState([]);
@@ -94,6 +98,16 @@ function DocumentList() {
       fetchDocuments();
     } catch (err) {
       toast.error(`Failed to delete document: ${err.message}`);
+    }
+  };
+
+  const handleReprocess = async (id) => {
+    try {
+      const doc = await reprocessDocumentById(id);
+      setDocuments((prev) => upsertDocument(prev, doc));
+      toast.success("Document queued for reprocessing");
+    } catch (err) {
+      toast.error(`Failed to reprocess document: ${err.message}`);
     }
   };
 
@@ -202,7 +216,7 @@ function DocumentList() {
                       {renderSortIcon(key)}
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -256,6 +270,18 @@ function DocumentList() {
                         title="Download document"
                       >
                         <ArrowDownTrayIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleReprocess(doc.id)}
+                        disabled={!canReprocess(doc.status)}
+                        className="text-gray-400 hover:text-green-400 transition-colors p-1 mr-2 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400"
+                        title={
+                          canReprocess(doc.status)
+                            ? "Reprocess document"
+                            : "Only completed or failed documents can be reprocessed"
+                        }
+                      >
+                        <ArrowPathIcon className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => handleDelete(doc.id)}

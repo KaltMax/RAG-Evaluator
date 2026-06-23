@@ -48,7 +48,9 @@ Modern web interface for the RAG-Evaluator system built with React, Vite, and Ta
   - View all uploaded documents in a sortable table
   - Sortable columns: file name, size, pages, chunks, language, status, upload date (ascending/descending)
   - See metadata: file name, size, pages, chunks, language, status, upload date
+  - Live status updates via SignalR (Pending → Processing → Completed/Failed) without manual refresh
   - Download documents
+  - Reprocess a single document (re-chunk + re-embed with the current config; available for completed or failed documents)
   - Delete documents
 
 - **Responsive Navigation**
@@ -278,6 +280,7 @@ Brief summary of implemented API services (see `src/api`):
 | `GET /api/documents/{id}` | Get document details |
 | `GET /api/documents/{id}/download` | Download document file |
 | `DELETE /api/documents/{id}` | Delete a document |
+| `POST /api/documents/{id}/reprocess` | Reprocess a single document with current chunking/embedding config |
 | `POST /api/documents/reprocess` | Reprocess all documents with current chunking/embedding config |
 | `GET /api/settings` | Get current RAG configuration and available options |
 | `PATCH /api/settings` | Update RAG configuration (partial update, only changed fields) |

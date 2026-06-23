@@ -57,6 +57,7 @@ export const deleteDocument = (id) =>
   apiRequest(() => axiosInstance.delete(`/documents/${id}`));
 
 export const reprocessDocuments = () =>
-  apiRequest(() =>
-    axiosInstance.post("/documents/reprocess", null, { timeout: 3600000 }),
-  );
+  apiRequest(() => axiosInstance.post("/documents/reprocess"));
+
+export const reprocessDocumentById = (id) =>
+  apiRequest(() => axiosInstance.post(`/documents/${id}/reprocess`));
