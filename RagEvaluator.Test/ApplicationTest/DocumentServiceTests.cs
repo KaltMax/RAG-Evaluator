@@ -582,6 +582,85 @@ namespace RagEvaluator.Test.ApplicationTest
 
         #endregion
 
+        #region ReprocessDocumentByIdAsync Tests
+
+        [Fact]
+        public async Task ReprocessDocumentByIdAsync_WithContent_MarksPendingQueuesAndReturnsPending()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = "Existing content";
+            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+
+            // Act
+            var result = await _service.ReprocessDocumentByIdAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert — marked Pending up front, enqueued once, processed in the background (not inline)
+            await _documentRepository.Received(1).SetStatusAsync(documentId, DocumentStatus.Pending, Arg.Any<CancellationToken>());
+            await _reprocessQueue.Received(1).EnqueueAsync(
+                Arg.Is<DocumentReprocessingJob>(j => j.DocumentId == documentId), Arg.Any<CancellationToken>());
+            await _documentChunkRepository.DidNotReceive().ReplaceChunksAsync(
+                Arg.Any<Guid>(), Arg.Any<IEnumerable<DocumentChunk>>(), Arg.Any<CancellationToken>());
+            Assert.Equal(DocumentStatus.Pending.ToString(), result.Status);
+        }
+
+        [Fact]
+        public async Task ReprocessDocumentByIdAsync_WhenNoContent_ThrowsAndQueuesNothing()
+        {
+            // Arrange — a document without extracted content cannot be reprocessed
+            var documentId = Guid.NewGuid();
+            var document = CreateSampleDocument(documentId);
+            document.Content = null;
+            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns(document);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.ReprocessDocumentByIdAsync(documentId, TestContext.Current.CancellationToken));
+
+            await _reprocessQueue.DidNotReceive().EnqueueAsync(
+                Arg.Any<DocumentReprocessingJob>(), Arg.Any<CancellationToken>());
+            await _documentRepository.DidNotReceive().SetStatusAsync(
+                Arg.Any<Guid>(), Arg.Any<DocumentStatus>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ReprocessDocumentByIdAsync_WhenDocumentNotFound_ThrowsAndQueuesNothing()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(true);
+            _documentRepository.GetByIdAsync(documentId, Arg.Any<CancellationToken>()).Returns((Document?)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.ReprocessDocumentByIdAsync(documentId, TestContext.Current.CancellationToken));
+
+            await _reprocessQueue.DidNotReceive().EnqueueAsync(
+                Arg.Any<DocumentReprocessingJob>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task ReprocessDocumentByIdAsync_WhenEmbeddingUnavailable_ThrowsAndQueuesNothing()
+        {
+            // Arrange — fail fast before touching the document or queuing any work
+            var documentId = Guid.NewGuid();
+            _embeddingService.IsAvailableAsync(Arg.Any<CancellationToken>()).Returns(false);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _service.ReprocessDocumentByIdAsync(documentId, TestContext.Current.CancellationToken));
+
+            await _reprocessQueue.DidNotReceive().EnqueueAsync(
+                Arg.Any<DocumentReprocessingJob>(), Arg.Any<CancellationToken>());
+            await _documentRepository.DidNotReceive().SetStatusAsync(
+                Arg.Any<Guid>(), Arg.Any<DocumentStatus>(), Arg.Any<CancellationToken>());
+        }
+
+        #endregion
+
         #region GetChunksByDocumentIdAsync Tests
 
         [Fact]

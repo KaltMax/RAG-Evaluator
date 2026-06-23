@@ -61,6 +61,12 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task ReprocessDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Queues a single document for reprocessing (re-chunk + re-embed from stored content with the current
+        /// configuration).
+        /// </summary>
+        Task<DocumentResponse> ReprocessDocumentByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Reprocesses all documents with content by deleting existing chunks and re-chunking + re-embedding with the current configuration.
         /// </summary>
         Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default);

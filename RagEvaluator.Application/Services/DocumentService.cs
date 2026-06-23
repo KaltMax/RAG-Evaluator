@@ -208,6 +208,26 @@ namespace RagEvaluator.Application.Services
             _logger.LogInformation("Document {DocumentId}: reprocessing completed", documentId);
         }
 
+        public async Task<DocumentResponse> ReprocessDocumentByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            // Fail fast: reject before touching the document if embeddings can't be generated.
+            await EnsureEmbeddingServiceAvailableAsync(cancellationToken);
+
+            var document = await _documentRepository.GetByIdAsync(id, cancellationToken);
+            if (document?.Content is null)
+            {
+                throw new ArgumentException($"Document with id {id} not found or has no content to reprocess.");
+            }
+
+            // Mark Pending up front so a refresh immediately reflects the queued state.
+            await _documentRepository.SetStatusAsync(document.Id, DocumentStatus.Pending, cancellationToken);
+            await _reprocessQueue.EnqueueAsync(new DocumentReprocessingJob(document.Id), cancellationToken);
+            _logger.LogInformation("Queued document {DocumentId} for reprocessing", document.Id);
+
+            document.Status = DocumentStatus.Pending;
+            return document.ToResponse();
+        }
+
         public async Task<ReprocessResponse> ReprocessAllDocumentsAsync(CancellationToken cancellationToken = default)
         {
             // Fail fast: reject the whole request if embeddings can't be generated.
