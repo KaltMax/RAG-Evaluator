@@ -30,7 +30,7 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Sets an experiment's status via a set-based update.
+        /// Updates an experiment's status.
         /// </summary>
         Task SetStatusAsync(Guid experimentId, ExperimentStatus status, CancellationToken cancellationToken = default);
 

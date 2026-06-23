@@ -8,7 +8,7 @@ namespace RagEvaluator.Application.Workers
 {
     /// <summary>
     /// Runs a <see cref="DocumentProcessingJob"/>: drives the document status lifecycle
-    /// (Processing → Completed, or Failed on error), broadcasts notifications, and delegates the
+    /// (Processing -> Completed, or Failed on error), broadcasts notifications, and delegates the
     /// actual work to <see cref="IDocumentService.ProcessDocumentAsync"/>.
     /// </summary>
     public class DocumentProcessingJobHandler : IJobHandler<DocumentProcessingJob>

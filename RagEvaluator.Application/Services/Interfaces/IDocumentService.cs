@@ -44,8 +44,7 @@ namespace RagEvaluator.Application.Services.Interfaces
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Sets a document's processing status via a set-based update.
-        /// Used by the background workers to drive status transitions.
+        /// Updates a document's processing status.
         /// </summary>
         Task SetStatusAsync(Guid documentId, DocumentStatus status, CancellationToken cancellationToken = default);
 
