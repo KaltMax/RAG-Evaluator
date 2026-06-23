@@ -294,6 +294,47 @@ namespace RagEvaluator.Test.ApiTest
 
         #endregion
 
+        #region ReprocessDocumentAsync Tests
+
+        [Fact]
+        public async Task ReprocessDocumentAsync_WithValidId_ReturnsAcceptedWithPendingDocument()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            _documentService.GetByIdAsync(documentId, Arg.Any<CancellationToken>())
+                .Returns(CreateDocumentResponse(documentId));
+            var pending = CreateDocumentResponse(documentId);
+            pending.Status = "Pending";
+            _documentService.ReprocessDocumentByIdAsync(documentId, Arg.Any<CancellationToken>())
+                .Returns(pending);
+
+            // Act
+            var result = await _controller.ReprocessDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert
+            var acceptedResult = Assert.IsType<AcceptedResult>(result.Result);
+            var response = Assert.IsType<DocumentResponse>(acceptedResult.Value);
+            Assert.Equal("Pending", response.Status);
+        }
+
+        [Fact]
+        public async Task ReprocessDocumentAsync_WhenDocumentNotFound_ReturnsNotFoundWithoutQueuing()
+        {
+            // Arrange
+            var documentId = Guid.NewGuid();
+            _documentService.GetByIdAsync(documentId, Arg.Any<CancellationToken>())
+                .Returns((DocumentResponse?)null);
+
+            // Act
+            var result = await _controller.ReprocessDocumentAsync(documentId, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.IsType<NotFoundResult>(result.Result);
+            await _documentService.DidNotReceive().ReprocessDocumentByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        }
+
+        #endregion
+
         #region GetDocumentChunksAsync Tests
 
         [Fact]

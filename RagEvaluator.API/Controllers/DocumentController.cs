@@ -177,6 +177,32 @@ namespace RagEvaluator.API.Controllers
         }
 
         /// <summary>
+        /// Queues a single document for reprocessing (re-chunk + re-embed from stored content with the current
+        /// configuration). Processing happens asynchronously; progress arrives via job notifications.
+        /// </summary>
+        /// <param name="id">The unique identifier of the document</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        [HttpPost("{id}/reprocess")]
+        [ProducesResponseType(typeof(DocumentResponse), StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<ActionResult<DocumentResponse>> ReprocessDocumentAsync(Guid id, CancellationToken cancellationToken)
+        {
+            var document = await _documentService.GetByIdAsync(id, cancellationToken);
+            if (document is null)
+            {
+                _logger.LogWarning("Attempted to reprocess non-existent document: {DocumentId}", id);
+                return NotFound();
+            }
+
+            _logger.LogInformation("Queuing document {DocumentId} for reprocessing", id);
+            var result = await _documentService.ReprocessDocumentByIdAsync(id, cancellationToken);
+            return Accepted(result);
+        }
+
+        /// <summary>
         /// Retrieves all chunks for a specific document
         /// </summary>
         /// <param name="id">The unique identifier of the document</param>
