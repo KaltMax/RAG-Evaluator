@@ -305,6 +305,7 @@ RAG-Evaluator/
   - `SetStatusAsync()` - set-based status update used by the workers to drive Processing/Failed transitions (the work methods set Completed themselves)
   - `ProcessDocumentAsync()` - opens the stored PDF and extracts text, chunks, embeds, and stores chunks (sets Completed); invoked by the background worker
   - `ReprocessDocumentAsync()` - re-chunks and re-embeds a document's stored content and atomically replaces its chunks (sets Completed); invoked by the background worker
+  - `ReprocessDocumentByIdAsync()` - fail-fast embedding check, validates the single document has stored content (400 if not), marks it Pending, and enqueues one `DocumentReprocessingJob`; returns the Pending `DocumentResponse`. Shares the same job/handler as the bulk path
   - `ReprocessAllDocumentsAsync()` - fail-fast embedding check, bulk-marks every reprocessable document (any status with stored content) Pending, then enqueues one `DocumentReprocessingJob` per document; returns the queued count
   - `GetChunksByDocumentIdAsync()` - retrieves document chunks
   - `GetByIdAsync()` / `GetByNameAsync()` / `GetAllAsync()` - document retrieval
@@ -461,6 +462,8 @@ RAG-Evaluator/
 ### Document Reprocessing Pipeline
 
 Reprocessing is asynchronous: the request only validates and **enqueues** one job per document, then returns immediately. Each document is reprocessed independently in the background, so per-document progress is delivered via job notifications and one document's failure never affects the rest.
+
+A single document can also be reprocessed on its own via `DocumentService.ReprocessDocumentByIdAsync()` (`POST /api/documents/{id}/reprocess`): same fail-fast embedding check, same Pending-then-enqueue flow, and the same `DocumentReprocessingJob` / handler as below — it just enqueues one job (404 if the document does not exist, 400 if it has no stored content). The background half (steps 8+) is identical.
 
 ```
 1. Settings Change or Manual Trigger (Controller)
@@ -669,6 +672,7 @@ GET    /api/documents/by-name/{name}  # Get document by filename
 GET    /api/documents/{id}/download   # Download document file
 DELETE /api/documents/{id}            # Delete document
 GET    /api/documents/{id}/chunks     # Get document chunks
+POST   /api/documents/{id}/reprocess  # Reprocess a single document with current config
 POST   /api/documents/reprocess       # Reprocess all documents with current config
 ```
 
